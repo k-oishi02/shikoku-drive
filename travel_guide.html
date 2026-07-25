@@ -1627,72 +1627,32 @@
     </main>
 
     <script>
-        function openTab(evt, tabName) {
-            const tabPanes = document.getElementsByClassName("tab-pane");
-            for (let i = 0; i < tabPanes.length; i++) {
-                tabPanes[i].classList.remove("active");
-            }
-            const tabBtns = document.getElementsByClassName("tab-nav-btn");
-            for (let i = 0; i < tabBtns.length; i++) {
-                tabBtns[i].classList.remove("active");
-            }
-            document.getElementById(tabName).classList.add("active");
-            evt.currentTarget.classList.add("active");
 
-            // Automatically switch map view to match the selected day!
-            const mapBtn = document.querySelector(`.map-switch-btn.btn-${tabName}`);
-            if (mapBtn) {
-                switchMap(tabName, mapBtn);
+        // Countdown Timer Script (Target: 2026-08-30 06:55 AM)
+        function updateCountdown() {
+            const targetDate = new Date("2026-08-30T06:55:00+09:00").getTime();
+            const now = new Date().getTime();
+            const diff = targetDate - now;
+
+            const elem = document.getElementById('trip-countdown');
+            if (!elem) return;
+
+            if (diff <= 0) {
+                elem.innerText = "🎉 旅行当日です！楽しんできてね！";
+                return;
             }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            elem.innerText = `${days}日 ${hours}時間 ${minutes}分 ${seconds}秒`;
         }
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
 
-        // Map Switcher Function for Day-by-Day Pins
-        const mapUrls = {
-            all: "https://maps.google.com/maps?q=%E9%AB%98%E6%9D%BE%E7%A9%BA%E6%B8%AF+to+%E3%81%B2%E3%81%A0%E3%81%BE%E3%82%8A%E5%85%AC%E5%9C%92%E3%81%82%E3%82%84%E3%81%8C%E3%82%8F+to+%E5%B0%8F%E8%B1%86%E5%B3%B6%E3%82%AA%E3%83%AA%E3%83%BC%E3%83%96%E5%85%AC%E5%9C%92+to+%E7%88%B6%E6%AF%8D%E3%83%B6%E6%B5%9C+to+%E9%81%93%E5%BE%8C%E6%B8%A9%E6%B3%89%E6%9C%AC%E9%A4%A8+to+%E4%B8%8B%E7%80%B9%E9%A7%85+to+%E6%9D%BE%E5%B1%B1%E7%A9%BA%E6%B8%AF&t=&z=9&ie=UTF8&iwloc=&output=embed",
-            day1: "https://maps.google.com/maps?q=%E9%AB%98%E6%9D%BE%E7%A9%BA%E6%B8%AF+to+%E3%81%B2%E3%81%A0%E3%81%BE%E3%82%8A%E5%85%AC%E5%9C%92%E3%81%82%E3%82%84%E3%81%8C%E3%82%8F+to+%E3%81%86%E3%81%A9%E3%82%93%E3%83%90%E3%82%AB%E4%B8%80%E4%BB%A3+to+%E9%AB%98%E6%9D%BE%E6%B8%AF+to+%E5%B0%8F%E8%B1%86%E5%B3%B6%E3%82%AA%E3%83%AA%E3%83%BC%E3%83%96%E5%85%AC%E5%9C%92+to+%E4%B8%B8%E4%BA%80%E7%94%BA%E3%82%B0%E3%83%AA%E3%83%BC%E3%83%B3&t=&z=10&ie=UTF8&iwloc=&output=embed",
-            day2: "https://maps.google.com/maps?q=%E5%B1%B1%E8%B6%8A%E3%81%86%E3%81%A9%E3%82%93+to+%E5%9B%9B%E5%9B%BD%E6%B0%B4%E6%97%8F%E9%A4%A8+to+%E9%95%B7%E7%94%B0in%E9%A6%99%E3%81%AE%E9%A6%99+to+%E7%88%B6%E6%AF%8D%E3%83%B6%E6%B5%9C+to+%E9%81%93%E5%BE%8C%E6%B8%A9%E6%B3%89%E6%9C%AC%E9%A4%A8+to+%E4%BA%94%E5%BF%97%E5%96%9C%E6%9C%AC%E5%BA%97&t=&z=9&ie=UTF8&iwloc=&output=embed",
-            day3: "https://maps.google.com/maps?q=%E4%B8%8B%E7%80%B9%E9%A7%85+to+%E7%99%BD%E6%A5%BD%E5%A4%A9%E4%BB%8A%E6%B2%BB+to+%E3%82%BF%E3%82%AA%E3%83%AB%E7%BE%8E%E3%83%AF%E9%A4%A8ICHIHIRO+to+%E4%BA%80%E8%80%81%E5%B1%B1%E5%B1%95%E6%90%9B%E5%85%AC%E5%9C%92+to+%E6%9D%BE%E5%B1%B1%E7%A9%BA%E6%B8%AF&t=&z=9&ie=UTF8&iwloc=&output=embed"
-        };
-
-        function switchMap(day, btnElem) {
-            const iframe = document.getElementById('main-google-map');
-            if (mapUrls[day]) {
-                iframe.src = mapUrls[day];
-            }
-            const switchBtns = document.getElementsByClassName('map-switch-btn');
-            for (let i = 0; i < switchBtns.length; i++) {
-                switchBtns[i].classList.remove('active');
-            }
-            btnElem.classList.add('active');
-        }
-
-        
-        // Initialize LINE LIFF App
-        window.addEventListener('DOMContentLoaded', () => {
-            if (typeof liff !== 'undefined') {
-                // Initialize LIFF with YOUR_LIFF_ID
-                liff.init({ liffId: "YOUR_LIFF_ID" }).then(() => {
-                    if (liff.isLoggedIn()) {
-                        liff.getProfile().then(profile => {
-                            const name = profile.displayName;
-                            const payerSelect = document.getElementById('payer');
-                            if (payerSelect && name) {
-                                // Auto match Aoi or Kotaro or add user name
-                                if (name.includes('あおい')) {
-                                    payerSelect.value = 'あおい';
-                                } else if (name.includes('こうたろう')) {
-                                    payerSelect.value = 'こうたろう';
-                                }
-                            }
-                        });
-                    }
-                }).catch((err) => {
-                    console.log('LIFF Init Error:', err);
-                });
-            }
-        });
-        
-// Real-Time Online Synchronized Warikan System
+        // Real-Time Online Synchronized Warikan System
         const SYNC_ENDPOINT = "https://kvdb.io/shikoku_drive_2026_aoi_kotaro_v1/expenses";
 
         const defaultInitialExpenses = [
@@ -1761,6 +1721,8 @@
             const summaryText = document.getElementById('warikan-summary-text');
             const resultAmount = document.getElementById('warikan-result-amount');
 
+            if (!summaryText || !resultAmount) return;
+
             if (expenses.length === 0) {
                 summaryText.innerText = '立替データはまだありません';
                 resultAmount.innerText = '0 円';
@@ -1812,39 +1774,11 @@
             }
         }
 
-        
-        // Countdown Timer Script (Target: 2026-08-30 06:55 AM)
-        function updateCountdown() {
-            const targetDate = new Date("2026-08-30T06:55:00+09:00").getTime();
-            const now = new Date().getTime();
-            const diff = targetDate - now;
-
-            if (diff <= 0) {
-                document.getElementById('trip-countdown').innerText = "🎉 旅行当日です！楽しんできてね！";
-                return;
-            }
-
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            document.getElementById('trip-countdown').innerText = `${days}日 ${hours}時間 ${minutes}分 ${seconds}秒`;
-        }
-        setInterval(updateCountdown, 1000);
-        updateCountdown();
-
-        
-
-        ;
-            reader.readAsDataURL(file);
-        }
-        renderGallery();
-
         // Initialize & Auto-Sync Every 4 Seconds Live
         renderExpensesUI();
         fetchRemoteExpenses();
         setInterval(fetchRemoteExpenses, 4000);
-    </script>
+
+</script>
 </body>
 </html>
