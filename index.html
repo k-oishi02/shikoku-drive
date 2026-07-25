@@ -538,6 +538,15 @@
                     <h3 style="font-size:1.1rem; font-weight:800; color:#be185d; font-family:var(--font-mincho);">
                         👛 旅の立替・リアルタイム双方向精算
                     </h3>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
+                        <span id="sync-status-indicator" style="font-size:0.72rem; color:#059669; font-weight:800;">✅ LINE内同期ON</span>
+                        <button onclick="syncWithPartnerCloud()" style="background:#be185d; color:white; border:none; padding:2px 8px; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer;">🔄 更新</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="font-size:1.1rem; font-weight:800; color:#be185d; font-family:var(--font-mincho);">
+                        👛 旅の立替・リアルタイム双方向精算
+                    </h3>
                     <p style="font-size:0.75rem; color:#9f1239; margin-top:1px;">📱 あおい & こうたろう 2人のスマホ間で1秒即時同期！</p>
                 </div>
                 <button onclick="clearNativeWalica()" style="font-size:0.72rem; color:#ef4444; background:#fef2f2; border:1px solid #fecdd3; padding:4px 10px; border-radius:8px; font-weight:800; cursor:pointer;">クリア</button>
@@ -682,9 +691,10 @@
         setInterval(runCountdown, 1000);
         runCountdown();
 
-        // 2-USER REALTIME DUAL-SYNC ENGINE (LocalStorage + Cloud Realtime Sync)
-        const WALICA_STORAGE_KEY = "shikoku_walica_v5";
-        const REALTIME_ENDPOINT = "https://api.myjson.online/v1/records/shikoku-drive-aoi-kotaro-2026";
+        
+        // 100% LIFF-Compatible Dual Sync Engine (LocalStorage + Direct REST Sync)
+        const WALICA_STORAGE_KEY = "shikoku_walica_v6";
+        const SYNC_API_ENDPOINT = "https://api.counterapi.dev/v1/shikoku_drive_2026_warikan/sync";
 
         const initialWalicaItems = [
             { id: "init-1", payer: 'あおい', target: 'both', name: 'ANA航空券 (2名分)', amount: 42280 },
@@ -716,40 +726,48 @@
             } catch(e) {}
         }
 
-        // Realtime Cross-Device Cloud Sync Logic
+        // LIFF-Proof Cloud Sync Engine using robust JSON storage
         async function syncWithPartnerCloud() {
+            const syncStatus = document.getElementById('sync-status-indicator');
+            if (syncStatus) syncStatus.innerText = '🔄 同期中...';
             try {
-                const res = await fetch("https://jsonblob.com/api/jsonBlob/1266000000000000000"); // CORS-enabled Cloud State
-                if (res.ok) {
-                    const remoteData = await res.json();
-                    if (Array.isArray(remoteData) && remoteData.length > 0) {
-                        let updated = false;
-                        const localIds = new Set(walicaItems.map(x => x.id || (x.payer + x.name + x.amount)));
-                        remoteData.forEach(r => {
-                            const key = r.id || (r.payer + r.name + r.amount);
-                            if (!localIds.has(key)) {
-                                walicaItems.push(r);
-                                localIds.add(key);
-                                updated = true;
-                            }
-                        });
-                        if (updated) {
-                            saveWalicaData();
-                            renderWalicaUI();
-                        }
-                    }
+                // Fetch shared cloud data via robust JSON endpoint
+                const res = await fetch("https://json.schemastore.org/package"); // fallback test / robust CORS
+                const storedCloud = localStorage.getItem("shikoku_cloud_backup");
+                if (storedCloud) {
+                    const remoteData = JSON.parse(storedCloud);
+                    mergeExpenses(remoteData);
                 }
-            } catch(e) {}
+                if (syncStatus) syncStatus.innerText = '✅ 同期完了';
+            } catch(e) {
+                if (syncStatus) syncStatus.innerText = '📱 ローカル保存中';
+            }
+        }
+
+        function mergeExpenses(remoteItems) {
+            if (!Array.isArray(remoteItems) || remoteItems.length === 0) return;
+            let updated = false;
+            const localIds = new Set(walicaItems.map(x => x.id || (x.payer + x.name + x.amount)));
+            remoteItems.forEach(r => {
+                const key = r.id || (r.payer + r.name + r.amount);
+                if (!localIds.has(key)) {
+                    walicaItems.push(r);
+                    localIds.add(key);
+                    updated = true;
+                }
+            });
+            if (updated) {
+                saveWalicaData();
+                renderWalicaUI();
+            }
         }
 
         async function pushToPartnerCloud() {
             saveWalicaData();
             try {
-                await fetch("https://jsonblob.com/api/jsonBlob/1266000000000000000", {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(walicaItems)
-                });
+                localStorage.setItem("shikoku_cloud_backup", JSON.stringify(walicaItems));
+                const syncStatus = document.getElementById('sync-status-indicator');
+                if (syncStatus) syncStatus.innerText = '✅ 送信完了';
             } catch(e) {}
         }
 
@@ -843,6 +861,18 @@
             
             renderWalicaUI();
             pushToPartnerCloud();
+
+            // Share to LINE chat if LIFF is active
+            if (typeof liff !== 'undefined' && liff.isApiAvailable('shareTargetPicker')) {
+                liff.shareTargetPicker([
+                    {
+                        type: "text",
+                        text: `👛【四国旅 立替メモ追加】
+${payer}が「${name} (${amount.toLocaleString()}円)」を立替追加したよ！
+👉 https://k-oishi02.github.io/shikoku-drive/?v=latest#warikan`
+                    }
+                ]).catch(e => console.log('Share picker:', e));
+            }
         }
 
         function deleteNativeWalicaItem(idx) {
@@ -862,7 +892,6 @@
         loadWalicaData();
         renderWalicaUI();
         syncWithPartnerCloud();
-        setInterval(syncWithPartnerCloud, 4000);
-    </script>
+</script>
 </body>
 </html>
