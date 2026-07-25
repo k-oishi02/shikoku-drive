@@ -10,7 +10,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
     <style>
@@ -18,141 +18,136 @@
             --font-mincho: 'Shippori Mincho', serif;
             --font-sans: 'Plus Jakarta Sans', sans-serif;
             --font-body: 'Zen Kaku Gothic New', sans-serif;
-            --day1: #ec4899;
-            --day2: #0284c7;
-            --day3: #059669;
+
+            /* Unified Color Palette (Setouchi Blue & Elegant Slate) */
+            --primary: #0f172a;
+            --accent-blue: #0284c7;
+            --accent-pink: #f43f5e;
+            --accent-green: #10b981;
+            
+            --day1-color: #ec4899;
+            --day2-color: #0284c7;
+            --day3-color: #059669;
+
             --bg: #f8fafc;
             --card-bg: #ffffff;
-            --text: #0f172a;
-            --muted: #64748b;
-            --border: #e2e8f0;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.05);
+            --shadow-card: 0 4px 16px rgba(15, 23, 42, 0.04);
+            --radius-main: 20px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
-        body { font-family: var(--font-body); background: var(--bg); color: var(--text); line-height: 1.6; padding-bottom: 60px; -webkit-font-smoothing: antialiased; }
+        body { font-family: var(--font-body); background: var(--bg); color: var(--text-dark); line-height: 1.6; padding-bottom: 60px; -webkit-font-smoothing: antialiased; }
         .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
 
-        /* Hero Banner */
+        /* Unified Hero Header */
         .hero {
-            background: linear-gradient(180deg, rgba(15,23,42,0.4) 0%, rgba(15,23,42,0.75) 100%), url('https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/header_shikoku.png') center/cover no-repeat;
-            color: white; padding: 50px 20px 40px; border-radius: 0 0 32px 32px; text-center; margin-bottom: 24px; text-align: center; position: relative; overflow: hidden;
+            background: linear-gradient(180deg, rgba(15,23,42,0.45) 0%, rgba(15,23,42,0.8) 100%), url('https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/header_shikoku.png') center/cover no-repeat;
+            color: white; padding: 54px 20px 44px; border-radius: 0 0 32px 32px; text-align: center; position: relative; overflow: hidden; margin-bottom: 24px;
         }
-        .hero-badge { display: inline-block; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); padding: 5px 16px; border-radius: 20px; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.4); margin-bottom: 12px; }
-        .hero-title { font-family: var(--font-mincho); font-size: 2.2rem; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 12px; text-shadow: 0 3px 10px rgba(0,0,0,0.5); }
+        .hero-badge { display: inline-block; background: rgba(255,255,255,0.22); backdrop-filter: blur(10px); padding: 6px 18px; border-radius: 20px; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.35); margin-bottom: 12px; }
+        .hero-title { font-family: var(--font-mincho); font-size: 2.3rem; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 12px; text-shadow: 0 3px 12px rgba(0,0,0,0.5); }
         .hero-tags { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; font-size: 0.85rem; font-weight: 700; }
-        .hero-tag-item { background: rgba(15,23,42,0.5); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); }
+        .hero-tag-item { background: rgba(15,23,42,0.55); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.25); }
 
-        /* Countdown Box */
-        .countdown-box { background: rgba(15,23,42,0.65); border: 1px solid rgba(255,255,255,0.3); border-radius: 14px; padding: 10px 18px; margin-top: 14px; display: inline-block; }
+        /* Unified Countdown Box */
+        .countdown-box { background: rgba(15,23,42,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3); border-radius: 16px; padding: 10px 20px; margin-top: 16px; display: inline-block; }
         .countdown-label { font-size: 0.75rem; color: #fbbf24; font-family: var(--font-sans); font-weight: 800; letter-spacing: 1px; }
-        .countdown-digits { font-family: var(--font-sans); font-size: 1.25rem; font-weight: 900; color: #fff; margin-top: 2px; }
+        .countdown-digits { font-family: var(--font-sans); font-size: 1.3rem; font-weight: 900; color: #fff; margin-top: 2px; }
 
-        /* Weather & BGM Banner */
-        .top-info-banner { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px; }
-        .info-card-blue { background: linear-gradient(135deg, #0284c7, #0369a1); color: white; border-radius: 18px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
-        .info-card-music { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 18px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-        .btn-amazon { background: #ff9900; color: #111; padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        /* Unified Top Info Widgets */
+        .top-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px; }
+        .widget-card { background: var(--card-bg); border-radius: var(--radius-main); padding: 20px 24px; border: 1px solid var(--border-color); box-shadow: var(--shadow-card); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .widget-title { font-size: 0.95rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 6px; }
+        .widget-val { font-family: var(--font-sans); font-weight: 900; font-size: 1.15rem; color: var(--accent-blue); margin-top: 2px; }
+        
+        .btn-amazon-music { background: linear-gradient(135deg, #ff9900 0%, #ff8800 100%); color: #111; padding: 9px 18px; border-radius: 12px; font-weight: 800; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(255,153,0,0.25); transition: transform 0.2s ease; }
+        .btn-amazon-music:hover { transform: translateY(-2px); }
 
-        /* Sleek Horizontal Scrollbar Navigation */
+        /* Unified Sleek Horizontal Scroll Navigation Bar */
         .nav-sticky {
-            position: sticky;
-            top: 12px;
-            z-index: 100;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-            border-radius: 20px;
-            padding: 8px 12px;
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-            border: 1px solid var(--border);
+            position: sticky; top: 12px; z-index: 100;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(14px);
+            border-radius: 20px; padding: 8px 12px; display: flex; gap: 10px;
+            overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
+            margin-bottom: 28px; box-shadow: var(--shadow-soft); border: 1px solid var(--border-color);
             scrollbar-width: thin;
         }
-        .nav-sticky::-webkit-scrollbar { height: 6px; }
+        .nav-sticky::-webkit-scrollbar { height: 4px; }
         .nav-sticky::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
         .nav-btn {
-            flex: 0 0 auto;
-            padding: 10px 18px;
-            border: none;
-            background: #f1f5f9;
-            font-family: var(--font-body);
-            font-size: 0.9rem;
-            font-weight: 800;
-            color: #475569;
-            border-radius: 14px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: all 0.2s ease;
+            flex: 0 0 auto; padding: 10px 18px; border: none; background: #f1f5f9;
+            font-family: var(--font-body); font-size: 0.9rem; font-weight: 800; color: #475569;
+            border-radius: 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease;
         }
-        .nav-btn.d1.active { background: var(--day1); color: white; box-shadow: 0 4px 12px rgba(236,72,153,0.3); }
-        .nav-btn.d2.active { background: var(--day2); color: white; box-shadow: 0 4px 12px rgba(2,132,199,0.3); }
-        .nav-btn.d3.active { background: var(--day3); color: white; box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
+        .nav-btn.d1.active { background: var(--day1-color); color: white; box-shadow: 0 4px 12px rgba(236,72,153,0.3); }
+        .nav-btn.d2.active { background: var(--day2-color); color: white; box-shadow: 0 4px 12px rgba(2,132,199,0.3); }
+        .nav-btn.d3.active { background: var(--day3-color); color: white; box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
+        .nav-btn.warikan-btn { background: #be185d; color: white; box-shadow: 0 4px 12px rgba(190,24,93,0.3); }
 
-        /* Map Section */
-        .map-box { background: white; border-radius: 20px; padding: 18px; margin-bottom: 28px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        .map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
-        .map-header h3 { font-size: 1.1rem; font-weight: 800; font-family: var(--font-sans); letter-spacing: 1px; }
-        .map-btn-group { display: flex; gap: 4px; background: #f1f5f9; padding: 3px; border-radius: 10px; }
-        .map-btn { border: none; background: transparent; padding: 5px 12px; font-size: 0.78rem; font-weight: 800; color: var(--muted); border-radius: 8px; cursor: pointer; }
-        .map-btn.active { background: #334155; color: white; }
+        /* Unified Map Section */
+        .map-box { background: var(--card-bg); border-radius: var(--radius-main); padding: 20px; margin-bottom: 32px; border: 1px solid var(--border-color); box-shadow: var(--shadow-card); }
+        .map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+        .map-header h3 { font-size: 1.15rem; font-weight: 800; font-family: var(--font-sans); letter-spacing: 1px; color: var(--primary); }
+        .map-btn-group { display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 12px; }
+        .map-btn { border: none; background: transparent; padding: 6px 14px; font-size: 0.8rem; font-weight: 800; color: var(--text-muted); border-radius: 8px; cursor: pointer; transition: all 0.2s ease; }
+        .map-btn.active { background: var(--primary); color: white; }
 
-        .iframe-container { width: 100%; height: 320px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
+        .iframe-container { width: 100%; height: 320px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-color); }
         .iframe-container iframe { width: 100%; height: 100%; border: 0; }
 
-        /* Day Section Header */
-        .day-section { margin-bottom: 40px; scroll-margin-top: 80px; }
-        .day-title-head { font-size: 1.4rem; font-weight: 800; font-family: var(--font-mincho); padding-bottom: 8px; margin-bottom: 20px; border-bottom: 3px solid; display: flex; align-items: center; gap: 8px; }
-        .day-title-head.d1 { color: var(--day1); border-color: var(--day1); }
-        .day-title-head.d2 { color: var(--day2); border-color: var(--day2); }
-        .day-title-head.d3 { color: var(--day3); border-color: var(--day3); }
+        /* Unified Day Section Headers & Cards */
+        .day-section { margin-bottom: 44px; scroll-margin-top: 80px; }
+        .day-title-head { font-size: 1.45rem; font-weight: 800; font-family: var(--font-mincho); padding-bottom: 10px; margin-bottom: 22px; border-bottom: 3px solid; display: flex; align-items: center; gap: 10px; }
+        .day-title-head.d1 { color: var(--day1-color); border-color: var(--day1-color); }
+        .day-title-head.d2 { color: var(--day2-color); border-color: var(--day2-color); }
+        .day-title-head.d3 { color: var(--day3-color); border-color: var(--day3-color); }
 
-        /* Timeline Cards */
-        .card { background: white; border-radius: 20px; padding: 20px 22px; margin-bottom: 20px; border: 1px solid var(--border); position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
-        .card.d1 { border-left: 5px solid var(--day1); }
-        .card.d2 { border-left: 5px solid var(--day2); }
-        .card.d3 { border-left: 5px solid var(--day3); }
+        .card { background: var(--card-bg); border-radius: var(--radius-main); padding: 22px 24px; margin-bottom: 22px; border: 1px solid var(--border-color); position: relative; box-shadow: var(--shadow-card); transition: transform 0.2s ease; }
+        .card.d1 { border-left: 5px solid var(--day1-color); }
+        .card.d2 { border-left: 5px solid var(--day2-color); }
+        .card.d3 { border-left: 5px solid var(--day3-color); }
 
-        .card-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-        .time-badge { font-family: var(--font-sans); font-weight: 800; font-size: 0.95rem; padding: 3px 12px; border-radius: 8px; }
+        .card-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        .time-badge { font-family: var(--font-sans); font-weight: 800; font-size: 0.92rem; padding: 4px 14px; border-radius: 10px; }
         .card.d1 .time-badge { background: #fce7f3; color: #be185d; }
         .card.d2 .time-badge { background: #e0f2fe; color: #0369a1; }
         .card.d3 .time-badge { background: #d1fae5; color: #047857; }
 
-        .card-title-text { font-size: 1.15rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
-        .card-desc { font-size: 0.92rem; color: #475569; margin: 8px 0; line-height: 1.6; }
+        .card-title-text { font-size: 1.15rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .card-desc { font-size: 0.92rem; color: #475569; margin: 8px 0; line-height: 1.65; }
 
-        .card-hero-img { width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #0f172a; border-radius: 14px; margin: 12px 0; border: 1px solid var(--border); display: block; }
-        .card-hero-img.fit-cover { height: 200px; object-fit: cover; }
+        .card-hero-img { width: 100%; height: auto; max-height: 420px; object-fit: contain; background: #0f172a; border-radius: 14px; margin: 12px 0; border: 1px solid var(--border-color); display: block; }
+        .card-hero-img.fit-cover { height: 210px; object-fit: cover; }
 
-        /* Camera Box in Card */
-        .cam-box { background: #0f172a; color: #f8fafc; padding: 12px 16px; border-radius: 12px; border-left: 4px solid #38bdf8; margin-top: 10px; font-size: 0.85rem; }
-        .cam-box-title { color: #38bdf8; font-weight: 800; font-family: var(--font-sans); font-size: 0.8rem; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
-        .film-badge { font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; background: #334155; color: #fff; font-family: var(--font-sans); font-weight: 800; }
+        /* Unified FUJIFILM Camera Box */
+        .cam-box { background: #0f172a; color: #f8fafc; padding: 14px 18px; border-radius: 14px; border-left: 4px solid #38bdf8; margin-top: 12px; font-size: 0.85rem; }
+        .cam-box-title { color: #38bdf8; font-weight: 800; font-family: var(--font-sans); font-size: 0.82rem; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .film-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; background: #334155; color: #fff; font-family: var(--font-sans); font-weight: 800; }
 
-        /* Buttons Row */
-        .btns-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-        .btn-action { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; text-decoration: none; font-family: var(--font-body); }
-        .btn-action.map { background: #0284c7; color: white; }
+        /* Unified Action Buttons Row */
+        .btns-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+        .btn-action { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 800; text-decoration: none; font-family: var(--font-body); transition: all 0.2s ease; }
+        .btn-action.map { background: var(--accent-blue); color: white; box-shadow: 0 4px 10px rgba(2,132,199,0.25); }
+    
         .btn-action.search { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+        .btn-action:hover { transform: translateY(-1px); }
 
-        /* Warikan Panel */
-        .warikan-panel { background: white; border-radius: 20px; padding: 24px; margin-top: 36px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        .warikan-form { display: grid; grid-template-columns: 1fr 1.8fr 1.2fr auto; gap: 8px; margin: 16px 0; background: #fff1f2; padding: 14px; border-radius: 14px; border: 1px solid #fecdd3; }
-        .warikan-form select, .warikan-form input { padding: 8px 12px; border: 1px solid #fda4af; border-radius: 8px; font-size: 0.88rem; outline: none; }
-        .btn-add-exp { background: #be185d; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 800; cursor: pointer; }
-        .warikan-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 0.88rem; }
-        .warikan-table th, .warikan-table td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
-        .warikan-res-box { background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        /* Unified Native Walica Panel */
+        .warikan-panel { background: var(--card-bg); border-radius: var(--radius-main); padding: 26px; margin-top: 40px; border: 2px solid #fda4af; box-shadow: var(--shadow-card); scroll-margin-top: 80px; }
+        .warikan-form-box { background: #fff1f2; padding: 18px; border-radius: 18px; border: 1px solid #fecdd3; margin-bottom: 20px; }
+        .warikan-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
+        .warikan-input-group label { font-size: 0.75rem; font-weight: 800; color: #9f1239; display: block; margin-bottom: 4px; }
+        .warikan-input-group select, .warikan-input-group input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #fda4af; font-size: 0.9rem; font-weight: 700; background: white; outline: none; }
+        .btn-add-walica { width: 100%; background: #be185d; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 4px 14px rgba(190,24,93,0.25); transition: transform 0.2s ease; }
+        .btn-add-walica:hover { transform: translateY(-1px); }
+
+        .warikan-res-card { background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 1px solid #fecdd3; border-radius: 16px; padding: 20px; margin-top: 16px; }
 
         .poke-img { vertical-align: middle; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15)); }
     </style>
@@ -179,36 +174,36 @@
 
     <main class="container">
 
-        <!-- Top Widgets -->
-        <div class="top-info-banner">
-            <div class="info-card-blue">
+        <!-- Unified Top Info Widgets -->
+        <div class="top-info-grid">
+            <div class="widget-card">
                 <div>
-                    <div style="font-weight:800; font-size:0.9rem;">🌤️ 香川・小豆島・松山の天気</div>
-                    <div style="font-family:var(--font-sans); font-weight:900; font-size:1.1rem; margin-top:2px;">晴れ 29°C / 22°C</div>
+                    <div class="widget-title">🌤️ 香川・小豆島・松山の天気</div>
+                    <div class="widget-val">晴れ 29°C / 22°C</div>
                 </div>
                 <div style="text-align:right;">
-                    <div style="font-size:0.8rem; opacity:0.9;">🌅 下灘駅日の入り</div>
-                    <div style="font-family:var(--font-sans); font-weight:900; color:#fef08a;">18:52 頃</div>
+                    <div style="font-size:0.78rem; color:var(--text-muted);">🌅 下灘駅日の入り</div>
+                    <div style="font-family:var(--font-sans); font-weight:900; color:#d97706; font-size:1rem;">18:52 頃</div>
                 </div>
             </div>
-            <div class="info-card-music">
+            <div class="widget-card">
                 <div>
-                    <div style="font-weight:800; font-size:0.95rem;">🎵 瀬戸内ドライブ BGM</div>
-                    <div style="font-size:0.8rem; opacity:0.9;">車内にぴったりなチルソング</div>
+                    <div class="widget-title">🎵 瀬戸内ドライブ BGM</div>
+                    <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">車内にぴったりなチルソング</div>
                 </div>
-                <a href="https://music.amazon.co.jp/search/%E7%80%AC%E6%88%B8%E5%86%85%E3%83%89%E3%83%A9%E3%82%A4%E3%83%96" target="_blank" class="btn-amazon">🎧 Amazon Music で再生</a>
+                <a href="https://music.amazon.co.jp/search/%E7%80%AC%E6%88%B8%E5%86%85%E3%83%89%E3%83%A9%E3%82%A4%E3%83%96" target="_blank" class="btn-amazon-music">🎧 Amazon Music で再生</a>
             </div>
         </div>
 
-        <!-- Sticky Navigation Bar (Smooth Scroll) -->
+        <!-- Unified Sleek Horizontal Scroll Navigation Bar -->
         <nav class="nav-sticky">
             <a href="#day1" class="nav-btn d1 active" onclick="navTo('day1')">🌸 DAY 1 香川・小豆島</a>
             <a href="#day2" class="nav-btn d2" onclick="navTo('day2')">🌊 DAY 2 香川・松山</a>
             <a href="#day3" class="nav-btn d3" onclick="navTo('day3')">🌿 DAY 3 下灘・しまなみ</a>
-            <a href="#warikan" class="nav-btn warikan-shortcut" style="background:#be185d; color:white; box-shadow:0 4px 10px rgba(190,24,93,0.3);" onclick="navTo('warikan')">👛 割り勘メモ</a>
+            <a href="#warikan" class="nav-btn warikan-btn" onclick="navTo('warikan')">👛 割り勘メモ</a>
         </nav>
 
-        <!-- Google Map Section -->
+        <!-- Unified Google Map Section -->
         <section class="map-box">
             <div class="map-header">
                 <h3>🗺️ MAP & ROUTE</h3>
@@ -562,34 +557,77 @@
             </div>
         </section>
 
-        <!-- Real-Time Warikan Calculator Section -->
-        
-        <!-- Walica Official Integration Section -->
-        <section id="warikan" class="warikan-panel" style="scroll-margin-top: 80px; background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 2px solid #fda4af;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <!-- Unified Native Walica Panel -->
+        <section id="warikan" class="warikan-panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px; border-bottom:2px solid #fff1f2; padding-bottom:12px;">
                 <div>
-                    <h3 style="font-size:1.25rem; font-weight:800; color:#be185d; font-family:var(--font-mincho); display:flex; align-items:center; gap:8px;">
-                        <span>👛 旅の立替・リアルタイム精算 (Walica連携)</span>
+                    <h3 style="font-size:1.3rem; font-weight:800; color:#be185d; font-family:var(--font-mincho); display:flex; align-items:center; gap:8px;">
+                        <span>👛 旅の立替・Walica風精算システム</span>
                     </h3>
-                    <p style="font-size:0.85rem; color:#9f1239; margin-top:4px;">登録不要・データ消失ゼロ・2人のスマホで完璧リアルタイム自動同期！</p>
+                    <p style="font-size:0.82rem; color:#9f1239; margin-top:2px;">アプリ内で即入力！最小送金回数を全自動計算＆2人の入力が消えない安全保存</p>
                 </div>
-                <a href="https://walica.jp/" target="_blank" style="background:#be185d; color:white; padding:10px 20px; border-radius:12px; font-weight:800; font-size:0.9rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(190,24,93,0.3);">
-                    <span>📱 Walicaで立替を入力・精算する</span>
-                </a>
+                <button onclick="clearNativeWalica()" style="font-size:0.78rem; color:#ef4444; background:#fef2f2; border:1px solid #fecdd3; padding:6px 14px; border-radius:10px; font-weight:800; cursor:pointer;">全クリア</button>
             </div>
 
-            <!-- Fixed Preset Pre-booked Expenses Summary -->
-            <div style="background:white; border-radius:14px; padding:16px; border:1px solid #fecdd3; margin-top:12px;">
-                <div style="font-weight:800; font-size:0.9rem; color:#be185d; margin-bottom:8px;">📌 予約済み確定費用（参考メモ）</div>
-                <ul style="font-size:0.85rem; color:#475569; list-style:none; padding:0; display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:8px;">
-                    <li style="background:#fff1f2; padding:6px 10px; border-radius:8px;">あおい: ANA航空券 42,280円</li>
-                    <li style="background:#fff1f2; padding:6px 10px; border-radius:8px;">こうたろう: レンタカー 33,440円</li>
-                    <li style="background:#fff1f2; padding:6px 10px; border-radius:8px;">こうたろう: 高松国際ホテル 11,520円</li>
-                    <li style="background:#fff1f2; padding:6px 10px; border-radius:8px;">こうたろう: ダイワロイネット松山 13,530円</li>
-                </ul>
+            <div class="warikan-form-box">
+                <div class="warikan-form-grid">
+                    <div class="warikan-input-group">
+                        <label>① 払った人</label>
+                        <select id="w-payer">
+                            <option value="あおい">あおい</option>
+                            <option value="こうたろう">こうたろう</option>
+                        </select>
+                    </div>
+                    <div class="warikan-input-group">
+                        <label>② 誰の分？ (対象)</label>
+                        <select id="w-target">
+                            <option value="both">2人で均等に割る (1/2)</option>
+                            <option value="aoi">あおいのみ</option>
+                            <option value="kotaro">こうたろうのみ</option>
+                        </select>
+                    </div>
+                    <div class="warikan-input-group">
+                        <label>③ 内容</label>
+                        <input type="text" id="w-name" placeholder="例: ガソリン、うどん">
+                    </div>
+                    <div class="warikan-input-group">
+                        <label>④ 金額 (円)</label>
+                        <input type="number" id="w-amount" placeholder="金額">
+                    </div>
+                </div>
+                <button class="btn-add-walica" onclick="addNativeWalicaItem()">＋ 立替項目を追加する</button>
+            </div>
+
+            <div style="overflow-x:auto; margin-bottom:18px;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+                    <thead>
+                        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; color:#64748b; text-align:left;">
+                            <th style="padding:10px;">支払者</th>
+                            <th style="padding:10px;">対象</th>
+                            <th style="padding:10px;">内容</th>
+                            <th style="padding:10px;">金額</th>
+                            <th style="padding:10px; text-align:center;">削除</th>
+                        </tr>
+                    </thead>
+                    <tbody id="walica-list-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="warikan-res-card">
+                <div style="font-weight:800; font-size:0.85rem; color:#be185d; letter-spacing:1px; margin-bottom:4px;">📊 Walica方式 最適精算結果</div>
+                <div id="walica-settlement-summary" style="font-size:1.25rem; font-weight:900; color:#9f1239;">計算中...</div>
+            </div>
+
+            <div style="background:#f8fafc; border-radius:14px; padding:14px; border:1px solid #e2e8f0; margin-top:18px;">
+                <div style="font-weight:800; font-size:0.85rem; color:#64748b; margin-bottom:6px;">📌 事前予約済み固定費（初期登録済み）</div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:6px; font-size:0.8rem; color:#475569;">
+                    <div>・あおい: ANA航空券 42,280円</div>
+                    <div>・こうたろう: レンタカー 33,440円</div>
+                    <div>・こうたろう: 1泊目ホテル 11,520円</div>
+                    <div>・こうたろう: 2泊目ホテル 13,530円</div>
+                </div>
             </div>
         </section>
-
 
     </main>
 
@@ -601,7 +639,7 @@
                     if (liff.isLoggedIn()) {
                         liff.getProfile().then(p => {
                             const name = p.displayName;
-                            const payerSelect = document.getElementById('payer');
+                            const payerSelect = document.getElementById('w-payer');
                             if (payerSelect && name) {
                                 if (name.includes('あおい')) payerSelect.value = 'あおい';
                                 else if (name.includes('こうたろう')) payerSelect.value = 'こうたろう';
@@ -624,7 +662,7 @@
                 const mapBtn = document.querySelector('.map-btn.btn-' + targetId);
                 if (mapBtn) changeMap(targetId, mapBtn);
             } else if (targetId === 'warikan') {
-                const activeBtn = document.querySelector('.nav-btn.warikan-shortcut');
+                const activeBtn = document.querySelector('.nav-btn.warikan-btn');
                 if (activeBtn) activeBtn.classList.add('active');
             }
 
@@ -670,90 +708,106 @@
         setInterval(runCountdown, 1000);
         runCountdown();
 
-        
-        
-        // 100% Guaranteed Warikan System (Zero Overwrite Bug)
-        const LOCAL_STORAGE_KEY = "shikoku_expenses_v3";
+        // Native Walica Engine
+        const WALICA_STORAGE_KEY = "native_walica_items_v2";
 
-        const defaultInitialExpenses = [
-            { payer: 'あおい', name: 'ANA航空券 (2名分)', amount: 42280 },
-            { payer: 'こうたろう', name: 'トヨタレンタカー (乗捨て込)', amount: 33440 },
-            { payer: 'こうたろう', name: '1泊目: 高松国際ホテル', amount: 11520 },
-            { payer: 'こうたろう', name: '2泊目: ダイワロイネットホテル松山', amount: 13530 }
+        const initialWalicaItems = [
+            { id: "init-1", payer: 'あおい', target: 'both', name: 'ANA航空券 (2名分)', amount: 42280 },
+            { id: "init-2", payer: 'こうたろう', target: 'both', name: 'トヨタレンタカー (乗捨て込)', amount: 33440 },
+            { id: "init-3", payer: 'こうたろう', target: 'both', name: '1泊目: 高松国際ホテル', amount: 11520 },
+            { id: "init-4", payer: 'こうたろう', target: 'both', name: '2泊目: ダイワロイネットホテル松山', amount: 13530 }
         ];
 
-        let expenses = [];
+        let walicaItems = [];
 
-        function loadLocalExpenses() {
+        function loadWalicaData() {
             try {
-                const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+                const stored = localStorage.getItem(WALICA_STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        expenses = parsed;
+                        walicaItems = parsed;
                         return;
                     }
                 }
             } catch(e) {}
-            expenses = [...defaultInitialExpenses];
-            saveLocalExpenses();
+            walicaItems = [...initialWalicaItems];
+            saveWalicaData();
         }
 
-        function saveLocalExpenses() {
+        function saveWalicaData() {
             try {
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(expenses));
+                localStorage.setItem(WALICA_STORAGE_KEY, JSON.stringify(walicaItems));
             } catch(e) {}
         }
 
-        function renderExpensesUI() {
-            const tbody = document.getElementById('warikan-tbody');
+        function renderWalicaUI() {
+            const tbody = document.getElementById('walica-list-tbody');
             if (!tbody) return;
             tbody.innerHTML = '';
-            
-            let totalAoi = 0;
-            let totalKotaro = 0;
 
-            expenses.forEach((item, idx) => {
+            let netAoi = 0;
+            let netKotaro = 0;
+
+            walicaItems.forEach((item, idx) => {
                 const tr = document.createElement('tr');
+                let targetLabel = "2人で均等";
+                if (item.target === 'aoi') targetLabel = "あおいのみ";
+                if (item.target === 'kotaro') targetLabel = "こうたろうのみ";
+
                 tr.innerHTML = `
-                    <td><strong>${item.payer}</strong></td>
-                    <td>${item.name}</td>
-                    <td>${item.amount.toLocaleString()} 円</td>
-                    <td><button style="color:#ef4444; background:none; border:none; cursor:pointer; font-weight:700; font-size:1.1rem; padding:2px 8px;" onclick="deleteExpense(${idx})">✕</button></td>
+                    <td style="padding:10px;"><strong>${item.payer}</strong></td>
+                    <td style="padding:10px;"><span style="background:#e2e8f0; padding:2px 8px; border-radius:6px; font-size:0.78rem;">${targetLabel}</span></td>
+                    <td style="padding:10px;">${item.name}</td>
+                    <td style="padding:10px; font-weight:700;">${item.amount.toLocaleString()} 円</td>
+                    <td style="padding:10px; text-align:center;"><button onclick="deleteNativeWalicaItem(${idx})" style="color:#ef4444; background:none; border:none; cursor:pointer; font-weight:800; font-size:1.1rem; padding:2px 8px;">✕</button></td>
                 `;
                 tbody.appendChild(tr);
 
-                if (item.payer === 'あおい') totalAoi += item.amount;
-                else if (item.payer === 'こうたろう') totalKotaro += item.amount;
+                let shareAoi = 0;
+                let shareKotaro = 0;
+
+                if (item.target === 'both') {
+                    shareAoi = item.amount / 2;
+                    shareKotaro = item.amount / 2;
+                } else if (item.target === 'aoi') {
+                    shareAoi = item.amount;
+                    shareKotaro = 0;
+                } else if (item.target === 'kotaro') {
+                    shareAoi = 0;
+                    shareKotaro = item.amount;
+                }
+
+                if (item.payer === 'あおい') {
+                    netAoi += (item.amount - shareAoi);
+                    netKotaro -= shareKotaro;
+                } else if (item.payer === 'こうたろう') {
+                    netKotaro += (item.amount - shareKotaro);
+                    netAoi -= shareAoi;
+                }
             });
 
-            const diff = totalAoi - totalKotaro;
-            const sumText = document.getElementById('warikan-summary-text');
-            const resAmt = document.getElementById('warikan-result-amount');
+            const summaryElem = document.getElementById('walica-settlement-summary');
+            if (!summaryElem) return;
 
-            if (!sumText || !resAmt) return;
-
-            if (expenses.length === 0) {
-                sumText.innerText = '立替データはまだありません';
-                resAmt.innerText = '0 円';
-            } else if (diff > 0) {
-                const payBack = Math.round(diff / 2);
-                sumText.innerText = 'こうたろう ➔ あおい へ支払う精算額:';
-                resAmt.innerText = `${payBack.toLocaleString()} 円`;
-            } else if (diff < 0) {
-                const payBack = Math.round(Math.abs(diff) / 2);
-                sumText.innerText = 'あおい ➔ こうたろう へ支払う精算額:';
-                resAmt.innerText = `${payBack.toLocaleString()} 円`;
+            if (walicaItems.length === 0) {
+                summaryElem.innerText = "立替データがありません";
+            } else if (netAoi > 0) {
+                const payAmt = Math.round(netAoi);
+                summaryElem.innerHTML = `こうたろう ➔ <span style="color:#be185d;">あおい</span> へ <span style="font-size:1.4rem; font-family:var(--font-sans); color:#be185d;">${payAmt.toLocaleString()} 円</span> 支払う`;
+            } else if (netKotaro > 0) {
+                const payAmt = Math.round(netKotaro);
+                summaryElem.innerHTML = `あおい ➔ <span style="color:#be185d;">こうたろう</span> へ <span style="font-size:1.4rem; font-family:var(--font-sans); color:#be185d;">${payAmt.toLocaleString()} 円</span> 支払う`;
             } else {
-                sumText.innerText = 'ピッタリ均等（精算なし）';
-                resAmt.innerText = '0 円';
+                summaryElem.innerText = "ピッタリ均等（精算なし）";
             }
         }
 
-        function addExpense() {
-            const payer = document.getElementById('payer').value;
-            const nameInput = document.getElementById('item-name');
-            const amountInput = document.getElementById('item-amount');
+        function addNativeWalicaItem() {
+            const payer = document.getElementById('w-payer').value;
+            const target = document.getElementById('w-target').value;
+            const nameInput = document.getElementById('w-name');
+            const amountInput = document.getElementById('w-amount');
 
             const name = nameInput.value.trim() || '立替項目';
             const amount = parseInt(amountInput.value);
@@ -763,32 +817,38 @@
                 return;
             }
 
-            expenses.push({ payer, name, amount });
+            const newItem = {
+                id: 'exp-' + Date.now() + '-' + Math.floor(Math.random()*1000),
+                payer,
+                target,
+                name,
+                amount
+            };
+
+            walicaItems.push(newItem);
             nameInput.value = '';
             amountInput.value = '';
-            saveLocalExpenses();
-            renderExpensesUI();
+            
+            saveWalicaData();
+            renderWalicaUI();
         }
 
-        function deleteExpense(idx) {
-            expenses.splice(idx, 1);
-            saveLocalExpenses();
-            renderExpensesUI();
+        function deleteNativeWalicaItem(idx) {
+            walicaItems.splice(idx, 1);
+            saveWalicaData();
+            renderWalicaUI();
         }
 
-        function clearWarikan() {
-            if (confirm('立替データを初期化しますか？')) {
-                expenses = [...defaultInitialExpenses];
-                saveLocalExpenses();
-                renderExpensesUI();
+        function clearNativeWalica() {
+            if (confirm('立替データを初期状態にリセットしますか？')) {
+                walicaItems = [...initialWalicaItems];
+                saveWalicaData();
+                renderWalicaUI();
             }
         }
 
-        // Initialize & Render immediately
-        loadLocalExpenses();
-        renderExpensesUI();
-
-
+        loadWalicaData();
+        renderWalicaUI();
     </script>
 </body>
 </html>
