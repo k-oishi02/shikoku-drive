@@ -677,9 +677,9 @@
         runCountdown();
 
         
-        // 100% Guaranteed Warikan Persistence System (LocalStorage + Remote Backup)
-        const LOCAL_STORAGE_KEY = "shikoku_expenses_v2";
-        const SYNC_URL = "https://kvdb.io/shikoku_drive_2026_aoi_kotaro_v2/expenses";
+        
+        // 100% Guaranteed Warikan System (Zero Overwrite Bug)
+        const LOCAL_STORAGE_KEY = "shikoku_expenses_v3";
 
         const defaultInitialExpenses = [
             { payer: 'あおい', name: 'ANA航空券 (2名分)', amount: 42280 },
@@ -690,7 +690,6 @@
 
         let expenses = [];
 
-        // 1. Load from localStorage FIRST so data is NEVER lost on reload
         function loadLocalExpenses() {
             try {
                 const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -703,38 +702,13 @@
                 }
             } catch(e) {}
             expenses = [...defaultInitialExpenses];
+            saveLocalExpenses();
         }
 
-        // 2. Save to localStorage FIRST
         function saveLocalExpenses() {
             try {
                 localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(expenses));
             } catch(e) {}
-        }
-
-        async function fetchRemoteExpenses() {
-            try {
-                const res = await fetch(SYNC_URL);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        expenses = data;
-                        saveLocalExpenses();
-                        renderExpensesUI();
-                    }
-                }
-            } catch (e) {}
-        }
-
-        async function saveRemoteExpenses() {
-            saveLocalExpenses();
-            try {
-                await fetch(SYNC_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(expenses)
-                });
-            } catch (e) {}
         }
 
         function renderExpensesUI() {
@@ -798,29 +772,28 @@
             expenses.push({ payer, name, amount });
             nameInput.value = '';
             amountInput.value = '';
+            saveLocalExpenses();
             renderExpensesUI();
-            saveRemoteExpenses();
         }
 
         function deleteExpense(idx) {
             expenses.splice(idx, 1);
+            saveLocalExpenses();
             renderExpensesUI();
-            saveRemoteExpenses();
         }
 
         function clearWarikan() {
             if (confirm('立替データを初期化しますか？')) {
                 expenses = [...defaultInitialExpenses];
+                saveLocalExpenses();
                 renderExpensesUI();
-                saveRemoteExpenses();
             }
         }
 
-        // Initialize & Render immediately from LocalStorage
+        // Initialize & Render immediately
         loadLocalExpenses();
         renderExpensesUI();
-        fetchRemoteExpenses();
-        setInterval(fetchRemoteExpenses, 5000);
+
 
     </script>
 </body>
