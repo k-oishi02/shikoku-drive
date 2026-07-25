@@ -563,39 +563,33 @@
         </section>
 
         <!-- Real-Time Warikan Calculator Section -->
-        <section id="warikan" class="warikan-panel" style="scroll-margin-top: 80px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <h3 style="font-size:1.2rem; font-weight:800; color:#be185d; font-family:var(--font-mincho);">👛 旅の立替・リアルタイム精算メモ</h3>
-                <button onclick="clearWarikan()" style="font-size:0.78rem; color:#ef4444; background:none; border:none; cursor:pointer;">全クリア</button>
+        
+        <!-- Walica Official Integration Section -->
+        <section id="warikan" class="warikan-panel" style="scroll-margin-top: 80px; background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 2px solid #fda4af;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                <div>
+                    <h3 style="font-size:1.25rem; font-weight:800; color:#be185d; font-family:var(--font-mincho); display:flex; align-items:center; gap:8px;">
+                        <span>👛 旅の立替・リアルタイム精算 (Walica連携)</span>
+                    </h3>
+                    <p style="font-size:0.85rem; color:#9f1239; margin-top:4px;">登録不要・データ消失ゼロ・2人のスマホで完璧リアルタイム自動同期！</p>
+                </div>
+                <a href="https://walica.jp/" target="_blank" style="background:#be185d; color:white; padding:10px 20px; border-radius:12px; font-weight:800; font-size:0.9rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(190,24,93,0.3);">
+                    <span>📱 Walicaで立替を入力・精算する</span>
+                </a>
             </div>
 
-            <div class="warikan-form">
-                <select id="payer">
-                    <option value="あおい">あおい</option>
-                    <option value="こうたろう">こうたろう</option>
-                </select>
-                <input type="text" id="item-name" placeholder="内容 (例: うどん、ガソリン、お土産)">
-                <input type="number" id="item-amount" placeholder="金額 (円)">
-                <button class="btn-add-exp" onclick="addExpense()">追加</button>
-            </div>
-
-            <table class="warikan-table">
-                <thead>
-                    <tr>
-                        <th>支払った人</th>
-                        <th>内容</th>
-                        <th>金額</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="warikan-tbody"></tbody>
-            </table>
-
-            <div class="warikan-res-box">
-                <div id="warikan-summary-text" style="font-size:0.98rem; font-weight:800; color:#9f1239;">計算中...</div>
-                <div id="warikan-result-amount" style="font-size:1.35rem; font-weight:900; color:#be185d; font-family:var(--font-sans);">0 円</div>
+            <!-- Fixed Preset Pre-booked Expenses Summary -->
+            <div style="background:white; border-radius:14px; padding:16px; border:1px solid #fecdd3; margin-top:12px;">
+                <div style="font-weight:800; font-size:0.9rem; color:#be185d; margin-bottom:8px;">📌 予約済み確定費用（参考メモ）</div>
+                <ul style="font-size:0.85rem; color:#475569; list-style:none; padding:0; display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:8px;">
+                    <li style="background:#fff1f2; padding:6px 10px; border-radius:8px;">あおい: ANA航空券 42,280円</li>
+                    <li style="background:#fff1f2; padding:6px 10px; border-radius:8px;">こうたろう: レンタカー 33,440円</li>
+                    <li style="background:#fff1f2; padding:6px 10px; border-radius:8px;">こうたろう: 高松国際ホテル 11,520円</li>
+                    <li style="background:#fff1f2; padding:6px 10px; border-radius:8px;">こうたろう: ダイワロイネット松山 13,530円</li>
+                </ul>
             </div>
         </section>
+
 
     </main>
 
