@@ -533,23 +533,17 @@
 
         <!-- 2-User Realtime Sync Walica Section -->
         <section id="warikan" class="warikan-panel">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:12px; border-bottom:2px solid #fff1f2; padding-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; border-bottom:2px solid #fff1f2; padding-bottom:8px;">
                 <div>
-                    <h3 style="font-size:1.1rem; font-weight:800; color:#be185d; font-family:var(--font-mincho);">
-                        👛 旅の立替・リアルタイム双方向精算
+                    <h3 style="font-size:1.1rem; font-weight:800; color:#be185d; font-family:var(--font-mincho); display:flex; align-items:center; gap:6px;">
+                        <span>👛 旅の立替・リアルタイム双方向精算</span>
                     </h3>
                     <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
-                        <span id="sync-status-indicator" style="font-size:0.72rem; color:#059669; font-weight:800;">✅ LINE内同期ON</span>
-                        <button onclick="syncWithPartnerCloud()" style="background:#be185d; color:white; border:none; padding:2px 8px; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer;">🔄 更新</button>
+                        <span id="sync-status-indicator" style="font-size:0.72rem; color:#059669; font-weight:800;">📱 2人のスマホ間で1秒即時同期！</span>
+                        <button onclick="syncWithPartnerCloud()" style="background:#be185d; color:white; border:none; padding:3px 10px; border-radius:6px; font-size:0.75rem; font-weight:800; cursor:pointer;">🔄 更新</button>
                     </div>
                 </div>
-                <div>
-                    <h3 style="font-size:1.1rem; font-weight:800; color:#be185d; font-family:var(--font-mincho);">
-                        👛 旅の立替・リアルタイム双方向精算
-                    </h3>
-                    <p style="font-size:0.75rem; color:#9f1239; margin-top:1px;">📱 あおい & こうたろう 2人のスマホ間で1秒即時同期！</p>
-                </div>
-                <button onclick="clearNativeWalica()" style="font-size:0.72rem; color:#ef4444; background:#fef2f2; border:1px solid #fecdd3; padding:4px 10px; border-radius:8px; font-weight:800; cursor:pointer;">クリア</button>
+                <button onclick="clearNativeWalica()" style="font-size:0.75rem; color:#ef4444; background:#fef2f2; border:1px solid #fecdd3; padding:4px 12px; border-radius:8px; font-weight:800; cursor:pointer;">全クリア</button>
             </div>
 
             <div class="warikan-form-box">
