@@ -508,6 +508,7 @@
             font-family: var(--font-body);
         }
 
+        
         /* Distinct Color Coded Tab Bar Navigation */
         .tab-bar-nav {
             display: flex;
@@ -516,6 +517,9 @@
             background: #cbd5e1;
             padding: 6px;
             border-radius: 20px;
+            position: relative;
+            z-index: 99;
+            pointer-events: auto !important;
         }
 
         .tab-nav-btn {
@@ -528,12 +532,16 @@
             font-weight: 800;
             color: #475569;
             border-radius: 15px;
-            cursor: pointer;
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            touch-action: manipulation;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .tab-nav-btn.nav-day1.active {
@@ -1136,9 +1144,9 @@
 
         <!-- Color-Coded Distinct Day Navigation Tabs -->
         <nav class="tab-bar-nav">
-            <button class="tab-nav-btn nav-day1 active" onclick="openTab(event, 'day1')">🌸 DAY 1 (8/30 日) 香川・小豆島</button>
-            <button class="tab-nav-btn nav-day2" onclick="openTab(event, 'day2')">🌊 DAY 2 (8/31 月) 香川・松山</button>
-            <button class="tab-nav-btn nav-day3" onclick="openTab(event, 'day3')">🌿 DAY 3 (9/1 火) 下灘・しまなみ</button>
+            <button type="button" class="tab-nav-btn nav-day1 active" onclick="switchDayTab('day1')">🌸 DAY 1 (8/30 日) 香川・小豆島</button>
+            <button type="button" class="tab-nav-btn nav-day2" onclick="switchDayTab('day2')">🌊 DAY 2 (8/31 月) 香川・松山</button>
+            <button type="button" class="tab-nav-btn nav-day3" onclick="switchDayTab('day3')">🌿 DAY 3 (9/1 火) 下灘・しまなみ</button>
         </nav>
 
         <!-- DAY 1 TAB PANE -->
