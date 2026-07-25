@@ -531,73 +531,26 @@
             </div>
         </section>
 
-        <!-- 2-User Realtime Sync Walica Section -->
-        <section id="warikan" class="warikan-panel">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; border-bottom:2px solid #fff1f2; padding-bottom:8px;">
-                <div>
-                    <h3 style="font-size:1.1rem; font-weight:800; color:#be185d; font-family:var(--font-mincho); display:flex; align-items:center; gap:6px;">
-                        <span>👛 旅の立替・リアルタイム双方向精算</span>
-                    </h3>
-                    <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
-                        <span id="sync-status-indicator" style="font-size:0.72rem; color:#059669; font-weight:800;">📱 2人のスマホ間で1秒即時同期！</span>
-                        <button onclick="syncWithPartnerCloud()" style="background:#be185d; color:white; border:none; padding:3px 10px; border-radius:6px; font-size:0.75rem; font-weight:800; cursor:pointer;">🔄 更新</button>
-                    </div>
-                </div>
-                <button onclick="clearNativeWalica()" style="font-size:0.75rem; color:#ef4444; background:#fef2f2; border:1px solid #fecdd3; padding:4px 12px; border-radius:8px; font-weight:800; cursor:pointer;">全クリア</button>
+        <!-- PayPay Group Split Integration Section -->
+        <section id="warikan" class="warikan-panel" style="background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 2px solid #fca5a5; padding: 20px 16px; border-radius: 18px; margin-top: 24px; scroll-margin-top: 60px; text-align: center;">
+            <div style="margin-bottom: 12px;">
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: #dc2626; font-family: var(--font-mincho); margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span>🔴 旅の立替・PayPayグループ割り勘</span>
+                </h3>
+                <p style="font-size: 0.8rem; color: #991b1b; font-weight: 700;">
+                    ワンタップでPayPayアプリが直接起動！通信エラーゼロ＆1秒で即時グループ精算
+                </p>
             </div>
 
-            <div class="warikan-form-box">
-                <div class="warikan-form-grid">
-                    <div class="warikan-input-group">
-                        <label>① 払った人</label>
-                        <select id="w-payer">
-                            <option value="あおい">あおい</option>
-                            <option value="こうたろう">こうたろう</option>
-                        </select>
-                    </div>
-                    <div class="warikan-input-group">
-                        <label>② 誰の分？</label>
-                        <select id="w-target">
-                            <option value="both">2人で均等 (1/2)</option>
-                            <option value="aoi">あおいのみ</option>
-                            <option value="kotaro">こうたろうのみ</option>
-                        </select>
-                    </div>
-                    <div class="warikan-input-group">
-                        <label>③ 内容</label>
-                        <input type="text" id="w-name" placeholder="例: ガソリン、うどん">
-                    </div>
-                    <div class="warikan-input-group">
-                        <label>④ 金額 (円)</label>
-                        <input type="number" id="w-amount" placeholder="金額">
-                    </div>
-                </div>
-                <button class="btn-add-walica" onclick="addNativeWalicaItem()">＋ 立替を追加して送信</button>
-            </div>
+            <!-- Big PayPay Direct Launch Button -->
+            <a href="paypay://" onclick="openPayPayGroup(event)" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: linear-gradient(135deg, #ff0033 0%, #d00028 100%); color: white; padding: 15px; border-radius: 14px; font-weight: 900; font-size: 1rem; text-decoration: none; box-shadow: 0 4px 16px rgba(255,0,51,0.35); margin-bottom: 14px; transition: transform 0.2s ease;">
+                <span>🔴 PayPayアプリを開いて割り勘・送金する ↗️</span>
+            </a>
 
-            <div style="overflow-x:auto; margin-bottom:12px;">
-                <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
-                    <thead>
-                        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; color:#64748b; text-align:left;">
-                            <th style="padding:8px 4px;">払った人</th>
-                            <th style="padding:8px 4px;">対象</th>
-                            <th style="padding:8px 4px;">内容</th>
-                            <th style="padding:8px 4px;">金額</th>
-                            <th style="padding:8px 4px; text-align:center;">削除</th>
-                        </tr>
-                    </thead>
-                    <tbody id="walica-list-tbody"></tbody>
-                </table>
-            </div>
-
-            <div class="warikan-res-card">
-                <div style="font-weight:800; font-size:0.78rem; color:#be185d; letter-spacing:1px; margin-bottom:2px;">📊 最適精算結果 (Walica計算エンジン)</div>
-                <div id="walica-settlement-summary" style="font-size:1.1rem; font-weight:900; color:#9f1239;">計算中...</div>
-            </div>
-
-            <div style="background:#f8fafc; border-radius:12px; padding:10px 12px; border:1px solid #e2e8f0; margin-top:12px;">
-                <div style="font-weight:800; font-size:0.78rem; color:#64748b; margin-bottom:4px;">📌 事前予約済み固定費（初期登録済み）</div>
-                <div style="font-size:0.75rem; color:#475569; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+            <!-- Fixed Pre-booked Expenses Summary -->
+            <div style="background: white; border-radius: 12px; padding: 12px 14px; border: 1px solid #fecdd3; text-align: left;">
+                <div style="font-weight: 800; font-size: 0.8rem; color: #dc2626; margin-bottom: 6px;">📌 事前予約済み固定費（参考メモ）</div>
+                <div style="font-size: 0.78rem; color: #475569; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
                     <div>・あおい: ANA航空券 42,280円</div>
                     <div>・こうたろう: レンタカー 33,440円</div>
                     <div>・こうたろう: 1泊目 11,520円</div>
@@ -662,6 +615,15 @@
             if (mapUrls[day]) iframe.src = mapUrls[day];
             document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
             if (btn) btn.classList.add('active');
+        }
+
+        
+        function openPayPayGroup(e) {
+            // Attempt to open PayPay app via deep link
+            setTimeout(() => {
+                // If app not installed or fallback needed
+                window.location.href = "https://paypay.ne.jp/";
+            }, 1500);
         }
 
         // Countdown Timer
