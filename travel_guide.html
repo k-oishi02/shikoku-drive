@@ -495,13 +495,15 @@
         /* Scenic Photo Embed in Timeline Cards */
         .card-photo-hero {
             width: 100%;
-            height: 280px;
-            object-fit: cover;
-            object-position: center;
+            height: auto;
+            max-height: 420px;
+            object-fit: contain;
+            background: #0f172a;
             border-radius: 16px;
             margin: 14px 0 16px 0;
             box-shadow: 0 6px 16px rgba(0,0,0,0.12);
             border: 1px solid var(--border-light);
+            display: block;
         }
 
         /* In-Card Camera Advice Box Style */
