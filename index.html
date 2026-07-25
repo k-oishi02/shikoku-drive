@@ -153,6 +153,202 @@
             letter-spacing: 0.5px;
         }
 
+        
+        /* Premium Dark Mode Styles */
+        body.dark-theme {
+            background-color: #090d16 !important;
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-theme .summary-card,
+        body.dark-theme .map-section,
+        body.dark-theme .card-box,
+        body.dark-theme .box-panel,
+        body.dark-theme .warikan-section,
+        body.dark-theme .gallery-section {
+            background-color: #111827 !important;
+            border-color: #1f2937 !important;
+            color: #f1f5f9 !important;
+        }
+
+        body.dark-theme .card-title,
+        body.dark-theme .summary-info p,
+        body.dark-theme .box-panel h3,
+        body.dark-theme .warikan-header h3 {
+            color: #f8fafc !important;
+        }
+
+        body.dark-theme .card-body-text {
+            color: #94a3b8 !important;
+        }
+
+        /* Top Theme Toggle Button */
+        .theme-toggle-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 999;
+            background: #0f172a;
+            color: #f8fafc;
+            border: 2px solid #38bdf8;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-body);
+            transition: transform 0.2s ease;
+        }
+
+        .theme-toggle-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Countdown Banner */
+        .countdown-box {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 14px 20px;
+            margin-top: 16px;
+            display: inline-block;
+        }
+
+        .countdown-title {
+            font-size: 0.78rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #fbbf24;
+            font-family: var(--font-sans-en);
+            font-weight: 800;
+        }
+
+        .countdown-digits {
+            font-family: var(--font-sans-en);
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #ffffff;
+            margin-top: 2px;
+            letter-spacing: 1px;
+        }
+
+        /* Weather & Sunset Widget */
+        .weather-banner {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: 22px 26px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .weather-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .weather-city {
+            font-weight: 800;
+            font-size: 0.95rem;
+        }
+
+        .weather-temp {
+            font-family: var(--font-sans-en);
+            font-weight: 900;
+            font-size: 1.2rem;
+        }
+
+        /* BGM Player Bar */
+        .bgm-section {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: 22px 26px;
+            margin-bottom: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
+        }
+
+        .bgm-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bgm-btns-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-music {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-decoration: none;
+            color: white;
+            transition: transform 0.2s ease;
+            font-family: var(--font-body);
+        }
+
+        .btn-music.amazon { background: #ff9900; color: #111; }
+        .btn-music.spotify { background: #1ed760; color: #111; }
+        .btn-music.apple { background: #fa233b; color: white; }
+
+        .btn-music:hover { transform: translateY(-2px); }
+
+        /* Photo Album Gallery */
+        .gallery-section {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-top: 38px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .gallery-thumb {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .gallery-thumb:hover {
+            transform: scale(1.05);
+        }
+
         /* Top Grid Info Cards */
         .summary-grid {
             display: grid;
@@ -890,7 +1086,12 @@
                 <span class="hero-tag-item en-font">📅 2026.08.30 (SUN) - 09.01 (TUE)</span>
                 <span class="hero-tag-item">👥 あおい & こうたろう</span>
                 <span class="hero-tag-item en-font">✈️ ANA HND</span>
+            
+            <div class="countdown-box">
+                <div class="countdown-title">⏳ 出発（8/30 06:55）まで</div>
+                <div id="trip-countdown" class="countdown-digits">計算中...</div>
             </div>
+</div>
         </div>
     </header>
 
@@ -920,6 +1121,38 @@
                     <h4>HOTEL</h4>
                     <p>1泊目: 高松国際ホテル<br>2泊目: ダイワロイネット松山</p>
                 </div>
+            </div>
+        </section>
+
+
+        <!-- Weather & Sunset Info Widget -->
+        <section class="weather-banner">
+            <div class="weather-item">
+                <span>🌤️</span>
+                <div>
+                    <div class="weather-city">香川・小豆島・松山</div>
+                    <div class="weather-temp">晴れ 29°C / 22°C</div>
+                </div>
+            </div>
+            <div class="weather-item">
+                <span>🌅</span>
+                <div>
+                    <div class="weather-city">下灘駅 マジックアワー (日の入り)</div>
+                    <div class="weather-temp" style="color: #fef08a;">本日 18:52 頃</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Drive BGM Player Bar (Amazon Music / Spotify / Apple Music) -->
+        <section class="bgm-section">
+            <div class="bgm-title">
+                <span>🎵</span>
+                <span>ドライブ BGM プレイヤー (車内おすすめ曲)</span>
+            </div>
+            <div class="bgm-btns-group">
+                <a href="https://music.amazon.co.jp/search/%E7%80%AC%E6%88%B8%E5%86%85%E3%83%89%E3%83%A9%E3%82%A4%E3%83%96" target="_blank" class="btn-music amazon">🎧 Amazon Music で聴く</a>
+                <a href="https://open.spotify.com/search/%E7%80%AC%E6%88%B8%E5%86%85%E3%83%89%E3%83%A9%E3%82%A4%E3%83%96" target="_blank" class="btn-music spotify">🟢 Spotify</a>
+                <a href="https://music.apple.com/jp/search?term=%E7%80%AC%E6%88%B8%E5%86%85%E3%83%89%E3%83%A9%E3%82%A4%E3%83%96" target="_blank" class="btn-music apple">🍎 Apple Music</a>
             </div>
         </section>
 
@@ -1443,6 +1676,25 @@
             </div>
         </section>
 
+    
+        <!-- 2-Person Travel Memories Photo Gallery -->
+        <section class="gallery-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <h3 style="font-size:1.25rem; font-weight:800; color:#0284c7; display:flex; align-items:center; gap:8px; font-family:var(--font-mincho);">📸 2人の旅の思い出フォトギャラリー</h3>
+                <input type="file" id="album-upload" accept="image/*" style="display:none;" onchange="uploadAlbumPhoto(event)">
+                <button onclick="document.getElementById('album-upload').click()" style="background:#0284c7; color:white; border:none; padding:8px 16px; border-radius:10px; font-weight:800; cursor:pointer;">＋ 写真を追加</button>
+            </div>
+            <div id="gallery-grid-box" class="gallery-grid">
+                <!-- User photos will appear here -->
+            </div>
+        </section>
+
+        <!-- Dark Mode Toggle Floating Button -->
+        <button class="theme-toggle-btn" onclick="toggleDarkMode()">
+            <span id="theme-btn-icon">🌙</span>
+            <span id="theme-btn-text">NIGHT MODE</span>
+        </button>
+
     </main>
 
     <script>
@@ -1630,6 +1882,70 @@
                 saveRemoteExpenses();
             }
         }
+
+        
+        // Countdown Timer Script (Target: 2026-08-30 06:55 AM)
+        function updateCountdown() {
+            const targetDate = new Date("2026-08-30T06:55:00+09:00").getTime();
+            const now = new Date().getTime();
+            const diff = targetDate - now;
+
+            if (diff <= 0) {
+                document.getElementById('trip-countdown').innerText = "🎉 旅行当日です！楽しんできてね！";
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('trip-countdown').innerText = `${days}日 ${hours}時間 ${minutes}分 ${seconds}秒`;
+        }
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // Dark Mode Toggle Script
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-theme');
+            const isDark = document.body.classList.contains('dark-theme');
+            document.getElementById('theme-btn-icon').innerText = isDark ? '☀️' : '🌙';
+            document.getElementById('theme-btn-text').innerText = isDark ? 'DAY MODE' : 'NIGHT MODE';
+            localStorage.setItem('shiori_dark_mode', isDark);
+        }
+
+        if (localStorage.getItem('shiori_dark_mode') === 'true') {
+            toggleDarkMode();
+        }
+
+        // Photo Album Gallery Script
+        let albumPhotos = JSON.parse(localStorage.getItem('shiori_album_photos')) || [];
+
+        function renderGallery() {
+            const box = document.getElementById('gallery-grid-box');
+            if (!box) return;
+            box.innerHTML = '';
+            albumPhotos.forEach((src) => {
+                const img = document.createElement('img');
+                img.src = src;
+                img.className = 'gallery-thumb';
+                box.appendChild(img);
+            });
+        }
+
+        function uploadAlbumPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                albumPhotos.unshift(e.target.result);
+                if (albumPhotos.length > 20) albumPhotos.pop();
+                localStorage.setItem('shiori_album_photos', JSON.stringify(albumPhotos));
+                renderGallery();
+            };
+            reader.readAsDataURL(file);
+        }
+        renderGallery();
 
         // Initialize & Auto-Sync Every 4 Seconds Live
         renderExpensesUI();
