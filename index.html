@@ -531,25 +531,24 @@
             </div>
         </section>
 
-        <!-- PayPay Group Split Integration Section -->
-        <section id="warikan" class="warikan-panel" style="background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 2px solid #fca5a5; padding: 20px 16px; border-radius: 18px; margin-top: 24px; scroll-margin-top: 60px; text-align: center;">
-            <div style="margin-bottom: 12px;">
-                <h3 style="font-size: 1.25rem; font-weight: 800; color: #dc2626; font-family: var(--font-mincho); margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    <span>🔴 旅の立替・PayPayグループ割り勘</span>
-                </h3>
-                <p style="font-size: 0.8rem; color: #991b1b; font-weight: 700;">
-                    ワンタップでPayPayアプリが直接起動！通信エラーゼロ＆1秒で即時グループ精算
-                </p>
+        <!-- Subtle PayPay Integration Section -->
+        <section id="warikan" class="warikan-panel" style="background: #ffffff; border: 1px solid #e2e8f0; padding: 18px 16px; border-radius: 18px; margin-top: 24px; scroll-margin-top: 60px; box-shadow: 0 4px 14px rgba(15,23,42,0.04);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <div>
+                    <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; font-family: var(--font-mincho);">
+                        👛 旅の立替・精算メモ
+                    </h3>
+                    <p style="font-size: 0.75rem; color: #64748b;">確定費用メモ ＆ PayPay精算</p>
+                </div>
+                <!-- Subtle PayPay Launch Button -->
+                <a href="paypay://" onclick="openPayPayGroup(event)" style="background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 10px; font-weight: 800; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="color:#ef4444;">🔴</span> PayPayアプリ起動
+                </a>
             </div>
 
-            <!-- Big PayPay Direct Launch Button -->
-            <a href="paypay://" onclick="openPayPayGroup(event)" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: linear-gradient(135deg, #ff0033 0%, #d00028 100%); color: white; padding: 15px; border-radius: 14px; font-weight: 900; font-size: 1rem; text-decoration: none; box-shadow: 0 4px 16px rgba(255,0,51,0.35); margin-bottom: 14px; transition: transform 0.2s ease;">
-                <span>🔴 PayPayアプリを開いて割り勘・送金する ↗️</span>
-            </a>
-
             <!-- Fixed Pre-booked Expenses Summary -->
-            <div style="background: white; border-radius: 12px; padding: 12px 14px; border: 1px solid #fecdd3; text-align: left;">
-                <div style="font-weight: 800; font-size: 0.8rem; color: #dc2626; margin-bottom: 6px;">📌 事前予約済み固定費（参考メモ）</div>
+            <div style="background: #f8fafc; border-radius: 12px; padding: 12px 14px; border: 1px solid #e2e8f0;">
+                <div style="font-weight: 800; font-size: 0.8rem; color: #0f172a; margin-bottom: 6px;">📌 事前予約済み固定費（参考）</div>
                 <div style="font-size: 0.78rem; color: #475569; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
                     <div>・あおい: ANA航空券 42,280円</div>
                     <div>・こうたろう: レンタカー 33,440円</div>
