@@ -270,16 +270,7 @@
 
         .btn-music:hover { transform: translateY(-2px); }
 
-        /* Photo Album Gallery */
-        .gallery-section {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 28px;
-            margin-top: 38px;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border-light);
-        }
-
+        
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -1629,17 +1620,7 @@
         </section>
 
     
-        <!-- 2-Person Travel Memories Photo Gallery -->
-        <section class="gallery-section">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <h3 style="font-size:1.25rem; font-weight:800; color:#0284c7; display:flex; align-items:center; gap:8px; font-family:var(--font-mincho);">📸 2人の旅の思い出フォトギャラリー</h3>
-                <input type="file" id="album-upload" accept="image/*" style="display:none;" onchange="uploadAlbumPhoto(event)">
-                <button onclick="document.getElementById('album-upload').click()" style="background:#0284c7; color:white; border:none; padding:8px 16px; border-radius:10px; font-weight:800; cursor:pointer;">＋ 写真を追加</button>
-            </div>
-            <div id="gallery-grid-box" class="gallery-grid">
-                <!-- User photos will appear here -->
-            </div>
-        </section>
+        
 
         
 
@@ -1855,31 +1836,7 @@
 
         
 
-        // Photo Album Gallery Script
-        let albumPhotos = JSON.parse(localStorage.getItem('shiori_album_photos')) || [];
-
-        function renderGallery() {
-            const box = document.getElementById('gallery-grid-box');
-            if (!box) return;
-            box.innerHTML = '';
-            albumPhotos.forEach((src) => {
-                const img = document.createElement('img');
-                img.src = src;
-                img.className = 'gallery-thumb';
-                box.appendChild(img);
-            });
-        }
-
-        function uploadAlbumPhoto(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                albumPhotos.unshift(e.target.result);
-                if (albumPhotos.length > 20) albumPhotos.pop();
-                localStorage.setItem('shiori_album_photos', JSON.stringify(albumPhotos));
-                renderGallery();
-            };
+        ;
             reader.readAsDataURL(file);
         }
         renderGallery();
