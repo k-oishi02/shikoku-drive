@@ -149,16 +149,20 @@
             color: var(--text-sub); padding: 2px 8px; text-transform: uppercase; margin-right: 4px;
         }
 
-        /* Jillion Style Arrow Buttons */
-        .j-btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        /* Jillion Style Arrow Buttons (APP vs WEB vs MAP) */
+        .j-btn-row { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
         .j-btn {
-            flex: 1; min-width: 120px; text-align: center; background: transparent; border: 1px solid var(--border-line);
-            color: #ffffff; padding: 9px 14px; font-family: var(--font-mont); font-size: 0.75rem;
-            font-weight: 700; letter-spacing: 1.5px; text-decoration: none; text-transform: uppercase;
-            transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            flex: 1; min-width: 95px; text-align: center; background: transparent; border: 1px solid var(--border-line);
+            color: #ffffff; padding: 8px 10px; font-family: var(--font-mont); font-size: 0.72rem;
+            font-weight: 700; letter-spacing: 1px; text-decoration: none; text-transform: uppercase;
+            transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
             cursor: pointer;
         }
-        .j-btn:hover, .j-btn.primary { background: #ffffff; color: #000000; border-color: #ffffff; }
+        .j-btn:hover { border-color: #ffffff; background: #2f2f2f; }
+        .j-btn.primary { background: #ffffff; color: #000000; border-color: #ffffff; }
+        .j-btn.primary:hover { background: #e0e0e0; }
+        .j-btn.app-accent { background: #333333; border-color: #ffffff; color: #ffffff; font-weight: 900; }
+        .j-btn.app-accent:hover { background: #ffffff; color: #000000; }
 
         /* Jillion Camera Guide Note Box */
         .j-cam-box {
@@ -168,7 +172,7 @@
         .j-cam-badge { font-family: var(--font-mont); font-size: 0.7rem; font-weight: 900; background: #ffffff; color: #000000; padding: 1px 6px; margin-left: 6px; }
 
         /* Jillion Widget / PayPay Section */
-        .j-widget { background: var(--bg-card); border: 1px solid var(--border-line); padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .j-widget { background: var(--bg-card); border: 1px solid var(--border-line); padding: 18px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
     </style>
 </head>
 <body>
@@ -196,13 +200,16 @@
             </div>
         </header>
 
-        <!-- Weather News Smart Universal Link Bar -->
+        <!-- Weather News Distinct APP vs WEB Bar -->
         <div class="j-widget">
-            <div>
-                <div style="font-family:var(--font-gothic); font-weight:800; font-size:0.9rem;">🌤️ 四国ピンポイント天気 29°C / 22°C</div>
-                <div style="font-family:var(--font-mont); font-size:0.75rem; color:var(--text-sub); margin-top:2px;">SUNSET AT SHIMONADA 18:52</div>
+            <div style="flex: 1 1 200px;">
+                <div style="font-family:var(--font-gothic); font-weight:800; font-size:0.92rem;">🌤️ 四国ピンポイント天気 29°C / 22°C</div>
+                <div style="font-family:var(--font-mont); font-size:0.72rem; color:var(--text-sub); margin-top:2px;">SUNSET AT SHIMONADA 18:52</div>
             </div>
-            <a href="https://weathernews.jp/onebox/tenki/kagawa/" target="_blank" class="j-btn primary" style="flex:none; padding:8px 14px;">WEATHER NEWS →</a>
+            <div style="display:flex; gap:6px; flex: 0 0 auto;">
+                <a href="weathernews://" class="j-btn app-accent" style="min-width:85px;">📱 APP</a>
+                <a href="https://weathernews.jp/onebox/tenki/kagawa/" target="_blank" class="j-btn" style="min-width:85px;">🌐 WEB</a>
+            </div>
         </div>
 
         <!-- Jillion Sticky TAB Bar Navigation -->
@@ -232,25 +239,27 @@
                 </div>
             </section>
 
-            <!-- DAY 1 - 1: ANA SMART UNIVERSAL LINK -->
+            <!-- DAY 1 - 1: ANA APP vs WEB -->
             <div class="j-card">
                 <span class="j-card-time">06:55 - 08:10</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">FLIGHT</span>羽田空港 → 高松空港</div>
                 <div class="j-card-desc">ANA 531便にて早朝フライト。到着後トヨタレンタカーへ移動。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=高松空港" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.ana.co.jp/ja/jp/share/mobile/app/app_ana/" target="_blank" class="j-btn">ANA APP →</a>
+                    <a href="ana://" class="j-btn app-accent">📱 ANA APP</a>
+                    <a href="https://www.ana.co.jp/" target="_blank" class="j-btn">🌐 WEB</a>
                 </div>
             </div>
 
-            <!-- DAY 1 - 2: TOYOTA RENT-A-CAR SMART UNIVERSAL LINK -->
+            <!-- DAY 1 - 2: TOYOTA RENT-A-CAR APP vs WEB -->
             <div class="j-card">
                 <span class="j-card-time">08:30 - 08:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">RENTAL CAR</span>トヨタレンタカー高松空港店</div>
                 <div class="j-card-desc">相棒ヤリス（ブロロローム）にてスムーズに手続き完了＆ドライブ発進。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=トヨタレンタカー高松空港店" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://rent.toyota.co.jp/sp/" target="_blank" class="j-btn">TOYOTA RENT →</a>
+                    <a href="toyotarentacar://" class="j-btn app-accent">📱 APP</a>
+                    <a href="https://rent.toyota.co.jp/" target="_blank" class="j-btn">🌐 WEB</a>
                 </div>
             </div>
 
@@ -342,14 +351,15 @@
                 </div>
             </div>
 
-            <!-- DAY 1 - 10: JALAN SMART UNIVERSAL LINK -->
+            <!-- DAY 1 - 10: JALAN APP vs WEB -->
             <div class="j-card">
                 <span class="j-card-time">21:00</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">HOTEL</span>高松国際ホテル</div>
                 <div class="j-card-desc">無料駐車場完備の快適ホテルへチェックイン。DAY 1 お疲れ様でした！</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=高松国際ホテル" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.jalan.net/v3200/s30_02.html?keyword=高松国際ホテル" target="_blank" class="j-btn">JALAN 予約 →</a>
+                    <a href="jalan://" class="j-btn app-accent">📱 JALAN APP</a>
+                    <a href="https://www.jalan.net/" target="_blank" class="j-btn">🌐 WEB</a>
                 </div>
             </div>
         </div>
@@ -413,14 +423,15 @@
                 </div>
             </div>
 
-            <!-- DAY 2 - 5: JALAN SMART UNIVERSAL LINK -->
+            <!-- DAY 2 - 5: JALAN APP vs WEB -->
             <div class="j-card">
                 <span class="j-card-time">14:45 - 16:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">DRIVE</span>愛媛県松山市へ移動 ＆ ホテル</div>
                 <div class="j-card-desc">高速道路経由で松山市内へ。ダイワロイネットホテル松山チェックイン。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=ダイワロイネットホテル松山" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.jalan.net/v3200/s30_02.html?keyword=ダイワロイネットホテル松山" target="_blank" class="j-btn">JALAN 予約 →</a>
+                    <a href="jalan://" class="j-btn app-accent">📱 JALAN APP</a>
+                    <a href="https://www.jalan.net/" target="_blank" class="j-btn">🌐 WEB</a>
                 </div>
             </div>
 
@@ -523,25 +534,27 @@
                 </div>
             </div>
 
-            <!-- DAY 3 - 6: TOYOTA RENT-A-CAR SMART UNIVERSAL LINK -->
+            <!-- DAY 3 - 6: TOYOTA RENT-A-CAR APP vs WEB -->
             <div class="j-card">
                 <span class="j-card-time">18:00 - 19:15</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">AIRPORT</span>松山空港 蛇口みかんジュース</div>
                 <div class="j-card-desc">レンタカー返却後、Orange BARにて蛇口ポンジュース。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=トヨタレンタカー松山空港店" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://rent.toyota.co.jp/sp/" target="_blank" class="j-btn">TOYOTA RENT →</a>
+                    <a href="toyotarentacar://" class="j-btn app-accent">📱 APP</a>
+                    <a href="https://rent.toyota.co.jp/" target="_blank" class="j-btn">🌐 WEB</a>
                 </div>
             </div>
 
-            <!-- DAY 3 - 7: ANA SMART UNIVERSAL LINK -->
+            <!-- DAY 3 - 7: ANA APP vs WEB -->
             <div class="j-card">
                 <span class="j-card-time">19:45 - 21:20</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">FLIGHT</span>松山空港 → 羽田空港</div>
                 <div class="j-card-desc">ANA 598便にて羽田空港着（21:20予定）。旅の行程完了。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=羽田空港" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.ana.co.jp/ja/jp/share/mobile/app/app_ana/" target="_blank" class="j-btn">ANA APP →</a>
+                    <a href="ana://" class="j-btn app-accent">📱 ANA APP</a>
+                    <a href="https://www.ana.co.jp/" target="_blank" class="j-btn">🌐 WEB</a>
                 </div>
             </div>
         </div>
@@ -591,7 +604,10 @@
                     <h3 style="font-family:var(--font-bebas); font-size:1.6rem; letter-spacing:1px; color:#ffffff;">PAYPAY SPLIT</h3>
                     <p style="font-size:0.78rem; color:var(--text-sub);">あおい ＆ こうたろう グループ会計</p>
                 </div>
-                <a href="paypay://" class="j-btn primary" style="flex:none; padding:10px 18px;">LAUNCH PAYPAY →</a>
+                <div style="display:flex; gap:8px;">
+                    <a href="paypay://" class="j-btn app-accent" style="padding:10px 16px;">📱 APP</a>
+                    <a href="https://paypay.ne.jp/" target="_blank" class="j-btn" style="padding:10px 16px;">🌐 WEB</a>
+                </div>
             </div>
         </div>
 
