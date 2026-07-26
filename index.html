@@ -194,7 +194,7 @@
         /* Jillion Style Arrow Buttons */
         .j-btn-row { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
         .j-btn {
-            flex: 1; min-width: 75px; text-align: center; background: transparent; border: 1px solid var(--border-line);
+            flex: 1; min-width: 70px; text-align: center; background: transparent; border: 1px solid var(--border-line);
             color: #ffffff; padding: 8px 6px; font-family: var(--font-mont); font-size: 0.68rem;
             font-weight: 700; letter-spacing: 0.5px; text-decoration: none; text-transform: uppercase;
             transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
@@ -205,11 +205,11 @@
         .j-btn.primary:hover { background: #e0e0e0; }
         .j-btn.app-accent { background: #2a2a2a; border-color: #ffffff; color: #ffffff; font-weight: 900; padding: 6px 8px; }
         .j-btn.app-accent:hover { background: #ffffff; color: #000000; }
-        .j-btn.app-accent:hover .j-app-icon { box-shadow: 0 0 0 1px #000; }
 
+        /* 100% Reliable Local PNG Icons */
         .j-app-icon {
             width: 16px; height: 16px; border-radius: 3px; object-fit: cover;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.4); flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4); flex-shrink: 0; display: inline-block; vertical-align: middle;
         }
 
         /* Jillion Camera Guide Note Box */
@@ -288,10 +288,10 @@
             <div class="weather-footer">
                 <span style="font-family:var(--font-mont); font-size:0.68rem; color:var(--text-sub);">WEATHERNEWS LIVE</span>
                 <div style="display:flex; gap:4px;">
-                    <a href="wni://" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/b7/a1/96/b7a196d1-f65a-b209-86b0-cf3bebec02a0/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="WNI">
+                    <button onclick="launchApp('weather')" class="j-btn app-accent">
+                        <img src="./weather.png" class="j-app-icon" alt="WNI">
                         <span>APP</span>
-                    </a>
+                    </button>
                     <a id="w-link" href="https://weathernews.jp/onebox/tenki/kagawa/" target="_blank" class="j-btn" style="padding:4px 8px;">🌐 WEB</a>
                 </div>
             </div>
@@ -324,27 +324,27 @@
                 </div>
             </section>
 
-            <!-- DAY 1 - 1: ANA FLIGHT (DUAL OS HYBRID) -->
+            <!-- DAY 1 - 1: ANA FLIGHT -->
             <div class="j-card">
                 <span class="j-card-time">06:55 - 08:10</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">FLIGHT</span>羽田空港 → 高松空港</div>
-                <div class="j-card-desc">ANA 531便にて早朝フライト。iOS ＆ HyperOS両対応アプリ直起動！</div>
+                <div class="j-card-desc">ANA 531便にて早朝フライト。両OS対応のANAアプリアタック！</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=高松空港" target="_blank" class="j-btn primary">MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
-                    <button onclick="crossPlatformLaunch('ana')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/27/f2/5d/27f25dab-fde6-2f73-c3b0-b782fe46225e/AppIcon-1x_U007ephone-0-1-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="ANA">
+                    <button onclick="launchApp('ana')" class="j-btn app-accent">
+                        <img src="./ana.png" class="j-app-icon" alt="ANA">
                         <span>ANA APP</span>
                     </button>
-                    <button onclick="crossPlatformLaunch('apple_wallet')" class="j-btn app-accent">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Apple_Wallet_Icon.svg/512px-Apple_Wallet_Icon.svg.png" class="j-app-icon" alt="Apple Wallet">
+                    <button onclick="launchApp('apple_wallet')" class="j-btn app-accent">
+                        <img src="./apple_wallet.png" class="j-app-icon" alt="Apple Wallet">
                         <span>Apple</span>
                     </button>
-                    <button onclick="crossPlatformLaunch('google_wallet')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/8b/dc/f9/8bdcf93b-2d9e-e45f-f2a1-2461ebad923e/AppIcon-0-0-1x_U007ephone-0-1-P3-85-220.png/100x100bb.jpg" class="j-app-icon" alt="Google Wallet">
+                    <button onclick="launchApp('google_wallet')" class="j-btn app-accent">
+                        <img src="./google_wallet.png" class="j-app-icon" alt="Google Wallet">
                         <span>Google</span>
                     </button>
                 </div>
@@ -357,18 +357,18 @@
                 <div class="j-card-desc">相棒ヤリス（ブロロローム）にてスムーズに手続き完了＆ドライブ発進。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=トヨタレンタカー高松空港店" target="_blank" class="j-btn primary">MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI NAVI</span>
                     </button>
                     <a href="https://rent.toyota.co.jp/" target="_blank" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/8e/2c/05/8e2c055d-71b9-d435-c3e5-85dc69edf95b/AppIcon-1x_U007emarketing-0-3-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="TOYOTA">
+                        <img src="./toyota.png" class="j-app-icon" alt="TOYOTA">
                         <span>TOYOTA SITE</span>
                     </a>
                 </div>
             </div>
 
-            <!-- DAY 1 - 3 -->
+            <!-- DAY 1 - 3: Yadon Park (WITH OFFICIAL HP) -->
             <div class="j-card">
                 <span class="j-card-time">09:00 - 09:40</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">PARK</span>ヤドン公園 (ひだまり公園あやがわ)</div>
@@ -376,15 +376,15 @@
                 <div class="j-card-desc">巨大ヤドン遊具やポケふたの散策・記念撮影。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=ひだまり公園あやがわ" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
-                    <a href="https://www.google.com/search?q=ひだまり公園あやがわ" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://yadon.sakura.ne.jp/park/" target="_blank" class="j-btn app-accent">🌐 公式HP</a>
                 </div>
             </div>
 
-            <!-- DAY 1 - 4: Udon Baka (TABELOG PROTECTED) -->
+            <!-- DAY 1 - 4: Udon Baka (EXACT TABELOG PAGE) -->
             <div class="j-card">
                 <span class="j-card-time">10:00 - 10:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">GOURMET</span>1軒目：手打十段 うどんバカ一代</div>
@@ -392,12 +392,12 @@
                 <div class="j-card-desc">名物「温たま釜バターうどん」を堪能。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=手打十段うどんバカ一代" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
                     <a href="https://tabelog.com/kagawa/A3701/A370101/37000242/" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/10/a5/8910a5e8-52fb-df72-23c2-d33a682b130e/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="食べログ">
+                        <img src="./tabelog.png" class="j-app-icon" alt="食べログ">
                         <span>食べログ</span>
                     </a>
                 </div>
@@ -410,15 +410,15 @@
                 <div class="j-card-desc">車は高松港地下駐車場に駐車し、人だけで乗船（約60分）。船内でリフレッシュ。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=高松港フェリー乗り場" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
-                    <a href="https://www.google.com/search?q=高松港フェリー乗り場" target="_blank" class="j-btn">SEARCH</a>
+                    <button onclick="smartSearch('高松港フェリー乗り場')" class="j-btn">SEARCH</button>
                 </div>
             </div>
 
-            <!-- DAY 1 - 6: Sakubee Somen (TABELOG PROTECTED) -->
+            <!-- DAY 1 - 6: Sakubee Somen -->
             <div class="j-card">
                 <span class="j-card-time">13:00 - 13:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">GOURMET</span>そうめん作兵衛 (小豆島)</div>
@@ -427,7 +427,7 @@
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=作兵衛小豆島" target="_blank" class="j-btn primary">VIEW MAP →</a>
                     <a href="https://tabelog.com/kagawa/A3705/A370501/37007787/" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/10/a5/8910a5e8-52fb-df72-23c2-d33a682b130e/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="食べログ">
+                        <img src="./tabelog.png" class="j-app-icon" alt="食べログ">
                         <span>食べログ</span>
                     </a>
                 </div>
@@ -445,11 +445,11 @@
                 </div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=道の駅小豆島オリーブ公園" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.google.com/search?q=道の駅小豆島オリーブ公園" target="_blank" class="j-btn">SEARCH</a>
+                    <button onclick="smartSearch('道の駅小豆島オリーブ公園')" class="j-btn">SEARCH</button>
                 </div>
             </div>
 
-            <!-- DAY 1 - 8 -->
+            <!-- DAY 1 - 8: Pokemon Center (WITH OFFICIAL HP) -->
             <div class="j-card">
                 <span class="j-card-time">18:30 - 19:30</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">SHOPPING</span>ポケモンセンターカガワ</div>
@@ -459,11 +459,11 @@
                 <div class="j-card-desc">四国初のポケモンセンターにてストア内散策・限定グッズ閲覧（閉店20:00）。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=丸亀町グリーン東館" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.google.com/search?q=丸亀町グリーン" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://www.pokemon.co.jp/shop/pokecen/kagawa/" target="_blank" class="j-btn app-accent">🌐 公式HP</a>
                 </div>
             </div>
 
-            <!-- DAY 1 - 9: Ikkaku Dinner (TABELOG PROTECTED) -->
+            <!-- DAY 1 - 9: Ikkaku Dinner -->
             <div class="j-card">
                 <span class="j-card-time">19:45 - 20:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">DINNER</span>骨付鳥 一鶴 (いっかく)</div>
@@ -471,24 +471,23 @@
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=骨付鳥一鶴高松" target="_blank" class="j-btn primary">VIEW MAP →</a>
                     <a href="https://tabelog.com/kagawa/A3701/A370101/37000523/" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/10/a5/8910a5e8-52fb-df72-23c2-d33a682b130e/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="食べログ">
+                        <img src="./tabelog.png" class="j-app-icon" alt="食べログ">
                         <span>食べログ</span>
                     </a>
                 </div>
             </div>
 
-            <!-- DAY 1 - 10: JALAN -->
+            <!-- DAY 1 - 10: JALAN (EXACT HOTEL BOOKING DIRECT PAGE!) -->
             <div class="j-card">
                 <span class="j-card-time">21:00</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">HOTEL</span>高松国際ホテル</div>
                 <div class="j-card-desc">無料駐車場完備の快適ホテルへチェックイン。DAY 1 お疲れ様でした！</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=高松国際ホテル" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('jalan')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/cb/bd/89cbbdb5-e4e5-f22b-4958-fb4e5294ed47/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/100x100bb.jpg" class="j-app-icon" alt="JALAN">
-                        <span>JALAN APP</span>
-                    </button>
-                    <a href="https://www.jalan.net/" target="_blank" class="j-btn">🌐 WEB</a>
+                    <a href="https://www.jalan.net/yad316524/" target="_blank" class="j-btn app-accent">
+                        <img src="./jalan.png" class="j-app-icon" alt="JALAN">
+                        <span>じゃらん宿直行</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -503,58 +502,58 @@
                 </div>
             </section>
 
-            <!-- DAY 2 - 1: Yamagoe Udon (TABELOG PROTECTED) -->
+            <!-- DAY 2 - 1: Yamagoe Udon -->
             <div class="j-card">
                 <span class="j-card-time">08:30 - 09:15</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">GOURMET</span>2軒目：山越うどん</div>
                 <div class="j-card-desc">かまたま発祥店舗にて釜たまうどん。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=山越うどん" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
                     <a href="https://tabelog.com/kagawa/A3702/A370202/37000008/" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/10/a5/8910a5e8-52fb-df72-23c2-d33a682b130e/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="食べログ">
+                        <img src="./tabelog.png" class="j-app-icon" alt="食べログ">
                         <span>食べログ</span>
                     </a>
                 </div>
             </div>
 
-            <!-- DAY 2 - 2 -->
+            <!-- DAY 2 - 2: Shikoku Aquarium (WITH OFFICIAL HP) -->
             <div class="j-card">
                 <span class="j-card-time">09:45 - 11:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">AQUARIUM</span>四国水族館</div>
                 <div class="j-card-desc">瀬戸内海を背景とした景観イルカプール・大水槽鑑賞。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=四国水族館" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
-                    <a href="https://www.google.com/search?q=四国水族館" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://shikoku-aquarium.jp/" target="_blank" class="j-btn app-accent">🌐 公式HP</a>
                 </div>
             </div>
 
-            <!-- DAY 2 - 3: Nagata in Kanoka (TABELOG PROTECTED) -->
+            <!-- DAY 2 - 3: Nagata in Kanoka -->
             <div class="j-card">
                 <span class="j-card-time">12:15 - 13:00</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">GOURMET</span>3軒目：長田 in 香の香</div>
                 <div class="j-card-desc">特製イリコ出汁の釜あげうどん。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=長田in香の香" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
                     <a href="https://tabelog.com/kagawa/A3703/A370303/37000012/" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/10/a5/8910a5e8-52fb-df72-23c2-d33a682b130e/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="食べログ">
+                        <img src="./tabelog.png" class="j-app-icon" alt="食べログ">
                         <span>食べログ</span>
                     </a>
                 </div>
             </div>
 
-            <!-- DAY 2 - 4 -->
+            <!-- DAY 2 - 4: Chichibugahama (WITH OFFICIAL HP) -->
             <div class="j-card">
                 <span class="j-card-time">13:30 - 14:30</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">VIEWPOINT</span>父母ヶ浜 (ちちぶがはま)</div>
@@ -566,30 +565,29 @@
                 </div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=父母ヶ浜" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
-                    <a href="https://www.google.com/search?q=父母ヶ浜" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://www.mitoyo-kanko.com/chichibugahama/" target="_blank" class="j-btn app-accent">🌐 公式HP</a>
                 </div>
             </div>
 
-            <!-- DAY 2 - 5 -->
+            <!-- DAY 2 - 5: DAIWA ROYNET MATSUYAMA (EXACT HOTEL BOOKING DIRECT PAGE!) -->
             <div class="j-card">
                 <span class="j-card-time">14:45 - 16:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">DRIVE</span>愛媛県松山市へ移動 ＆ ホテル</div>
                 <div class="j-card-desc">高速道路経由で松山市内へ。ダイワロイネットホテル松山チェックイン。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=ダイワロイネットホテル松山" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('jalan')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/cb/bd/89cbbdb5-e4e5-f22b-4958-fb4e5294ed47/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/100x100bb.jpg" class="j-app-icon" alt="JALAN">
-                        <span>JALAN APP</span>
-                    </button>
-                    <a href="https://www.jalan.net/" target="_blank" class="j-btn">🌐 WEB</a>
+                    <a href="https://www.jalan.net/yad379105/" target="_blank" class="j-btn app-accent">
+                        <img src="./jalan.png" class="j-app-icon" alt="JALAN">
+                        <span>じゃらん宿直行</span>
+                    </a>
                 </div>
             </div>
 
-            <!-- DAY 2 - 6 -->
+            <!-- DAY 2 - 6: Dogo Onsen (WITH OFFICIAL HP) -->
             <div class="j-card">
                 <span class="j-card-time">17:15 - 19:00</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">SPA</span>道後温泉本館 散策 ＆ 入浴</div>
@@ -601,11 +599,11 @@
                 </div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=道後温泉本館" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.google.com/search?q=道後温泉本館" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://dogo.jp/" target="_blank" class="j-btn app-accent">🌐 公式HP</a>
                 </div>
             </div>
 
-            <!-- DAY 2 - 7: Goshiki Dinner (TABELOG PROTECTED) -->
+            <!-- DAY 2 - 7: Goshiki Dinner -->
             <div class="j-card">
                 <span class="j-card-time">19:30 - 21:00</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">DINNER</span>五志喜 本店 (19:30予約)</div>
@@ -613,7 +611,7 @@
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=五志喜本店" target="_blank" class="j-btn primary">VIEW MAP →</a>
                     <a href="https://tabelog.com/ehime/A3801/A380101/38000008/" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/10/a5/8910a5e8-52fb-df72-23c2-d33a682b130e/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="食べログ">
+                        <img src="./tabelog.png" class="j-app-icon" alt="食べログ">
                         <span>食べログ</span>
                     </a>
                 </div>
@@ -630,7 +628,7 @@
                 </div>
             </section>
 
-            <!-- DAY 3 - 1 -->
+            <!-- DAY 3 - 1: Shimonada Station (WITH OFFICIAL HP) -->
             <div class="j-card">
                 <span class="j-card-time">09:20 - 10:00</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">VIEWPOINT</span>下灘駅 (伊予市)</div>
@@ -642,26 +640,26 @@
                 </div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=下灘駅" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
-                    <a href="https://www.google.com/search?q=下灘駅" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://www.city.iyo.lg.jp/kankou/kankou/shimonada.html" target="_blank" class="j-btn app-accent">🌐 公式HP</a>
                 </div>
             </div>
 
-            <!-- DAY 3 - 2 -->
+            <!-- DAY 3 - 2: Michi no Eki Futami (WITH OFFICIAL HP) -->
             <div class="j-card">
                 <span class="j-card-time">10:10 - 10:40</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">STATION</span>道の駅 ふたみ</div>
                 <div class="j-card-desc">海沿いの道の駅にて愛媛名物じゃこ天のテイクアウト。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=道の駅ふたみ" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.google.com/search?q=道の駅ふたみ" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://futami.co.jp/" target="_blank" class="j-btn app-accent">🌐 公式HP</a>
                 </div>
             </div>
 
-            <!-- DAY 3 - 3: Hakurakuten (TABELOG PROTECTED) -->
+            <!-- DAY 3 - 3: Hakurakuten -->
             <div class="j-card">
                 <span class="j-card-time">11:45 - 12:30</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">GOURMET</span>今治名物「焼豚玉子飯」 (白楽天)</div>
@@ -669,24 +667,24 @@
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=白楽天今治" target="_blank" class="j-btn primary">VIEW MAP →</a>
                     <a href="https://tabelog.com/ehime/A3802/A380201/38000109/" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/10/a5/8910a5e8-52fb-df72-23c2-d33a682b130e/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="食べログ">
+                        <img src="./tabelog.png" class="j-app-icon" alt="食べログ">
                         <span>食べログ</span>
                     </a>
                 </div>
             </div>
 
-            <!-- DAY 3 - 4 -->
+            <!-- DAY 3 - 4: Towel Museum (WITH OFFICIAL HP) -->
             <div class="j-card">
                 <span class="j-card-time">12:45 - 13:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">MUSEUM</span>タオル美術館 ICHIHIRO</div>
                 <div class="j-card-desc">タオルアート展示の観覧および高品質今治タオルの閲覧。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=タオル美術館ICHIHIRO" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.google.com/search?q=タオル美術館ICHIHIRO" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://www.towelmuseum.com/" target="_blank" class="j-btn app-accent">🌐 公式HP</a>
                 </div>
             </div>
 
-            <!-- DAY 3 - 5 -->
+            <!-- DAY 3 - 5: Kirosan (WITH OFFICIAL HP) -->
             <div class="j-card">
                 <span class="j-card-time">14:15 - 15:15</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">VIEWPOINT</span>亀老山展望公園 (しまなみ海道)</div>
@@ -694,11 +692,11 @@
                 <div class="j-card-desc">隈研吾氏設計の建築展望台より来島海峡大橋の360度大パノラマ観覧。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=亀老山展望公園" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
-                    <a href="https://www.google.com/search?q=亀老山展望公園" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://www.iyokannet.jp/spot/191" target="_blank" class="j-btn app-accent">🌐 公式HP</a>
                 </div>
             </div>
 
@@ -709,12 +707,12 @@
                 <div class="j-card-desc">レンタカー返却後、Orange BARにて蛇口ポンジュース。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=トヨタレンタカー松山空港店" target="_blank" class="j-btn primary">MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
                     <a href="https://rent.toyota.co.jp/" target="_blank" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/8e/2c/05/8e2c055d-71b9-d435-c3e5-85dc69edf95b/AppIcon-1x_U007emarketing-0-3-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="TOYOTA">
+                        <img src="./toyota.png" class="j-app-icon" alt="TOYOTA">
                         <span>TOYOTA SITE</span>
                     </a>
                 </div>
@@ -727,20 +725,20 @@
                 <div class="j-card-desc">ANA 598便にて羽田空港着（21:20予定）。ウォレットでQRコード一発表示！</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=羽田空港" target="_blank" class="j-btn primary">MAP →</a>
-                    <button onclick="crossPlatformLaunch('cocchi')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/91/91/3c/91913c1c-a3f2-15f5-a7b2-132a26fa323f/AppIcon-0-0-1x_U007ephone-0-1-0-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="COCCHI">
+                    <button onclick="launchApp('cocchi')" class="j-btn app-accent">
+                        <img src="./cocchi.png" class="j-app-icon" alt="COCCHI">
                         <span>COCCHI</span>
                     </button>
-                    <button onclick="crossPlatformLaunch('ana')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/27/f2/5d/27f25dab-fde6-2f73-c3b0-b782fe46225e/AppIcon-1x_U007ephone-0-1-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="ANA">
+                    <button onclick="launchApp('ana')" class="j-btn app-accent">
+                        <img src="./ana.png" class="j-app-icon" alt="ANA">
                         <span>ANA APP</span>
                     </button>
-                    <button onclick="crossPlatformLaunch('apple_wallet')" class="j-btn app-accent">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Apple_Wallet_Icon.svg/512px-Apple_Wallet_Icon.svg.png" class="j-app-icon" alt="Wallet">
+                    <button onclick="launchApp('apple_wallet')" class="j-btn app-accent">
+                        <img src="./apple_wallet.png" class="j-app-icon" alt="Wallet">
                         <span>Apple</span>
                     </button>
-                    <button onclick="crossPlatformLaunch('google_wallet')" class="j-btn app-accent">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/8b/dc/f9/8bdcf93b-2d9e-e45f-f2a1-2461ebad923e/AppIcon-0-0-1x_U007ephone-0-1-P3-85-220.png/100x100bb.jpg" class="j-app-icon" alt="Wallet">
+                    <button onclick="launchApp('google_wallet')" class="j-btn app-accent">
+                        <img src="./google_wallet.png" class="j-app-icon" alt="Wallet">
                         <span>Google</span>
                     </button>
                 </div>
@@ -794,8 +792,8 @@
                     <p style="font-size:0.78rem; color:var(--text-sub);">あおい ＆ こうたろう グループ会計</p>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <button onclick="crossPlatformLaunch('paypay')" class="j-btn app-accent" style="padding:10px 16px;">
-                        <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/d7/9e/02/d79e024b-7ed7-00ee-71b6-a2fc688fe883/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="PayPay">
+                    <button onclick="launchApp('paypay')" class="j-btn app-accent" style="padding:10px 16px;">
+                        <img src="./paypay.png" class="j-app-icon" alt="PayPay">
                         <span>APP</span>
                     </button>
                     <a href="https://paypay.ne.jp/" target="_blank" class="j-btn" style="padding:10px 16px;">🌐 WEB</a>
@@ -805,9 +803,9 @@
 
     </div>
 
-    <!-- DUAL OS HYBRID ENGINE (iOS + HyperOS / Android) -->
+    <!-- MASTER DUAL-OS LAUNCH ENGINE (iOS + HyperOS / Android) -->
     <script>
-        function crossPlatformLaunch(key) {
+        function launchApp(key) {
             const ua = navigator.userAgent.toLowerCase();
             const isIOS = ua.indexOf('iphone') > -1 || ua.indexOf('ipad') > -1 || ua.indexOf('ipod') > -1;
             const isAndroid = ua.indexOf('android') > -1;
@@ -815,11 +813,11 @@
             if (key === 'ana') {
                 if (isIOS) {
                     window.location.href = "jp.co.ana.iphoneapp.Tabidachi://";
-                    setTimeout(() => { if (!document.hidden) window.location.href = "https://www.ana.co.jp/"; }, 500);
+                    setTimeout(() => { if (!document.hidden) window.location.href = "https://www.ana.co.jp/ja/jp/"; }, 500);
                 } else if (isAndroid) {
                     window.location.href = "intent://#Intent;package=jp.co.ana.anaapp;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end";
                 } else {
-                    window.open("https://www.ana.co.jp/", "_blank");
+                    window.open("https://www.ana.co.jp/ja/jp/", "_blank");
                 }
             } else if (key === 'cocchi') {
                 if (isIOS) {
@@ -843,6 +841,26 @@
             } else if (key === 'paypay') {
                 window.location.href = "paypay://launch";
                 setTimeout(() => { if (!document.hidden) window.open("https://paypay.ne.jp/", "_blank"); }, 500);
+            } else if (key === 'weather') {
+                if (isIOS) {
+                    window.location.href = "wni://";
+                } else {
+                    window.location.href = "https://weathernews.jp/onebox/tenki/kagawa/";
+                }
+            }
+        }
+
+        function smartSearch(query) {
+            const ua = navigator.userAgent.toLowerCase();
+            const isAndroid = ua.indexOf('android') > -1;
+            const encoded = encodeURIComponent(query);
+
+            if (isAndroid) {
+                // HyperOS / Android Google App search intent
+                window.location.href = `intent://www.google.com/search?q=${encoded}#Intent;package=com.google.android.googlequicksearchbox;end`;
+            } else {
+                // iOS Safari Google search
+                window.open(`https://www.google.com/search?q=${encoded}`, '_blank');
             }
         }
 
