@@ -11,6 +11,165 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600;700&family=Marck+Script&family=Yomogi&display=swap" rel="stylesheet">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+    <style>
+        :root {
+            /* 100% All-Handwritten Font System */
+            --font-handwritten: 'Klee One', 'Yomogi', cursive, sans-serif;
+            --font-script: 'Marck Script', cursive;
+
+            --font-mincho: var(--font-handwritten);
+            --font-sans: var(--font-handwritten);
+            --font-hand: var(--font-script);
+            --font-body: var(--font-handwritten);
+
+            /* Canva Warm Natural Palette */
+            --bg-sand: #f7f4ee;
+            --card-white: #ffffff;
+            --text-main: #2d3748;
+            --text-sub: #64748b;
+            
+            --terracotta: #c57b57;
+            --sage-green: #5a7d6c;
+            --warm-gold: #d99b26;
+
+            --day1-theme: #d97757;
+            --day2-theme: #4a7c6d;
+            --day3-theme: #c08552;
+
+            --shadow-canva: 0 12px 32px rgba(197, 123, 87, 0.09);
+            --radius-canva: 24px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; }
+        body { font-family: var(--font-handwritten); background: var(--bg-sand); color: var(--text-main); line-height: 1.65; padding-bottom: 60px; overflow-x: hidden; }
+        .container { width: 100%; max-width: 500px; margin: 0 auto; padding: 0 14px; }
+
+        /* Canva Magazine Hero Header */
+        .hero {
+            background: linear-gradient(180deg, rgba(45,55,72,0.4) 0%, rgba(45,55,72,0.85) 100%), url('https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/header_shikoku.png') center/cover no-repeat;
+            color: white; padding: 44px 18px 32px; border-radius: 0 0 30px 30px; text-align: center; position: relative; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .hero-hand { font-family: var(--font-script); font-size: 2.1rem; color: #fef08a; letter-spacing: 2px; margin-bottom: -4px; display: block; }
+        .hero-badge { display: inline-block; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); padding: 4px 16px; border-radius: 20px; font-family: var(--font-handwritten); font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.4); margin-bottom: 10px; }
+        .hero-title { font-family: var(--font-handwritten); font-size: 1.95rem; font-weight: 700; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.4); letter-spacing: 1px; }
+        .hero-tags { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; font-size: 0.82rem; font-weight: 700; }
+        .hero-tag-item { background: rgba(255,255,255,0.22); backdrop-filter: blur(8px); padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); }
+
+        /* Canva Style Countdown */
+        .countdown-box { background: rgba(255,255,255,0.25); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.4); border-radius: 16px; padding: 10px 16px; margin-top: 14px; display: inline-block; width: 100%; }
+        .countdown-label { font-size: 0.78rem; color: #fef08a; font-family: var(--font-handwritten); font-weight: 700; letter-spacing: 1px; }
+        .countdown-digits { font-family: var(--font-handwritten); font-size: 1.25rem; font-weight: 700; color: #fff; margin-top: 2px; }
+
+        /* Canva Natural Info Cards */
+        .canva-info-card { background: var(--card-white); border-radius: var(--radius-canva); padding: 16px 18px; margin-bottom: 14px; border: 1px solid #eae5dc; box-shadow: var(--shadow-canva); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .btn-amazon-music { background: linear-gradient(135deg, var(--terracotta) 0%, #a85d38 100%); color: white; padding: 8px 16px; border-radius: 12px; font-weight: 700; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(197,123,87,0.3); white-space: nowrap; font-family: var(--font-handwritten); }
+
+        /* Canva Scroll Navigation Bar */
+        .nav-sticky {
+            position: sticky; top: 8px; z-index: 100;
+            background: rgba(247, 244, 238, 0.95); backdrop-filter: blur(14px);
+            border-radius: 20px; padding: 6px; display: flex; gap: 6px;
+            overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
+            margin-bottom: 22px; box-shadow: 0 6px 20px rgba(0,0,0,0.06); border: 1px solid #eae5dc;
+        }
+        .nav-sticky::-webkit-scrollbar { display: none; }
+        
+        .nav-btn {
+            flex: 0 0 auto; padding: 8px 16px; border: none; background: #eef0ea;
+            font-size: 0.85rem; font-weight: 700; color: var(--text-main);
+            border-radius: 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s ease; font-family: var(--font-handwritten);
+        }
+        .nav-btn.d1.active { background: var(--day1-theme); color: white; box-shadow: 0 4px 12px rgba(217,119,87,0.3); }
+        .nav-btn.d2.active { background: var(--day2-theme); color: white; box-shadow: 0 4px 12px rgba(74,124,109,0.3); }
+        .nav-btn.d3.active { background: var(--day3-theme); color: white; box-shadow: 0 4px 12px rgba(192,133,82,0.3); }
+        .nav-btn.warikan-btn { background: #7c5c43; color: white; }
+
+        /* Canva Map Box */
+        .map-box { background: var(--card-white); border-radius: var(--radius-canva); padding: 16px; margin-bottom: 24px; border: 1px solid #eae5dc; box-shadow: var(--shadow-canva); }
+        .map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .map-header h3 { font-size: 1.15rem; font-weight: 700; font-family: var(--font-handwritten); color: var(--text-main); }
+        .map-btn-group { display: flex; gap: 3px; background: #f1ede6; padding: 3px; border-radius: 12px; }
+        .map-btn { border: none; background: transparent; padding: 5px 12px; font-size: 0.78rem; font-weight: 700; color: var(--text-sub); border-radius: 9px; cursor: pointer; font-family: var(--font-handwritten); }
+        .map-btn.active { background: var(--text-main); color: white; }
+
+        .iframe-container { width: 100%; height: 250px; border-radius: 16px; overflow: hidden; border: 1px solid #eae5dc; }
+        .iframe-container iframe { width: 100%; height: 100%; border: 0; }
+
+        /* Canva Magazine Day Sections & Cards */
+        .day-section { margin-bottom: 34px; scroll-margin-top: 60px; }
+        .day-title-head { font-size: 1.35rem; font-weight: 700; font-family: var(--font-handwritten); padding-bottom: 6px; margin-bottom: 16px; border-bottom: 2.5px solid; display: flex; align-items: center; justify-content: space-between; }
+        .day-title-head.d1 { color: var(--day1-theme); border-color: var(--day1-theme); }
+        .day-title-head.d2 { color: var(--day2-theme); border-color: var(--day2-theme); }
+        .day-title-head.d3 { color: var(--day3-theme); border-color: var(--day3-theme); }
+
+        .card { background: var(--card-white); border-radius: var(--radius-canva); padding: 18px; margin-bottom: 16px; border: 1px solid #eae5dc; box-shadow: var(--shadow-canva); position: relative; overflow: hidden; }
+        .card.d1 { border-left: 5px solid var(--day1-theme); }
+        .card.d2 { border-left: 5px solid var(--day2-theme); }
+        .card.d3 { border-left: 5px solid var(--day3-theme); }
+
+        .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .time-badge { font-family: var(--font-handwritten); font-weight: 700; font-size: 0.82rem; padding: 3px 12px; border-radius: 12px; letter-spacing: 0.5px; }
+        .card.d1 .time-badge { background: #fdf2f0; color: var(--day1-theme); }
+        .card.d2 .time-badge { background: #edf4f1; color: var(--day2-theme); }
+        .card.d3 .time-badge { background: #fdf8f2; color: var(--day3-theme); }
+
+        .card-title-text { font-size: 1.12rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px; margin-top: 4px; font-family: var(--font-handwritten); }
+        .card-desc { font-size: 0.88rem; color: #475569; margin: 8px 0; line-height: 1.6; font-family: var(--font-handwritten); }
+
+        .card-hero-img { width: 100%; height: auto; max-height: 280px; object-fit: contain; background: #2d3748; border-radius: 16px; margin: 10px 0; border: 1px solid #eae5dc; display: block; }
+        .card-hero-img.fit-cover { height: 170px; object-fit: cover; }
+
+        /* Canva Styling FUJIFILM Camera Box */
+        .cam-box {
+            background: #f8fafc;
+            color: #334155;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border-left: 4px solid var(--terracotta);
+            border: 1px solid #e2e8f0;
+            border-left-width: 4px;
+            border-left-color: var(--terracotta);
+            margin-top: 10px;
+            font-size: 0.84rem;
+            font-family: var(--font-handwritten);
+        }
+        .cam-box-title {
+            color: var(--text-main);
+            font-weight: 700;
+            font-family: var(--font-handwritten);
+            font-size: 0.82rem;
+            margin-bottom: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .film-badge {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: #eef0ea;
+            color: var(--text-main);
+            font-family: var(--font-handwritten);
+            font-weight: 700;
+        }
+
+        /* Canva Magazine Action Buttons */
+        .btns-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+        .btn-action { display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 12px; font-size: 0.82rem; font-weight: 700; text-decoration: none; font-family: var(--font-handwritten); transition: all 0.2s ease; }
+        .btn-action.map { background: var(--terracotta); color: white; flex: 1; justify-content: center; box-shadow: 0 4px 10px rgba(197,123,87,0.25); }
+        .btn-action.search { background: #f1ede6; color: var(--text-main); border: 1px solid #ded8cc; flex: 1; justify-content: center; }
+
+        /* Canva Style Checklist */
+        .checklist-panel { background: var(--card-white); border-radius: var(--radius-canva); padding: 18px; margin-top: 24px; border: 1px solid #eae5dc; box-shadow: var(--shadow-canva); }
+
+        /* Canva Subtle PayPay Panel */
+        .warikan-panel { background: var(--card-white); border-radius: var(--radius-canva); padding: 18px; margin-top: 24px; border: 1px solid #eae5dc; box-shadow: var(--shadow-canva); scroll-margin-top: 60px; }
+
+        .poke-img { vertical-align: middle; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+    </style>
 </head>
 <body>
 
@@ -19,7 +178,7 @@
         <img style="position:absolute; left:6px; bottom:6px; width:75px;" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/79.png" alt="ヤドン">
         <img style="position:absolute; right:6px; bottom:6px; width:68px;" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" alt="ピカチュウ">
         <div class="container">
-            <div class="hero-badge">CANVA STYLE TRAVEL GUIDE</div>
+            <div class="hero-badge">CANVA HANDWRITTEN TRAVEL DIARY</div>
             <h1 class="hero-title">香川・小豆島・愛媛 旅のしおり</h1>
             <div class="hero-tags">
                 <span class="hero-tag-item">📅 8/30 (日) - 9/1 (火)</span>
@@ -37,8 +196,8 @@
         <!-- Canva Info Widgets -->
         <div class="canva-info-card">
             <div>
-                <div style="font-size:0.85rem; font-weight:800; font-family:var(--font-mincho);">🌤️ 四国の天気 29°C / 22°C</div>
-                <div style="font-size:0.75rem; color:#d97706; font-weight:800; margin-top:2px;">🌅 下灘駅日の入り 18:52 頃</div>
+                <div style="font-size:0.88rem; font-weight:700; font-family:var(--font-handwritten);">🌤️ 四国の天気 29°C / 22°C</div>
+                <div style="font-size:0.78rem; color:#d97706; font-weight:700; margin-top:2px;">🌅 下灘駅日の入り 18:52 頃</div>
             </div>
             <a href="https://music.amazon.co.jp/search/%E7%80%AC%E6%88%B8%E5%86%85%E3%83%89%E3%83%A9%E3%82%A4%E3%83%96" target="_blank" class="btn-amazon-music">🎧 BGM再生</a>
         </div>
@@ -71,7 +230,7 @@
         <section id="day1" class="day-section">
             <h2 class="day-title-head d1">
                 <span>🌸 DAY 1 (8/30 日)</span>
-                <span style="font-size:0.85rem; font-family:var(--font-sans); font-weight:700;">香川・小豆島</span>
+                <span style="font-size:0.88rem; font-family:var(--font-handwritten); font-weight:700;">香川・小豆島</span>
             </h2>
 
             <div class="card d1">
@@ -210,7 +369,7 @@
         <section id="day2" class="day-section">
             <h2 class="day-title-head d2">
                 <span>🌊 DAY 2 (8/31 月)</span>
-                <span style="font-size:0.85rem; font-family:var(--font-sans); font-weight:700;">香川・松山</span>
+                <span style="font-size:0.88rem; font-family:var(--font-handwritten); font-weight:700;">香川・松山</span>
             </h2>
 
             <div class="card d2">
@@ -321,7 +480,7 @@
         <section id="day3" class="day-section">
             <h2 class="day-title-head d3">
                 <span>🌿 DAY 3 (9/1 火)</span>
-                <span style="font-size:0.85rem; font-family:var(--font-sans); font-weight:700;">下灘・しまなみ</span>
+                <span style="font-size:0.88rem; font-family:var(--font-handwritten); font-weight:700;">下灘・しまなみ</span>
             </h2>
 
             <div class="card d3">
@@ -417,17 +576,17 @@
         <!-- Canva Style Checklist -->
         <section id="checklist" class="checklist-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #f1ede6; padding-bottom: 8px;">
-                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); font-family: var(--font-mincho); display: flex; align-items: center; gap: 6px;">
+                <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); font-family: var(--font-handwritten); display: flex; align-items: center; gap: 6px;">
                     <span>🎒 2人の旅の持ち物チェックリスト</span>
                 </h3>
-                <span style="font-size: 0.72rem; color: var(--text-sub); font-weight: 700;">タップでチェック！</span>
+                <span style="font-size: 0.78rem; color: var(--text-sub); font-weight: 700; font-family: var(--font-handwritten);">タップでチェック！</span>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
                 <!-- 1. 貴重品・チケット -->
                 <div style="background: #fbf9f5; border-radius: 14px; padding: 12px; border: 1px solid #eae5dc;">
-                    <div style="font-weight: 800; font-size: 0.82rem; color: var(--terracotta); margin-bottom: 6px;">📄 貴重品・チケット</div>
-                    <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--terracotta); margin-bottom: 6px; font-family: var(--font-handwritten);">📄 貴重品・チケット</div>
+                    <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.84rem; font-family: var(--font-handwritten);">
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-1"> ✈️ ANA航空券 (2人分)</label>
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-2"> 🎴 運転免許証 (こうたろう)</label>
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-3"> 💳 クレジットカード & 現金 (うどん用)</label>
@@ -437,8 +596,8 @@
 
                 <!-- 2. ガジェット & カメラ -->
                 <div style="background: #fbf9f5; border-radius: 14px; padding: 12px; border: 1px solid #eae5dc;">
-                    <div style="font-weight: 800; font-size: 0.82rem; color: var(--sage-green); margin-bottom: 6px;">📷 ガジェット & カメラ</div>
-                    <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--sage-green); margin-bottom: 6px; font-family: var(--font-handwritten);">📷 ガジェット & カメラ</div>
+                    <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.84rem; font-family: var(--font-handwritten);">
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-5"> 📷 FUJIFILM X-S10 & レンズ</label>
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-6"> 🔋 X-S10予備バッテリー & 充電器</label>
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-7"> 💾 SDカード (空き容量確認)</label>
@@ -450,8 +609,8 @@
 
                 <!-- 3. ドライブ & 旅のアイテム -->
                 <div style="background: #fbf9f5; border-radius: 14px; padding: 12px; border: 1px solid #eae5dc;">
-                    <div style="font-weight: 800; font-size: 0.82rem; color: var(--day3-theme); margin-bottom: 6px;">🚗 ドライブ & 旅のアイテム</div>
-                    <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--day3-theme); margin-bottom: 6px; font-family: var(--font-handwritten);">🚗 ドライブ & 旅のアイテム</div>
+                    <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.84rem; font-family: var(--font-handwritten);">
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-11"> 🕶️ サングラス (小豆島サイクリング)</label>
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-12"> 🧢 日よけ帽子 & 羽織もの</label>
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-13"> ♨️ 温泉用フェイスタオル (道後温泉)</label>
@@ -466,21 +625,21 @@
         <section id="warikan" class="warikan-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px;">
                 <div>
-                    <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); font-family: var(--font-mincho);">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); font-family: var(--font-handwritten);">
                         👛 旅の立替・精算メモ
                     </h3>
-                    <p style="font-size: 0.75rem; color: var(--text-sub);">確定費用メモ ＆ PayPayグループ精算</p>
+                    <p style="font-size: 0.78rem; color: var(--text-sub); font-family: var(--font-handwritten);">確定費用メモ ＆ PayPayグループ精算</p>
                 </div>
                 <!-- Pure Direct PayPay Launch Button -->
-                <a href="paypay://" style="background: #f1ede6; color: var(--text-main); border: 1px solid #ded8cc; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                <a href="paypay://" style="background: #f1ede6; color: var(--text-main); border: 1px solid #ded8cc; padding: 6px 14px; border-radius: 12px; font-weight: 700; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-handwritten);">
                     <span style="color:#ef4444;">🔴</span> PayPayアプリ起動
                 </a>
             </div>
 
             <!-- Fixed Pre-booked Expenses Summary -->
-            <div style="background: #fbf9f5; border-radius: 14px; padding: 12px 14px; border: 1px solid #eae5dc;">
-                <div style="font-weight: 800; font-size: 0.8rem; color: var(--text-main); margin-bottom: 6px;">📌 事前予約済み固定費（参考）</div>
-                <div style="font-size: 0.78rem; color: #475569; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+            <div style="background: #fbf9f5; border-radius: 14px; padding: 12px 14px; border: 1px solid #eae5dc; font-family: var(--font-handwritten);">
+                <div style="font-weight: 700; font-size: 0.84rem; color: var(--text-main); margin-bottom: 6px;">📌 事前予約済み固定費（参考）</div>
+                <div style="font-size: 0.8rem; color: #475569; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
                     <div>・あおい: ANA航空券 42,280円</div>
                     <div>・こうたろう: レンタカー 33,440円</div>
                     <div>・こうたろう: 1泊目 11,520円</div>
