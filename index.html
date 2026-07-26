@@ -531,6 +531,54 @@
             </div>
         </section>
 
+        <!-- Packing Checklist Component -->
+        <section id="checklist" class="warikan-panel" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 18px 16px; border-radius: 18px; margin-top: 24px; box-shadow: 0 4px 14px rgba(15,23,42,0.04);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; font-family: var(--font-mincho); display: flex; align-items: center; gap: 6px;">
+                    <span>🎒 2人の旅の持ち物チェックリスト</span>
+                </h3>
+                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">タップでチェック！</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                <!-- 1. 貴重品・チケット -->
+                <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0;">
+                    <div style="font-weight: 800; font-size: 0.82rem; color: #0284c7; margin-bottom: 6px;">📄 貴重品・チケット</div>
+                    <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-1"> ✈️ ANA航空券 (2人分)</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-2"> 🎴 運転免許証 (こうたろう)</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-3"> 💳 クレジットカード & 現金 (うどん用)</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-4"> 🏥 健康保険証</label>
+                    </div>
+                </div>
+
+                <!-- 2. ガジェト & カメラ -->
+                <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0;">
+                    <div style="font-weight: 800; font-size: 0.82rem; color: #0f172a; margin-bottom: 6px;">📷 ガジェット & カメラ</div>
+                    <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-5"> 📷 FUJIFILM X-S10 & レンズ</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-6"> 🔋 X-S10予備バッテリー & 充電器</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-7"> 💾 SDカード (空き容量確認)</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-8"> 🔌 シガーソケット急速充電器</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-9"> 📱 車載スマホホルダー (ワンタッチ)</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-10"> ⚡ モバイルバッテリー & ケーブル</label>
+                    </div>
+                </div>
+
+                <!-- 3. ドライブ & 旅のアイテム -->
+                <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0;">
+                    <div style="font-weight: 800; font-size: 0.82rem; color: #059669; margin-bottom: 6px;">🚗 ドライブ & 旅のアイテム</div>
+                    <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-11"> 🕶️ サングラス (小豆島サイクリング)</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-12"> 🧢 日よけ帽子 & 羽織もの</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-13"> ♨️ 温泉用フェイスタオル (道後温泉)</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-14"> 🧼 厚手車内用ウェットティッシュ</label>
+                        <label><input type="checkbox" onchange="saveChecklistState()" id="chk-15"> 👕 着替え & 洗面セット</label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Subtle PayPay Integration Section -->
         <section id="warikan" class="warikan-panel" style="background: #ffffff; border: 1px solid #e2e8f0; padding: 18px 16px; border-radius: 18px; margin-top: 24px; scroll-margin-top: 60px; box-shadow: 0 4px 14px rgba(15,23,42,0.04);">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px;">
@@ -624,6 +672,31 @@
                 window.location.href = "https://paypay.ne.jp/";
             }, 1500);
         }
+
+        
+        // Checklist LocalStorage Persistence
+        function saveChecklistState() {
+            const state = {};
+            for (let i = 1; i <= 15; i++) {
+                const chk = document.getElementById('chk-' + i);
+                if (chk) state['chk-' + i] = chk.checked;
+            }
+            try { localStorage.setItem('shikoku_checklist_v1', JSON.stringify(state)); } catch(e){}
+        }
+
+        function loadChecklistState() {
+            try {
+                const stored = localStorage.getItem('shikoku_checklist_v1');
+                if (stored) {
+                    const state = JSON.parse(stored);
+                    for (let i = 1; i <= 15; i++) {
+                        const chk = document.getElementById('chk-' + i);
+                        if (chk && state['chk-' + i] !== undefined) chk.checked = state['chk-' + i];
+                    }
+                }
+            } catch(e){}
+        }
+        document.addEventListener('DOMContentLoaded', loadChecklistState);
 
         // Countdown Timer
         function runCountdown() {
