@@ -152,21 +152,21 @@
         /* Jillion Style Arrow Buttons */
         .j-btn-row { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
         .j-btn {
-            flex: 1; min-width: 95px; text-align: center; background: transparent; border: 1px solid var(--border-line);
-            color: #ffffff; padding: 8px 10px; font-family: var(--font-mont); font-size: 0.72rem;
-            font-weight: 700; letter-spacing: 1px; text-decoration: none; text-transform: uppercase;
-            transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            flex: 1; min-width: 85px; text-align: center; background: transparent; border: 1px solid var(--border-line);
+            color: #ffffff; padding: 8px 8px; font-family: var(--font-mont); font-size: 0.7rem;
+            font-weight: 700; letter-spacing: 0.5px; text-decoration: none; text-transform: uppercase;
+            transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
             cursor: pointer;
         }
         .j-btn:hover { border-color: #ffffff; background: #2f2f2f; }
         .j-btn.primary { background: #ffffff; color: #000000; border-color: #ffffff; }
         .j-btn.primary:hover { background: #e0e0e0; }
-        .j-btn.app-accent { background: #2a2a2a; border-color: #ffffff; color: #ffffff; font-weight: 900; padding: 6px 12px; }
+        .j-btn.app-accent { background: #2a2a2a; border-color: #ffffff; color: #ffffff; font-weight: 900; padding: 6px 10px; }
         .j-btn.app-accent:hover { background: #ffffff; color: #000000; }
         .j-btn.app-accent:hover .j-app-icon { box-shadow: 0 0 0 1px #000; }
 
         .j-app-icon {
-            width: 20px; height: 20px; border-radius: 5px; object-fit: cover;
+            width: 18px; height: 18px; border-radius: 4px; object-fit: cover;
             box-shadow: 0 1px 3px rgba(0,0,0,0.4); flex-shrink: 0;
         }
 
@@ -247,18 +247,22 @@
                 </div>
             </section>
 
-            <!-- DAY 1 - 1: DUAL OS WALLET (iPhone: Apple Wallet / Android: Google Wallet) + ANA SITE -->
+            <!-- DAY 1 - 1: DUAL DIRECT ANCHOR BUTTONS (Apple Wallet vs Google Wallet vs ANA Site) -->
             <div class="j-card">
                 <span class="j-card-time">06:55 - 08:10</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">FLIGHT</span>羽田空港 → 高松空港</div>
-                <div class="j-card-desc">ANA 531便にて早朝フライト。ウォレットへ搭乗券を追加しておくと一発表示！</div>
+                <div class="j-card-desc">ANA 531便にて早朝フライト。お使いのスマホのウォレットボタンをタップ！</div>
                 <div class="j-btn-row">
-                    <a href="https://www.google.com/maps/search/?api=1&query=高松空港" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="openWallet()" class="j-btn app-accent">
-                        <img src="https://img.icons8.com/?size=100&id=108641&format=png" class="j-app-icon" alt="Wallet">
-                        <span>WALLET APP</span>
-                    </button>
-                    <a href="https://www.ana.co.jp/" target="_blank" class="j-btn">🌐 ANA SITE</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=高松空港" target="_blank" class="j-btn primary">MAP →</a>
+                    <a href="shoebox://" class="j-btn app-accent">
+                        <img src="https://img.icons8.com/?size=100&id=108641&format=png" class="j-app-icon" alt="Apple Wallet">
+                        <span>🍎 WALLET</span>
+                    </a>
+                    <a href="https://pay.google.com/" target="_blank" class="j-btn app-accent">
+                        <img src="https://img.icons8.com/?size=100&id=V5c2fxPuhj1g&format=png" class="j-app-icon" alt="Google Wallet">
+                        <span>🤖 WALLET</span>
+                    </a>
+                    <a href="https://www.ana.co.jp/" target="_blank" class="j-btn">🌐 ANA</a>
                 </div>
             </div>
 
@@ -567,18 +571,22 @@
                 </div>
             </div>
 
-            <!-- DAY 3 - 7: DUAL OS WALLET (iPhone: Apple Wallet / Android: Google Wallet) + ANA SITE -->
+            <!-- DAY 3 - 7: DUAL DIRECT ANCHOR BUTTONS -->
             <div class="j-card">
                 <span class="j-card-time">19:45 - 21:20</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">FLIGHT</span>松山空港 → 羽田空港</div>
                 <div class="j-card-desc">ANA 598便にて羽田空港着（21:20予定）。ウォレットでQRコード一発表示！</div>
                 <div class="j-btn-row">
-                    <a href="https://www.google.com/maps/search/?api=1&query=羽田空港" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <button onclick="openWallet()" class="j-btn app-accent">
-                        <img src="https://img.icons8.com/?size=100&id=108641&format=png" class="j-app-icon" alt="Wallet">
-                        <span>WALLET APP</span>
-                    </button>
-                    <a href="https://www.ana.co.jp/" target="_blank" class="j-btn">🌐 ANA SITE</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=羽田空港" target="_blank" class="j-btn primary">MAP →</a>
+                    <a href="shoebox://" class="j-btn app-accent">
+                        <img src="https://img.icons8.com/?size=100&id=108641&format=png" class="j-app-icon" alt="Apple Wallet">
+                        <span>🍎 WALLET</span>
+                    </a>
+                    <a href="https://pay.google.com/" target="_blank" class="j-btn app-accent">
+                        <img src="https://img.icons8.com/?size=100&id=V5c2fxPuhj1g&format=png" class="j-app-icon" alt="Google Wallet">
+                        <span>🤖 WALLET</span>
+                    </a>
+                    <a href="https://www.ana.co.jp/" target="_blank" class="j-btn">🌐 ANA</a>
                 </div>
             </div>
         </div>
@@ -641,22 +649,7 @@
 
     </div>
 
-    <!-- DUAL OS WALLET LAUNCHER -->
     <script>
-        function openWallet() {
-            const ua = navigator.userAgent.toLowerCase();
-            if (ua.indexOf('iphone') > -1 || ua.indexOf('ipad') > -1 || ua.indexOf('ipod') > -1) {
-                // iPhone / iOS Apple Wallet App
-                window.location.href = "shoebox://";
-            } else if (ua.indexOf('android') > -1) {
-                // Android Google Wallet App via Intent (fallback to Web)
-                window.location.href = "intent://pay/#Intent;scheme=https;package=com.google.android.apps.walletnfcrel;end";
-            } else {
-                // Desktop / Fallback
-                window.location.href = "shoebox://";
-            }
-        }
-
         function switchTab(panelId, btnEl) {
             const panels = document.querySelectorAll('.j-tab-panel');
             panels.forEach(p => p.classList.remove('active'));
