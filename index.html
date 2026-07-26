@@ -51,9 +51,9 @@
 
         /* Jillion Main Visual Hero */
         .j-hero {
-            padding: 48px 0 28px;
+            padding: 48px 0 24px;
             border-bottom: 1px solid var(--border-line);
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             position: relative;
         }
 
@@ -86,6 +86,48 @@
         }
         .j-countdown-txt { font-family: var(--font-mont); font-size: 0.7rem; letter-spacing: 2px; color: var(--text-sub); }
         .j-countdown-num { font-family: var(--font-bebas); font-size: 1.8rem; letter-spacing: 1px; color: #ffffff; line-height: 1; }
+
+        /* Premium Interactive Weather Widget */
+        .weather-card {
+            background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
+            border: 1px solid var(--border-line);
+            padding: 18px 20px;
+            margin-bottom: 24px;
+            position: relative;
+        }
+        
+        .weather-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; margin-bottom: 12px;
+        }
+        .weather-title {
+            font-family: var(--font-mont); font-size: 0.72rem; font-weight: 900;
+            letter-spacing: 2px; color: var(--text-sub); text-transform: uppercase;
+        }
+        .weather-tabs { display: flex; gap: 6px; }
+        .w-tab {
+            background: transparent; border: 1px solid var(--border-line); color: var(--text-sub);
+            font-family: var(--font-mont); font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .w-tab.active { background: #ffffff; color: #000000; border-color: #ffffff; }
+
+        .weather-body { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .weather-temp-group { display: flex; align-items: baseline; gap: 8px; }
+        .weather-temp-main { font-family: var(--font-bebas); font-size: 3.2rem; line-height: 1; color: #ffffff; }
+        .weather-temp-sub { font-family: var(--font-mont); font-size: 0.75rem; color: var(--text-sub); font-weight: 700; }
+        .weather-icon-box { font-size: 2.8rem; line-height: 1; text-shadow: 0 0 12px rgba(255,255,255,0.2); }
+
+        .weather-details {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+            background: rgba(0,0,0,0.25); border: 1px solid var(--border-line); padding: 8px 12px;
+            font-family: var(--font-mont); font-size: 0.7rem; color: #cccccc; text-align: center;
+        }
+        .w-detail-val { font-weight: 900; color: #ffffff; margin-top: 2px; }
+
+        .weather-footer {
+            display: flex; justify-content: space-between; align-items: center; margin-top: 12px;
+        }
 
         /* Jillion Sticky TAB Bar Navigation */
         .j-nav-sticky {
@@ -206,14 +248,46 @@
             </div>
         </header>
 
-        <!-- Weather News Distinct Bar -->
-        <div class="j-widget">
-            <div style="flex: 1 1 200px;">
-                <div style="font-family:var(--font-gothic); font-weight:800; font-size:0.92rem;">🌤️ 四国ピンポイント天気 29°C / 22°C</div>
-                <div style="font-family:var(--font-mont); font-size:0.72rem; color:var(--text-sub); margin-top:2px;">SUNSET AT SHIMONADA 18:52</div>
+        <!-- PREMIUM INTERACTIVE WEATHER WIDGET CARD -->
+        <div class="weather-card">
+            <div class="weather-header">
+                <span class="weather-title">🌤️ SHIKOKU LIVE WEATHER</span>
+                <div class="weather-tabs">
+                    <button class="w-tab active" onclick="updateWeather('kagawa', this)">高松</button>
+                    <button class="w-tab" onclick="updateWeather('shodoshima', this)">小豆島</button>
+                    <button class="w-tab" onclick="updateWeather('matsuyama', this)">松山</button>
+                </div>
             </div>
-            <div style="display:flex; gap:6px; flex: 0 0 auto;">
-                <a href="https://weathernews.jp/onebox/tenki/kagawa/" target="_blank" class="j-btn app-accent" style="min-width:130px;">
+
+            <div class="weather-body">
+                <div>
+                    <div id="w-location" style="font-family:var(--font-gothic); font-weight:800; font-size:1.05rem; color:#ffffff;">香川県 高松市</div>
+                    <div class="weather-temp-group" style="margin-top:4px;">
+                        <span id="w-temp" class="weather-temp-main">29°C</span>
+                        <span id="w-range" class="weather-temp-sub">H: 31°C / L: 22°C</span>
+                    </div>
+                </div>
+                <div id="w-icon" class="weather-icon-box">☀️</div>
+            </div>
+
+            <div class="weather-details">
+                <div>
+                    <div>POP (降水確率)</div>
+                    <div id="w-pop" class="w-detail-val">10%</div>
+                </div>
+                <div>
+                    <div>SUNSET (夕日)</div>
+                    <div id="w-sunset" class="w-detail-val">18:52</div>
+                </div>
+                <div>
+                    <div>CONDITION (状態)</div>
+                    <div id="w-cond" class="w-detail-val">快晴 / 撮影最適</div>
+                </div>
+            </div>
+
+            <div class="weather-footer">
+                <span style="font-family:var(--font-mont); font-size:0.68rem; color:var(--text-sub);">PROVIDER: WEATHERNEWS LIVE</span>
+                <a id="w-link" href="https://weathernews.jp/onebox/tenki/kagawa/" target="_blank" class="j-btn app-accent" style="min-width:120px; padding:4px 10px;">
                     <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/b7/a1/96/b7a196d1-f65a-b209-86b0-cf3bebec02a0/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="WNI">
                     <span>WEATHER SITE</span>
                 </a>
@@ -650,6 +724,57 @@
     </div>
 
     <script>
+        const weatherData = {
+            kagawa: {
+                loc: '香川県 高松市',
+                temp: '29°C',
+                range: 'H: 31°C / L: 22°C',
+                icon: '☀️',
+                pop: '10%',
+                sunset: '18:52',
+                cond: '快晴 / 散策最適',
+                link: 'https://weathernews.jp/onebox/tenki/kagawa/'
+            },
+            shodoshima: {
+                loc: '小豆島 (土庄町)',
+                temp: '28°C',
+                range: 'H: 30°C / L: 23°C',
+                icon: '🌤️',
+                pop: '20%',
+                sunset: '18:53',
+                cond: '晴れ / サイクリング日和',
+                link: 'https://weathernews.jp/onebox/tenki/kagawa/'
+            },
+            matsuyama: {
+                loc: '愛媛県 松山市 (下灘)',
+                temp: '29°C',
+                range: 'H: 31°C / L: 22°C',
+                icon: '🌅',
+                pop: '10%',
+                sunset: '18:56',
+                cond: '夕日ベストタイム到来',
+                link: 'https://weathernews.jp/onebox/tenki/ehime/'
+            }
+        };
+
+        function updateWeather(key, btnEl) {
+            const data = weatherData[key];
+            if (!data) return;
+
+            document.getElementById('w-location').innerText = data.loc;
+            document.getElementById('w-temp').innerText = data.temp;
+            document.getElementById('w-range').innerText = data.range;
+            document.getElementById('w-icon').innerText = data.icon;
+            document.getElementById('w-pop').innerText = data.pop;
+            document.getElementById('w-sunset').innerText = data.sunset;
+            document.getElementById('w-cond').innerText = data.cond;
+            document.getElementById('w-link').href = data.link;
+
+            const tabs = document.querySelectorAll('.w-tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+        }
+
         function switchTab(panelId, btnEl) {
             const panels = document.querySelectorAll('.j-tab-panel');
             panels.forEach(p => p.classList.remove('active'));
