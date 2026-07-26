@@ -247,17 +247,17 @@
                 </div>
             </section>
 
-            <!-- DAY 1 - 1: ANA FLIGHT -> WALLET APP (shoebox://) + ANA SITE -->
+            <!-- DAY 1 - 1: DUAL OS WALLET (iPhone: Apple Wallet / Android: Google Wallet) + ANA SITE -->
             <div class="j-card">
                 <span class="j-card-time">06:55 - 08:10</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">FLIGHT</span>羽田空港 → 高松空港</div>
-                <div class="j-card-desc">ANA 531便にて早朝フライト。Apple Walletへ搭乗券を追加しておくと一発表示！</div>
+                <div class="j-card-desc">ANA 531便にて早朝フライト。ウォレットへ搭乗券を追加しておくと一発表示！</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=高松空港" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="shoebox://" class="j-btn app-accent">
+                    <button onclick="openWallet()" class="j-btn app-accent">
                         <img src="https://img.icons8.com/?size=100&id=108641&format=png" class="j-app-icon" alt="Wallet">
                         <span>WALLET APP</span>
-                    </a>
+                    </button>
                     <a href="https://www.ana.co.jp/" target="_blank" class="j-btn">🌐 ANA SITE</a>
                 </div>
             </div>
@@ -567,17 +567,17 @@
                 </div>
             </div>
 
-            <!-- DAY 3 - 7: ANA FLIGHT -> WALLET APP (shoebox://) + ANA SITE -->
+            <!-- DAY 3 - 7: DUAL OS WALLET (iPhone: Apple Wallet / Android: Google Wallet) + ANA SITE -->
             <div class="j-card">
                 <span class="j-card-time">19:45 - 21:20</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">FLIGHT</span>松山空港 → 羽田空港</div>
-                <div class="j-card-desc">ANA 598便にて羽田空港着（21:20予定）。Apple WalletでQRコード一発表示！</div>
+                <div class="j-card-desc">ANA 598便にて羽田空港着（21:20予定）。ウォレットでQRコード一発表示！</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=羽田空港" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="shoebox://" class="j-btn app-accent">
+                    <button onclick="openWallet()" class="j-btn app-accent">
                         <img src="https://img.icons8.com/?size=100&id=108641&format=png" class="j-app-icon" alt="Wallet">
                         <span>WALLET APP</span>
-                    </a>
+                    </button>
                     <a href="https://www.ana.co.jp/" target="_blank" class="j-btn">🌐 ANA SITE</a>
                 </div>
             </div>
@@ -597,7 +597,7 @@
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:0.84rem; color:#b0b0b0;">
                     <div>
                         <div style="font-family:var(--font-mont); font-size:0.8rem; font-weight:900; color:#ffffff; letter-spacing:1px; margin-bottom:6px;">DOCUMENTS</div>
-                        <div>・ANA Flight Tickets (Apple Wallet)</div>
+                        <div>・ANA Flight Tickets (Wallet App)</div>
                         <div>・Driver's License (Kotaro)</div>
                         <div>・Cash for Udon Restaurants</div>
                         <div>・Health Insurance Cards</div>
@@ -641,7 +641,22 @@
 
     </div>
 
+    <!-- DUAL OS WALLET LAUNCHER -->
     <script>
+        function openWallet() {
+            const ua = navigator.userAgent.toLowerCase();
+            if (ua.indexOf('iphone') > -1 || ua.indexOf('ipad') > -1 || ua.indexOf('ipod') > -1) {
+                // iPhone / iOS Apple Wallet App
+                window.location.href = "shoebox://";
+            } else if (ua.indexOf('android') > -1) {
+                // Android Google Wallet App via Intent (fallback to Web)
+                window.location.href = "intent://pay/#Intent;scheme=https;package=com.google.android.apps.walletnfcrel;end";
+            } else {
+                // Desktop / Fallback
+                window.location.href = "shoebox://";
+            }
+        }
+
         function switchTab(panelId, btnEl) {
             const panels = document.querySelectorAll('.j-tab-panel');
             panels.forEach(p => p.classList.remove('active'));
