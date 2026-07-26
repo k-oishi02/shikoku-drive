@@ -149,7 +149,7 @@
             color: var(--text-sub); padding: 2px 8px; text-transform: uppercase; margin-right: 4px;
         }
 
-        /* Jillion Style Arrow Buttons (APP vs WEB vs MAP) */
+        /* Jillion Style Arrow Buttons (Smart Link vs MAP) */
         .j-btn-row { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
         .j-btn {
             flex: 1; min-width: 95px; text-align: center; background: transparent; border: 1px solid var(--border-line);
@@ -161,9 +161,9 @@
         .j-btn:hover { border-color: #ffffff; background: #2f2f2f; }
         .j-btn.primary { background: #ffffff; color: #000000; border-color: #ffffff; }
         .j-btn.primary:hover { background: #e0e0e0; }
-        .j-btn.app-accent { background: #2a2a2a; border-color: #ffffff; color: #ffffff; font-weight: 900; padding: 6px 12px; }
-        .j-btn.app-accent:hover { background: #ffffff; color: #000000; }
-        .j-btn.app-accent:hover .j-app-icon { box-shadow: 0 0 0 1px #000; }
+        .j-btn.smart-btn { background: #2a2a2a; border-color: #ffffff; color: #ffffff; font-weight: 900; padding: 6px 12px; }
+        .j-btn.smart-btn:hover { background: #ffffff; color: #000000; }
+        .j-btn.smart-btn:hover .j-app-icon { box-shadow: 0 0 0 1px #000; }
 
         .j-app-icon {
             width: 20px; height: 20px; border-radius: 5px; object-fit: cover;
@@ -206,17 +206,17 @@
             </div>
         </header>
 
-        <!-- Weather News Distinct Bar (Using Icon on WEB button since no URL scheme exists) -->
+        <!-- Weather News Distinct Bar with Smart Deep Link -->
         <div class="j-widget">
             <div style="flex: 1 1 200px;">
                 <div style="font-family:var(--font-gothic); font-weight:800; font-size:0.92rem;">🌤️ 四国ピンポイント天気 29°C / 22°C</div>
                 <div style="font-family:var(--font-mont); font-size:0.72rem; color:var(--text-sub); margin-top:2px;">SUNSET AT SHIMONADA 18:52</div>
             </div>
             <div style="display:flex; gap:6px; flex: 0 0 auto;">
-                <a href="https://weathernews.jp/onebox/tenki/kagawa/" target="_blank" class="j-btn app-accent" style="min-width:120px;">
+                <button onclick="smartLaunch('wni://', 'https://weathernews.jp/onebox/tenki/kagawa/')" class="j-btn smart-btn" style="min-width:130px;">
                     <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/b7/a1/96/b7a196d1-f65a-b209-86b0-cf3bebec02a0/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="WNI">
-                    <span>WEATHER SITE</span>
-                </a>
+                    <span>WEATHER LINK</span>
+                </button>
             </div>
         </div>
 
@@ -247,31 +247,31 @@
                 </div>
             </section>
 
-            <!-- DAY 1 - 1: ANA (No working scheme in latest app -> Icon WEB button) -->
+            <!-- DAY 1 - 1: ANA Smart Deep Link -->
             <div class="j-card">
                 <span class="j-card-time">06:55 - 08:10</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">FLIGHT</span>羽田空港 → 高松空港</div>
                 <div class="j-card-desc">ANA 531便にて早朝フライト。到着後トヨタレンタカーへ移動。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=高松空港" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.ana.co.jp/" target="_blank" class="j-btn app-accent">
+                    <button onclick="smartLaunch('jp.co.ana.iphoneapp.Tabidachi://', 'https://www.ana.co.jp/')" class="j-btn smart-btn">
                         <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/27/f2/5d/27f25dab-fde6-2f73-c3b0-b782fe46225e/AppIcon-1x_U007ephone-0-1-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="ANA">
-                        <span>ANA SITE</span>
-                    </a>
+                        <span>ANA LINK</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- DAY 1 - 2: TOYOTA RENT-A-CAR (No URL scheme exists -> Icon WEB button) -->
+            <!-- DAY 1 - 2: TOYOTA RENT-A-CAR Smart Deep Link -->
             <div class="j-card">
                 <span class="j-card-time">08:30 - 08:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">RENTAL CAR</span>トヨタレンタカー高松空港店</div>
                 <div class="j-card-desc">相棒ヤリス（ブロロローム）にてスムーズに手続き完了＆ドライブ発進。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=トヨタレンタカー高松空港店" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://rent.toyota.co.jp/" target="_blank" class="j-btn app-accent">
+                    <button onclick="smartLaunch('', 'https://rent.toyota.co.jp/')" class="j-btn smart-btn">
                         <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/8e/2c/05/8e2c055d-71b9-d435-c3e5-85dc69edf95b/AppIcon-1x_U007emarketing-0-3-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="TOYOTA">
-                        <span>TOYOTA SITE</span>
-                    </a>
+                        <span>TOYOTA LINK</span>
+                    </button>
                 </div>
             </div>
 
@@ -363,18 +363,17 @@
                 </div>
             </div>
 
-            <!-- DAY 1 - 10: JALAN APP (Successful: jalan://) vs WEB -->
+            <!-- DAY 1 - 10: Jalan Smart Deep Link -->
             <div class="j-card">
                 <span class="j-card-time">21:00</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">HOTEL</span>高松国際ホテル</div>
                 <div class="j-card-desc">無料駐車場完備の快適ホテルへチェックイン。DAY 1 お疲れ様でした！</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=高松国際ホテル" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="jalan://" class="j-btn app-accent">
+                    <button onclick="smartLaunch('jalan://', 'https://www.jalan.net/')" class="j-btn smart-btn">
                         <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/cb/bd/89cbbdb5-e4e5-f22b-4958-fb4e5294ed47/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/100x100bb.jpg" class="j-app-icon" alt="JALAN">
-                        <span>JALAN APP</span>
-                    </a>
-                    <a href="https://www.jalan.net/" target="_blank" class="j-btn">🌐 WEB</a>
+                        <span>JALAN LINK</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -438,18 +437,17 @@
                 </div>
             </div>
 
-            <!-- DAY 2 - 5: JALAN APP vs WEB -->
+            <!-- DAY 2 - 5: Jalan Smart Deep Link -->
             <div class="j-card">
                 <span class="j-card-time">14:45 - 16:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">DRIVE</span>愛媛県松山市へ移動 ＆ ホテル</div>
                 <div class="j-card-desc">高速道路経由で松山市内へ。ダイワロイネットホテル松山チェックイン。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=ダイワロイネットホテル松山" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="jalan://" class="j-btn app-accent">
+                    <button onclick="smartLaunch('jalan://', 'https://www.jalan.net/')" class="j-btn smart-btn">
                         <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/89/cb/bd/89cbbdb5-e4e5-f22b-4958-fb4e5294ed47/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/100x100bb.jpg" class="j-app-icon" alt="JALAN">
-                        <span>JALAN APP</span>
-                    </a>
-                    <a href="https://www.jalan.net/" target="_blank" class="j-btn">🌐 WEB</a>
+                        <span>JALAN LINK</span>
+                    </button>
                 </div>
             </div>
 
@@ -552,31 +550,31 @@
                 </div>
             </div>
 
-            <!-- DAY 3 - 6: TOYOTA RENT-A-CAR (No URL scheme exists -> Icon WEB button) -->
+            <!-- DAY 3 - 6: Toyota Smart Deep Link -->
             <div class="j-card">
                 <span class="j-card-time">18:00 - 19:15</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">AIRPORT</span>松山空港 蛇口みかんジュース</div>
                 <div class="j-card-desc">レンタカー返却後、Orange BARにて蛇口ポンジュース。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=トヨタレンタカー松山空港店" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://rent.toyota.co.jp/" target="_blank" class="j-btn app-accent">
+                    <button onclick="smartLaunch('', 'https://rent.toyota.co.jp/')" class="j-btn smart-btn">
                         <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/8e/2c/05/8e2c055d-71b9-d435-c3e5-85dc69edf95b/AppIcon-1x_U007emarketing-0-3-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="TOYOTA">
-                        <span>TOYOTA SITE</span>
-                    </a>
+                        <span>TOYOTA LINK</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- DAY 3 - 7: ANA (No working scheme in latest app -> Icon WEB button) -->
+            <!-- DAY 3 - 7: ANA Smart Deep Link -->
             <div class="j-card">
                 <span class="j-card-time">19:45 - 21:20</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">FLIGHT</span>松山空港 → 羽田空港</div>
                 <div class="j-card-desc">ANA 598便にて羽田空港着（21:20予定）。旅の行程完了。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=羽田空港" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.ana.co.jp/" target="_blank" class="j-btn app-accent">
+                    <button onclick="smartLaunch('jp.co.ana.iphoneapp.Tabidachi://', 'https://www.ana.co.jp/')" class="j-btn smart-btn">
                         <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/27/f2/5d/27f25dab-fde6-2f73-c3b0-b782fe46225e/AppIcon-1x_U007ephone-0-1-0-85-220-0.png/100x100bb.jpg" class="j-app-icon" alt="ANA">
-                        <span>ANA SITE</span>
-                    </a>
+                        <span>ANA LINK</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -621,25 +619,57 @@
                 </div>
             </section>
 
-            <!-- RESTORED PAYPAY APP (paypay://launch) vs WEB BUTTONS! -->
+            <!-- PAYPAY SMART DEEP LINK -->
             <div class="j-widget" style="margin-top:12px;">
                 <div>
                     <h3 style="font-family:var(--font-bebas); font-size:1.6rem; letter-spacing:1px; color:#ffffff;">PAYPAY SPLIT</h3>
                     <p style="font-size:0.78rem; color:var(--text-sub);">あおい ＆ こうたろう グループ会計</p>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <a href="paypay://launch" class="j-btn app-accent" style="padding:10px 16px;">
+                    <button onclick="smartLaunch('paypay://launch', 'https://paypay.ne.jp/')" class="j-btn smart-btn" style="padding:10px 16px;">
                         <img src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/d7/9e/02/d79e024b-7ed7-00ee-71b6-a2fc688fe883/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/100x100bb.jpg" class="j-app-icon" alt="PayPay">
-                        <span>APP</span>
-                    </a>
-                    <a href="https://paypay.ne.jp/" target="_blank" class="j-btn" style="padding:10px 16px;">🌐 WEB</a>
+                        <span>PAYPAY LINK</span>
+                    </button>
                 </div>
             </div>
         </div>
 
     </div>
 
+    <!-- JS SMART DEEP LINK ENGINE -->
     <script>
+        function smartLaunch(appScheme, webUrl) {
+            const start = Date.now();
+            let pageHidden = false;
+
+            const onVisibilityChange = () => {
+                if (document.hidden || document.webkitHidden) {
+                    pageHidden = true;
+                }
+            };
+
+            document.addEventListener('visibilitychange', onVisibilityChange);
+            document.addEventListener('pagehide', onVisibilityChange);
+
+            // Attempt to trigger app scheme if present
+            if (appScheme && appScheme.length > 0) {
+                // Use location redirect for smooth iOS/Android native handler
+                window.location.href = appScheme;
+            }
+
+            // Fallback to Web URL if app didn't take over within 500ms
+            setTimeout(() => {
+                document.removeEventListener('visibilitychange', onVisibilityChange);
+                document.removeEventListener('pagehide', onVisibilityChange);
+
+                const elapsed = Date.now() - start;
+                // If page hasn't lost focus / hidden, and reasonable time passed without app switch
+                if (!pageHidden && elapsed < 1500) {
+                    window.open(webUrl, '_blank');
+                }
+            }, 500);
+        }
+
         function switchTab(panelId, btnEl) {
             const panels = document.querySelectorAll('.j-tab-panel');
             panels.forEach(p => p.classList.remove('active'));
