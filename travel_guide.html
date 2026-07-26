@@ -9,7 +9,6 @@
     <meta name="theme-color" content="#242424">
     <title>JILLION STYLE | 四国ドライブ 旅のしおり</title>
 
-    <!-- Exact Google Fonts from jillion.co.jp + Modern Solid Japanese Gothic (Zen Kaku Gothic New, Noto Sans JP) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;700;900&family=Noto+Sans+JP:wght@700;900&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" rel="stylesheet">
@@ -21,10 +20,6 @@
             --font-mont: 'Montserrat', sans-serif;
             --font-gothic: 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
 
-            --font-mincho: var(--font-gothic); /* Replaced all Mincho with Modern Solid Gothic */
-            --font-body: var(--font-gothic);
-
-            /* Exact Jillion.co.jp Color Palette */
             --bg-body: #1c1c1c;
             --bg-card: #242424;
             --border-line: #383838;
@@ -32,9 +27,6 @@
 
             --text-main: #ffffff;
             --text-sub: #a1a1a1;
-            --text-accent: #ffffff;
-
-            --radius-card: 0px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -71,7 +63,6 @@
             margin-bottom: 12px; display: block;
         }
 
-        /* Massive Bebas Neue Typography Header */
         .j-hero-bebas {
             font-family: var(--font-bebas); font-size: 4.2rem; line-height: 0.9;
             letter-spacing: 2px; color: #ffffff; text-transform: uppercase; margin-bottom: 14px;
@@ -121,7 +112,7 @@
         /* Jillion Editorial Card */
         .j-card {
             background: var(--bg-card); border: 1px solid var(--border-line);
-            padding: 22px; margin-bottom: 20px; transition: border-color 0.2s ease;
+            padding: 20px; margin-bottom: 18px; transition: border-color 0.2s ease;
         }
         .j-card:hover { border-color: #ffffff; }
 
@@ -130,16 +121,16 @@
             color: var(--text-sub); letter-spacing: 1px; margin-bottom: 6px; display: block;
         }
 
-        .j-card-ttl { font-family: var(--font-gothic); font-size: 1.15rem; font-weight: 900; color: #ffffff; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .j-card-desc { font-size: 0.88rem; color: #b0b0b0; line-height: 1.75; margin-bottom: 14px; font-family: var(--font-gothic); }
+        .j-card-ttl { font-family: var(--font-gothic); font-size: 1.15rem; font-weight: 900; color: #ffffff; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .j-card-desc { font-size: 0.88rem; color: #b0b0b0; line-height: 1.7; margin-bottom: 12px; font-family: var(--font-gothic); }
 
-        .j-card-img { width: 100%; height: auto; max-height: 280px; object-fit: cover; margin: 12px 0; border: 1px solid var(--border-line); display: block; }
+        .j-card-img { width: 100%; height: auto; max-height: 260px; object-fit: cover; margin: 10px 0; border: 1px solid var(--border-line); display: block; }
 
-        /* Jillion Style Arrow Button (c-btn) */
-        .j-btn-row { display: flex; gap: 8px; margin-top: 14px; }
+        /* Jillion Style Arrow Buttons (EVERY CARD) */
+        .j-btn-row { display: flex; gap: 8px; margin-top: 12px; }
         .j-btn {
             flex: 1; text-align: center; background: transparent; border: 1px solid var(--border-line);
-            color: #ffffff; padding: 10px 16px; font-family: var(--font-mont); font-size: 0.75rem;
+            color: #ffffff; padding: 9px 14px; font-family: var(--font-mont); font-size: 0.75rem;
             font-weight: 700; letter-spacing: 1.5px; text-decoration: none; text-transform: uppercase;
             transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
         }
@@ -148,12 +139,12 @@
         /* Jillion Camera Guide Note Box */
         .j-cam-box {
             border: 1px solid var(--border-line); background: #1c1c1c; padding: 12px 14px;
-            margin-top: 12px; font-size: 0.82rem; color: #d0d0d0; font-family: var(--font-gothic);
+            margin-top: 10px; font-size: 0.82rem; color: #d0d0d0; font-family: var(--font-gothic);
         }
         .j-cam-badge { font-family: var(--font-mont); font-size: 0.7rem; font-weight: 900; background: #ffffff; color: #000000; padding: 1px 6px; margin-left: 6px; }
 
         /* Jillion Widget / PayPay Section */
-        .j-widget { background: var(--bg-card); border: 1px solid var(--border-line); padding: 20px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; }
+        .j-widget { background: var(--bg-card); border: 1px solid var(--border-line); padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
 
         .poke-img { vertical-align: middle; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
     </style>
@@ -209,7 +200,7 @@
             </div>
         </div>
 
-        <!-- DAY 01 SECTION -->
+        <!-- ==================== DAY 01 SECTION ==================== -->
         <section id="day1" class="j-sec-header">
             <h2 class="j-sec-en">DAY 01</h2>
             <div class="j-sec-ja">
@@ -218,6 +209,7 @@
             </div>
         </section>
 
+        <!-- DAY 1 - 1 -->
         <div class="j-card">
             <span class="j-card-time">06:55 - 08:10</span>
             <div class="j-card-ttl">羽田空港 ✈️ 高松空港</div>
@@ -228,6 +220,7 @@
             </div>
         </div>
 
+        <!-- DAY 1 - 2 -->
         <div class="j-card">
             <span class="j-card-time">08:30 - 08:45</span>
             <div class="j-card-ttl">
@@ -235,8 +228,13 @@
                 <span>トヨタレンタカー高松空港店</span>
             </div>
             <div class="j-card-desc">相棒ブロロローム（ヤリス）でスムーズに手続き完了＆ドライブ発進！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=トヨタレンタカー高松空港店" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=トヨタレンタカー高松空港店" target="_blank" class="j-btn">SEARCH</a>
+            </div>
         </div>
 
+        <!-- DAY 1 - 3 -->
         <div class="j-card">
             <span class="j-card-time">09:00 - 09:40</span>
             <div class="j-card-ttl">
@@ -245,15 +243,48 @@
             </div>
             <img class="j-card-img" src="https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/yadon_park.png">
             <div class="j-card-desc">巨大ヤドン遊具やポケふたと記念撮影！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=ひだまり公園あやがわ" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=ひだまり公園あやがわ" target="_blank" class="j-btn">SEARCH</a>
+            </div>
         </div>
 
+        <!-- DAY 1 - 4 -->
         <div class="j-card">
             <span class="j-card-time">10:00 - 10:45</span>
             <div class="j-card-ttl">🍜 1軒目：うどんバカ一代</div>
             <img class="j-card-img" src="https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/udon_baka.png">
             <div class="j-card-desc">名物「温たま釜バターうどん」を堪能！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=手打十段うどんバカ一代" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=手打十段うどんバカ一代" target="_blank" class="j-btn">SEARCH</a>
+            </div>
         </div>
 
+        <!-- DAY 1 - 5 -->
+        <div class="j-card">
+            <span class="j-card-time">11:40 - 12:40</span>
+            <div class="j-card-ttl">⛴️ 高松港 ➡️ 小豆島フェリー</div>
+            <div class="j-card-desc">車は高松港地下駐車場に駐車し、人だけで乗船（約60分）。船内で運転手さんの休憩タイム！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=高松港フェリー乗り場" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=高松港フェリー乗り場" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 1 - 6 -->
+        <div class="j-card">
+            <span class="j-card-time">13:00 - 13:45</span>
+            <div class="j-card-ttl">🍜 そうめん作兵衛 (小豆島)</div>
+            <img class="j-card-img" src="https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/sakubee_somen.png">
+            <div class="j-card-desc">土庄港からチャリで10分！伝統手延べそうめんと熱々天ぷら！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=作兵衛小豆島" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=作兵衛小豆島" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 1 - 7 -->
         <div class="j-card">
             <span class="j-card-time">14:15 - 16:45</span>
             <div class="j-card-ttl">
@@ -261,14 +292,43 @@
                 <span>小豆島サイクリング 🚴‍♂️</span>
             </div>
             <img class="j-card-img" src="https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/shodoshima.png">
-            <div class="j-card-desc">電動アシスト自転車で海沿いサイクリング！魔法のほうき撮影！</div>
+            <div class="j-card-desc">電動アシスト自転車で海沿いサイクリング！魔法のほうき撮影 ＆ エンジェルロード散策！</div>
             <div class="j-cam-box">
                 📷 FUJIFILM X-S10 <span class="j-cam-badge">VELVIA</span><br>
                 魔法のほうきジャンプ！SS 1/1000秒 ＋ 連写で空中撮影！
             </div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=道の駅小豆島オリーブ公園" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=道の駅小豆島オリーブ公園" target="_blank" class="j-btn">SEARCH</a>
+            </div>
         </div>
 
-        <!-- DAY 02 SECTION -->
+        <!-- DAY 1 - 8 -->
+        <div class="j-card">
+            <span class="j-card-time">18:30 - 19:30</span>
+            <div class="j-card-ttl">
+                <img class="poke-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" width="26">
+                <span>ポケモンセンターカガワ</span>
+            </div>
+            <div class="j-card-desc">丸亀町グリーン東館！四国初のポケセンでお買い物。</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=丸亀町グリーン東館" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=丸亀町グリーン" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 1 - 9 -->
+        <div class="j-card">
+            <span class="j-card-time">19:45 - 21:00</span>
+            <div class="j-card-ttl">🍗 骨付鳥 一鶴 ＆ 🏨 高松国際ホテル</div>
+            <div class="j-card-desc">名物スパイシー骨付鳥！駐車場完備の快適ホテルへチェックイン！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=高松国際ホテル" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=高松国際ホテル" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- ==================== DAY 02 SECTION ==================== -->
         <section id="day2" class="j-sec-header">
             <h2 class="j-sec-en">DAY 02</h2>
             <div class="j-sec-ja">
@@ -277,6 +337,40 @@
             </div>
         </section>
 
+        <!-- DAY 2 - 1 -->
+        <div class="j-card">
+            <span class="j-card-time">08:30 - 09:15</span>
+            <div class="j-card-ttl">🍜 2軒目：山越うどん</div>
+            <div class="j-card-desc">かまたま発祥のお店で熱々のかまたまうどん！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=山越うどん" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=山越うどん" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 2 - 2 -->
+        <div class="j-card">
+            <span class="j-card-time">09:45 - 11:45</span>
+            <div class="j-card-ttl">🐬 四国水族館</div>
+            <div class="j-card-desc">瀬戸内海を背景にしたイルカショーや大水槽！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=四国水族館" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=四国水族館" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 2 - 3 -->
+        <div class="j-card">
+            <span class="j-card-time">12:15 - 13:00</span>
+            <div class="j-card-ttl">🍜 3軒目：長田 in 香の香</div>
+            <div class="j-card-desc">最高峰のイリコ出汁「釜あげうどん」！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=長田in香の香" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=長田in香の香" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 2 - 4 -->
         <div class="j-card">
             <span class="j-card-time">13:30 - 14:30</span>
             <div class="j-card-ttl">🌊 父母ヶ浜 (ちちぶがはま)</div>
@@ -286,16 +380,54 @@
                 📷 FUJIFILM X-S10 <span class="j-cam-badge">CLASSIC NEGA</span><br>
                 地面スレスレのローアングル撮影！
             </div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=父母ヶ浜" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=父母ヶ浜" target="_blank" class="j-btn">SEARCH</a>
+            </div>
         </div>
 
+        <!-- DAY 2 - 5 -->
+        <div class="j-card">
+            <span class="j-card-time">14:45 - 16:45</span>
+            <div class="j-card-ttl">
+                <img class="poke-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/966.png" width="28">
+                <span>愛媛県松山市へドライブ (1.5h)</span>
+            </div>
+            <div class="j-card-desc">ブロロロームで高速クルージング。ダイワロイネットホテル松山チェックイン。</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=ダイワロイネットホテル松山" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=ダイワロイネットホテル松山" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 2 - 6 -->
         <div class="j-card">
             <span class="j-card-time">17:15 - 19:00</span>
             <div class="j-card-ttl">♨️ 道後温泉本館 散策 & 入浴</div>
             <img class="j-card-img" src="https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/dogo_onsen.png">
             <div class="j-card-desc">日本最古の温泉街で外湯 ＆ ハイカラ通り散策。</div>
+            <div class="j-cam-box">
+                📷 FUJIFILM X-S10 <span class="j-cam-badge">CLASSIC NEGA</span><br>
+                強力手ブレ補正で提灯の光と木造建築の手持ち夜景！
+            </div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=道後温泉本館" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=道後温泉本館" target="_blank" class="j-btn">SEARCH</a>
+            </div>
         </div>
 
-        <!-- DAY 03 SECTION -->
+        <!-- DAY 2 - 7 -->
+        <div class="j-card">
+            <span class="j-card-time">19:30 - 21:00</span>
+            <div class="j-card-ttl">🐟 五志喜 本店 (19:30予約)</div>
+            <div class="j-card-desc">創業390年の老舗！絶品鯛めし＆愛媛郷土料理・地酒！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=五志喜本店" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=五志喜本店" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- ==================== DAY 03 SECTION ==================== -->
         <section id="day3" class="j-sec-header">
             <h2 class="j-sec-en">DAY 03</h2>
             <div class="j-sec-ja">
@@ -304,6 +436,7 @@
             </div>
         </section>
 
+        <!-- DAY 3 - 1 -->
         <div class="j-card">
             <span class="j-card-time">09:20 - 10:00</span>
             <div class="j-card-ttl">💖 下灘駅 (伊予市)</div>
@@ -313,13 +446,73 @@
                 📷 FUJIFILM X-S10 <span class="j-cam-badge">CLASSIC CHROME</span><br>
                 F5.6〜F8に絞って海とベンチを鮮明に！
             </div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=下灘駅" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=下灘駅" target="_blank" class="j-btn">SEARCH</a>
+            </div>
         </div>
 
+        <!-- DAY 3 - 2 -->
+        <div class="j-card">
+            <span class="j-card-time">10:10 - 10:40</span>
+            <div class="j-card-ttl">🍢 道の駅 ふたみ</div>
+            <div class="j-card-desc">海沿いの道の駅！揚げたて「愛媛名物じゃこ天」！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=道の駅ふたみ" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=道の駅ふたみ" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 3 - 3 -->
+        <div class="j-card">
+            <span class="j-card-time">11:45 - 12:30</span>
+            <div class="j-card-ttl">🍳 今治名物「焼豚玉子飯」</div>
+            <div class="j-card-desc">白楽天でジューシーな焼豚・半熟目玉焼きランチ！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=白楽天今治" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=白楽天今治" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 3 - 4 -->
+        <div class="j-card">
+            <span class="j-card-time">12:45 - 13:45</span>
+            <div class="j-card-ttl">🖼️ タオル美術館 ICHIHIRO</div>
+            <div class="j-card-desc">タオルアート展示と最高級「今治タオル」のお買い物！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=タオル美術館ICHIHIRO" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=タオル美術館ICHIHIRO" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 3 - 5 -->
         <div class="j-card">
             <span class="j-card-time">14:15 - 15:15</span>
             <div class="j-card-ttl">🌉 亀老山展望公園 (しまなみ)</div>
             <img class="j-card-img" src="https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/shimanami.png">
             <div class="j-card-desc">隈研吾氏設計！来島海峡大橋と瀬戸内海の360度大パノラマ！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=亀老山展望公園" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=亀老山展望公園" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 3 - 6 -->
+        <div class="j-card">
+            <span class="j-card-time">18:00 - 19:15</span>
+            <div class="j-card-ttl">💖 松山空港 蛇口ポンジュース</div>
+            <div class="j-card-desc">レンタカー返却後、Orange BARで蛇口ポンジュース！</div>
+            <div class="j-btn-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=トヨタレンタカー松山空港店" target="_blank" class="j-btn primary">VIEW MAP →</a>
+                <a href="https://www.google.com/search?q=トヨタレンタカー松山空港店" target="_blank" class="j-btn">SEARCH</a>
+            </div>
+        </div>
+
+        <!-- DAY 3 - 7 -->
+        <div class="j-card">
+            <span class="j-card-time">19:45 - 21:20</span>
+            <div class="j-card-ttl">松山空港 ✈️ 羽田空港</div>
+            <div class="j-card-desc">ANA 598便にて羽田空港へ無事帰還（21:20着）。おつかれさまでした！</div>
         </div>
 
         <!-- CHECKLIST PANEL -->
