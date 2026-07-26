@@ -9,18 +9,20 @@
     <meta name="theme-color" content="#242424">
     <title>JILLION STYLE | 四国ドライブ 旅のしおり</title>
 
-    <!-- Exact Google Fonts from jillion.co.jp: Bebas Neue + Montserrat -->
+    <!-- Exact Google Fonts from jillion.co.jp + Modern Solid Japanese Gothic (Zen Kaku Gothic New, Noto Sans JP) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;700;900&family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;700;900&family=Noto+Sans+JP:wght@700;900&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
     <style>
         :root {
             --font-bebas: 'Bebas Neue', sans-serif;
             --font-mont: 'Montserrat', sans-serif;
-            --font-mincho: 'Shippori Mincho', serif;
-            --font-gothic: 'Zen Kaku Gothic New', sans-serif;
+            --font-gothic: 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
+
+            --font-mincho: var(--font-gothic); /* Replaced all Mincho with Modern Solid Gothic */
+            --font-body: var(--font-gothic);
 
             /* Exact Jillion.co.jp Color Palette */
             --bg-body: #1c1c1c;
@@ -32,7 +34,7 @@
             --text-sub: #a1a1a1;
             --text-accent: #ffffff;
 
-            --radius-card: 0px; /* Jillion uses sharp modern edges */
+            --radius-card: 0px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -76,8 +78,8 @@
         }
 
         .j-hero-ja {
-            font-family: var(--font-mincho); font-size: 1.25rem; font-weight: 800;
-            color: #ffffff; margin-bottom: 16px; letter-spacing: 1px;
+            font-family: var(--font-gothic); font-size: 1.2rem; font-weight: 900;
+            color: #ffffff; margin-bottom: 16px; letter-spacing: 0.5px;
         }
 
         .j-hero-meta {
@@ -113,7 +115,7 @@
         /* Jillion Line Divider Title (c-ttl) */
         .j-sec-header { margin-bottom: 24px; scroll-margin-top: 70px; }
         .j-sec-en { font-family: var(--font-bebas); font-size: 2.8rem; line-height: 0.95; letter-spacing: 2px; color: #ffffff; }
-        .j-sec-ja { font-family: var(--font-mincho); font-size: 0.95rem; color: var(--text-sub); font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 8px; }
+        .j-sec-ja { font-family: var(--font-gothic); font-size: 0.92rem; color: var(--text-sub); font-weight: 900; margin-top: 4px; display: flex; align-items: center; gap: 8px; }
         .j-sec-line { height: 1px; background: var(--border-line); flex: 1; }
 
         /* Jillion Editorial Card */
@@ -128,8 +130,8 @@
             color: var(--text-sub); letter-spacing: 1px; margin-bottom: 6px; display: block;
         }
 
-        .j-card-ttl { font-family: var(--font-mincho); font-size: 1.2rem; font-weight: 800; color: #ffffff; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .j-card-desc { font-size: 0.88rem; color: #b0b0b0; line-height: 1.75; margin-bottom: 14px; }
+        .j-card-ttl { font-family: var(--font-gothic); font-size: 1.15rem; font-weight: 900; color: #ffffff; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .j-card-desc { font-size: 0.88rem; color: #b0b0b0; line-height: 1.75; margin-bottom: 14px; font-family: var(--font-gothic); }
 
         .j-card-img { width: 100%; height: auto; max-height: 280px; object-fit: cover; margin: 12px 0; border: 1px solid var(--border-line); display: block; }
 
@@ -146,7 +148,7 @@
         /* Jillion Camera Guide Note Box */
         .j-cam-box {
             border: 1px solid var(--border-line); background: #1c1c1c; padding: 12px 14px;
-            margin-top: 12px; font-size: 0.82rem; color: #d0d0d0;
+            margin-top: 12px; font-size: 0.82rem; color: #d0d0d0; font-family: var(--font-gothic);
         }
         .j-cam-badge { font-family: var(--font-mont); font-size: 0.7rem; font-weight: 900; background: #ffffff; color: #000000; padding: 1px 6px; margin-left: 6px; }
 
@@ -184,7 +186,7 @@
         <!-- Weather & Music Bar -->
         <div class="j-widget">
             <div>
-                <div style="font-family:var(--font-mincho); font-weight:800; font-size:0.9rem;">🌤️ 四国エリア 29°C / 22°C</div>
+                <div style="font-family:var(--font-gothic); font-weight:900; font-size:0.9rem;">🌤️ 四国エリア 29°C / 22°C</div>
                 <div style="font-family:var(--font-mont); font-size:0.75rem; color:var(--text-sub); margin-top:2px;">SUNSET AT SHIMONADA 18:52</div>
             </div>
             <a href="https://music.amazon.co.jp/search/%E7%80%AC%E6%88%B8%E5%86%85%E3%83%89%E3%83%A9%E3%82%A4%E3%83%96" target="_blank" class="j-btn primary" style="flex:none; padding:8px 16px;">PLAY BGM →</a>
