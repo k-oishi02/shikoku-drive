@@ -104,7 +104,7 @@
         }
         .j-tab-btn.active, .j-tab-btn:hover { color: #ffffff; border-color: #ffffff; }
 
-        /* STRICT TAB PANEL SWITCHING (Completely hides unselected days) */
+        /* STRICT TAB PANEL SWITCHING */
         .j-tab-panel {
             display: none !important;
         }
@@ -150,9 +150,9 @@
         }
 
         /* Jillion Style Arrow Buttons */
-        .j-btn-row { display: flex; gap: 8px; margin-top: 12px; }
+        .j-btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
         .j-btn {
-            flex: 1; text-align: center; background: transparent; border: 1px solid var(--border-line);
+            flex: 1; min-width: 120px; text-align: center; background: transparent; border: 1px solid var(--border-line);
             color: #ffffff; padding: 9px 14px; font-family: var(--font-mont); font-size: 0.75rem;
             font-weight: 700; letter-spacing: 1.5px; text-decoration: none; text-transform: uppercase;
             transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -167,7 +167,7 @@
         .j-cam-badge { font-family: var(--font-mont); font-size: 0.7rem; font-weight: 900; background: #ffffff; color: #000000; padding: 1px 6px; margin-left: 6px; }
 
         /* Jillion Widget / PayPay Section */
-        .j-widget { background: var(--bg-card); border: 1px solid var(--border-line); padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .j-widget { background: var(--bg-card); border: 1px solid var(--border-line); padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     </style>
 </head>
 <body>
@@ -195,13 +195,13 @@
             </div>
         </header>
 
-        <!-- Weather & Music Bar -->
+        <!-- Weather News Direct Integration Bar -->
         <div class="j-widget">
             <div>
-                <div style="font-family:var(--font-gothic); font-weight:800; font-size:0.9rem;">四国エリア 29°C / 22°C</div>
+                <div style="font-family:var(--font-gothic); font-weight:800; font-size:0.9rem;">🌤️ 四国ピンポイント天気 29°C / 22°C</div>
                 <div style="font-family:var(--font-mont); font-size:0.75rem; color:var(--text-sub); margin-top:2px;">SUNSET AT SHIMONADA 18:52</div>
             </div>
-            <a href="https://music.amazon.co.jp/search/%E7%80%AC%E6%88%B8%E5%86%85%E3%83%89%E3%83%A9%E3%82%A4%E3%83%96" target="_blank" class="j-btn primary" style="flex:none; padding:8px 16px;">PLAY BGM →</a>
+            <a href="https://weathernews.jp/onebox/tenki/kagawa/" target="_blank" class="j-btn primary" style="flex:none; padding:8px 14px;">WEATHER NEWS →</a>
         </div>
 
         <!-- Jillion Sticky TAB Bar Navigation -->
@@ -242,14 +242,14 @@
                 </div>
             </div>
 
-            <!-- DAY 1 - 2 -->
+            <!-- DAY 1 - 2: TOYOTA RENT-A-CAR INTEGRATION -->
             <div class="j-card">
                 <span class="j-card-time">08:30 - 08:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">RENTAL CAR</span>トヨタレンタカー高松空港店</div>
                 <div class="j-card-desc">相棒ヤリス（ブロロローム）にてスムーズに手続き完了＆ドライブ発進。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=トヨタレンタカー高松空港店" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.google.com/search?q=トヨタレンタカー高松空港店" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://rent.toyota.co.jp/" target="_blank" class="j-btn">TOYOTA RENT →</a>
                 </div>
             </div>
 
@@ -341,14 +341,14 @@
                 </div>
             </div>
 
-            <!-- DAY 1 - 10 -->
+            <!-- DAY 1 - 10: JALAN HOTEL INTEGRATION -->
             <div class="j-card">
                 <span class="j-card-time">21:00</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">HOTEL</span>高松国際ホテル</div>
                 <div class="j-card-desc">無料駐車場完備の快適ホテルへチェックイン。DAY 1 お疲れ様でした！</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=高松国際ホテル" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.google.com/search?q=高松国際ホテル" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://www.jalan.net/v3200/s30_02.html?keyword=高松国際ホテル" target="_blank" class="j-btn">JALAN 予約 →</a>
                 </div>
             </div>
         </div>
@@ -412,14 +412,14 @@
                 </div>
             </div>
 
-            <!-- DAY 2 - 5 -->
+            <!-- DAY 2 - 5: JALAN HOTEL INTEGRATION -->
             <div class="j-card">
                 <span class="j-card-time">14:45 - 16:45</span>
-                <div class="j-card-ttl"><span class="j-tag-badge">DRIVE</span>愛媛県松山市へ移動 (1.5h)</div>
+                <div class="j-card-ttl"><span class="j-tag-badge">DRIVE</span>愛媛県松山市へ移動 ＆ ホテル</div>
                 <div class="j-card-desc">高速道路経由で松山市内へ。ダイワロイネットホテル松山チェックイン。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=ダイワロイネットホテル松山" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.google.com/search?q=ダイワロイネットホテル松山" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://www.jalan.net/v3200/s30_02.html?keyword=ダイワロイネットホテル松山" target="_blank" class="j-btn">JALAN 予約 →</a>
                 </div>
             </div>
 
@@ -522,14 +522,14 @@
                 </div>
             </div>
 
-            <!-- DAY 3 - 6 -->
+            <!-- DAY 3 - 6: TOYOTA RENT-A-CAR INTEGRATION -->
             <div class="j-card">
                 <span class="j-card-time">18:00 - 19:15</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">AIRPORT</span>松山空港 蛇口みかんジュース</div>
                 <div class="j-card-desc">レンタカー返却後、Orange BARにて蛇口ポンジュース。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&query=トヨタレンタカー松山空港店" target="_blank" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.google.com/search?q=トヨタレンタカー松山空港店" target="_blank" class="j-btn">SEARCH</a>
+                    <a href="https://rent.toyota.co.jp/" target="_blank" class="j-btn">TOYOTA RENT →</a>
                 </div>
             </div>
 
@@ -594,19 +594,12 @@
 
     <script>
         function switchTab(panelId, btnEl) {
-            // Strictly hide all panels with display: none !important
             const panels = document.querySelectorAll('.j-tab-panel');
-            panels.forEach(p => {
-                p.classList.remove('active');
-            });
+            panels.forEach(p => p.classList.remove('active'));
 
-            // Deactivate all buttons
             const btns = document.querySelectorAll('.j-tab-btn');
-            btns.forEach(b => {
-                b.classList.remove('active');
-            });
+            btns.forEach(b => b.classList.remove('active'));
 
-            // Show selected panel strictly
             const targetPanel = document.getElementById(panelId);
             if (targetPanel) {
                 targetPanel.classList.add('active');
@@ -615,7 +608,6 @@
                 btnEl.classList.add('active');
             }
 
-            // Smooth scroll to top of tab section for seamless experience
             const navEl = document.getElementById('nav-bar');
             if (navEl) {
                 const yOffset = -10;
