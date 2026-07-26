@@ -10,113 +10,116 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=Shippori+Mincho:wght@700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Plus+Jakarta+Sans:wght@700;800;900&family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
     <style>
         :root {
             --font-mincho: 'Shippori Mincho', serif;
             --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --font-hand: 'Caveat', cursive;
             --font-body: 'Zen Kaku Gothic New', sans-serif;
 
-            --primary: #0f172a;
-            --accent-blue: #0284c7;
-            --accent-pink: #f43f5e;
+            /* Canva Warm Natural Palette */
+            --bg-sand: #f7f4ee;
+            --card-white: #ffffff;
+            --text-main: #2d3748;
+            --text-sub: #64748b;
             
-            --day1-color: #ec4899;
-            --day2-color: #0284c7;
-            --day3-color: #059669;
+            --terracotta: #c57b57;
+            --sage-green: #5a7d6c;
+            --warm-gold: #d99b26;
+            --soft-rose: #e8a598;
 
-            --bg: #f1f5f9;
-            --card-bg: #ffffff;
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --shadow-card: 0 4px 14px rgba(15, 23, 42, 0.06);
-            --radius-card: 18px;
+            --day1-theme: #d97757;
+            --day2-theme: #4a7c6d;
+            --day3-theme: #c08552;
+
+            --shadow-canva: 0 12px 32px rgba(197, 123, 87, 0.09);
+            --radius-canva: 24px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html { scroll-behavior: smooth; }
-        body { font-family: var(--font-body); background: var(--bg); color: var(--text-dark); line-height: 1.5; padding-bottom: 50px; overflow-x: hidden; }
-        .container { width: 100%; max-width: 500px; margin: 0 auto; padding: 0 12px; }
+        body { font-family: var(--font-body); background: var(--bg-sand); color: var(--text-main); line-height: 1.6; padding-bottom: 60px; overflow-x: hidden; }
+        .container { width: 100%; max-width: 500px; margin: 0 auto; padding: 0 14px; }
 
-        /* 100% Mobile-Native Header */
+        /* Canva Magazine Hero Header */
         .hero {
-            background: linear-gradient(180deg, rgba(15,23,42,0.5) 0%, rgba(15,23,42,0.85) 100%), url('https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/header_shikoku.png') center/cover no-repeat;
-            color: white; padding: 36px 16px 28px; border-radius: 0 0 24px 24px; text-align: center; position: relative; margin-bottom: 16px;
+            background: linear-gradient(180deg, rgba(45,55,72,0.4) 0%, rgba(45,55,72,0.85) 100%), url('https://raw.githubusercontent.com/k-oishi02/shikoku-drive/main/header_shikoku.png') center/cover no-repeat;
+            color: white; padding: 44px 18px 32px; border-radius: 0 0 30px 30px; text-align: center; position: relative; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
-        .hero-badge { display: inline-block; background: rgba(255,255,255,0.25); backdrop-filter: blur(8px); padding: 4px 14px; border-radius: 20px; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.3); margin-bottom: 8px; }
-        .hero-title { font-family: var(--font-mincho); font-size: 1.75rem; font-weight: 800; margin-bottom: 8px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .hero-hand { font-family: var(--font-hand); font-size: 1.8rem; color: #fef08a; letter-spacing: 2px; margin-bottom: -4px; display: block; }
+        .hero-badge { display: inline-block; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); padding: 4px 16px; border-radius: 20px; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800; letter-spacing: 1.5px; border: 1px solid rgba(255,255,255,0.4); margin-bottom: 10px; }
+        .hero-title { font-family: var(--font-mincho); font-size: 1.85rem; font-weight: 800; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.4); letter-spacing: 1px; }
         .hero-tags { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; font-size: 0.78rem; font-weight: 700; }
-        .hero-tag-item { background: rgba(15,23,42,0.6); backdrop-filter: blur(6px); padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); }
+        .hero-tag-item { background: rgba(255,255,255,0.22); backdrop-filter: blur(8px); padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); }
 
-        /* Mobile Countdown Box */
-        .countdown-box { background: rgba(15,23,42,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); border-radius: 14px; padding: 8px 14px; margin-top: 12px; display: inline-block; width: 100%; }
-        .countdown-label { font-size: 0.7rem; color: #fbbf24; font-family: var(--font-sans); font-weight: 800; }
-        .countdown-digits { font-family: var(--font-sans); font-size: 1.15rem; font-weight: 900; color: #fff; margin-top: 1px; }
+        /* Canva Style Countdown */
+        .countdown-box { background: rgba(255,255,255,0.25); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.4); border-radius: 16px; padding: 10px 16px; margin-top: 14px; display: inline-block; width: 100%; }
+        .countdown-label { font-size: 0.72rem; color: #fef08a; font-family: var(--font-sans); font-weight: 800; letter-spacing: 1px; }
+        .countdown-digits { font-family: var(--font-sans); font-size: 1.2rem; font-weight: 900; color: #fff; margin-top: 2px; }
 
-        /* Mobile Info Cards */
-        .mobile-info-card { background: var(--card-bg); border-radius: var(--radius-card); padding: 14px 16px; margin-bottom: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-card); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .btn-amazon-music { background: linear-gradient(135deg, #ff9900 0%, #ff8800 100%); color: #111; padding: 8px 14px; border-radius: 10px; font-weight: 800; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 3px 10px rgba(255,153,0,0.25); white-space: nowrap; }
+        /* Canva Natural Info Cards */
+        .canva-info-card { background: var(--card-white); border-radius: var(--radius-canva); padding: 16px 18px; margin-bottom: 14px; border: 1px solid #eae5dc; box-shadow: var(--shadow-canva); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .btn-amazon-music { background: linear-gradient(135deg, var(--terracotta) 0%, #a85d38 100%); color: white; padding: 8px 16px; border-radius: 12px; font-weight: 800; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(197,123,87,0.3); white-space: nowrap; }
 
-        /* Mobile Sticky Horizontal Bar */
+        /* Canva Scroll Navigation Bar */
         .nav-sticky {
             position: sticky; top: 8px; z-index: 100;
-            background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px);
-            border-radius: 16px; padding: 6px; display: flex; gap: 6px;
+            background: rgba(247, 244, 238, 0.95); backdrop-filter: blur(14px);
+            border-radius: 20px; padding: 6px; display: flex; gap: 6px;
             overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
-            margin-bottom: 18px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08); border: 1px solid var(--border-color);
+            margin-bottom: 22px; box-shadow: 0 6px 20px rgba(0,0,0,0.06); border: 1px solid #eae5dc;
         }
         .nav-sticky::-webkit-scrollbar { display: none; }
         
         .nav-btn {
-            flex: 0 0 auto; padding: 8px 14px; border: none; background: #f1f5f9;
-            font-size: 0.82rem; font-weight: 800; color: #475569;
-            border-radius: 12px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+            flex: 0 0 auto; padding: 8px 16px; border: none; background: #eef0ea;
+            font-size: 0.82rem; font-weight: 800; color: var(--text-main);
+            border-radius: 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s ease;
         }
-        .nav-btn.d1.active { background: var(--day1-color); color: white; }
-        .nav-btn.d2.active { background: var(--day2-color); color: white; }
-        .nav-btn.d3.active { background: var(--day3-color); color: white; }
-        .nav-btn.warikan-btn { background: #be185d; color: white; }
+        .nav-btn.d1.active { background: var(--day1-theme); color: white; box-shadow: 0 4px 12px rgba(217,119,87,0.3); }
+        .nav-btn.d2.active { background: var(--day2-theme); color: white; box-shadow: 0 4px 12px rgba(74,124,109,0.3); }
+        .nav-btn.d3.active { background: var(--day3-theme); color: white; box-shadow: 0 4px 12px rgba(192,133,82,0.3); }
+        .nav-btn.warikan-btn { background: #7c5c43; color: white; }
 
-        /* Mobile Map Box */
-        .map-box { background: var(--card-bg); border-radius: var(--radius-card); padding: 14px; margin-bottom: 20px; border: 1px solid var(--border-color); box-shadow: var(--shadow-card); }
-        .map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .map-header h3 { font-size: 1rem; font-weight: 800; font-family: var(--font-sans); color: var(--primary); }
-        .map-btn-group { display: flex; gap: 2px; background: #f1f5f9; padding: 3px; border-radius: 10px; }
-        .map-btn { border: none; background: transparent; padding: 4px 10px; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); border-radius: 8px; cursor: pointer; }
-        .map-btn.active { background: var(--primary); color: white; }
+        /* Canva Map Box */
+        .map-box { background: var(--card-white); border-radius: var(--radius-canva); padding: 16px; margin-bottom: 24px; border: 1px solid #eae5dc; box-shadow: var(--shadow-canva); }
+        .map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .map-header h3 { font-size: 1.05rem; font-weight: 800; font-family: var(--font-mincho); color: var(--text-main); }
+        .map-btn-group { display: flex; gap: 3px; background: #f1ede6; padding: 3px; border-radius: 12px; }
+        .map-btn { border: none; background: transparent; padding: 5px 12px; font-size: 0.75rem; font-weight: 800; color: var(--text-sub); border-radius: 9px; cursor: pointer; }
+        .map-btn.active { background: var(--text-main); color: white; }
 
-        .iframe-container { width: 100%; height: 240px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); }
+        .iframe-container { width: 100%; height: 250px; border-radius: 16px; overflow: hidden; border: 1px solid #eae5dc; }
         .iframe-container iframe { width: 100%; height: 100%; border: 0; }
 
-        /* Mobile Day Section & Cards */
-        .day-section { margin-bottom: 28px; scroll-margin-top: 60px; }
-        .day-title-head { font-size: 1.2rem; font-weight: 800; font-family: var(--font-mincho); padding-bottom: 6px; margin-bottom: 14px; border-bottom: 3px solid; display: flex; align-items: center; gap: 6px; }
-        .day-title-head.d1 { color: var(--day1-color); border-color: var(--day1-color); }
-        .day-title-head.d2 { color: var(--day2-color); border-color: var(--day2-color); }
-        .day-title-head.d3 { color: var(--day3-color); border-color: var(--day3-color); }
+        /* Canva Magazine Day Sections & Cards */
+        .day-section { margin-bottom: 34px; scroll-margin-top: 60px; }
+        .day-title-head { font-size: 1.3rem; font-weight: 800; font-family: var(--font-mincho); padding-bottom: 6px; margin-bottom: 16px; border-bottom: 2.5px solid; display: flex; align-items: center; justify-content: space-between; }
+        .day-title-head.d1 { color: var(--day1-theme); border-color: var(--day1-theme); }
+        .day-title-head.d2 { color: var(--day2-theme); border-color: var(--day2-theme); }
+        .day-title-head.d3 { color: var(--day3-theme); border-color: var(--day3-theme); }
 
-        .card { background: var(--card-bg); border-radius: var(--radius-card); padding: 16px; margin-bottom: 14px; border: 1px solid var(--border-color); box-shadow: var(--shadow-card); position: relative; }
-        .card.d1 { border-left: 4px solid var(--day1-color); }
-        .card.d2 { border-left: 4px solid var(--day2-color); }
-        .card.d3 { border-left: 4px solid var(--day3-color); }
+        .card { background: var(--card-white); border-radius: var(--radius-canva); padding: 18px; margin-bottom: 16px; border: 1px solid #eae5dc; box-shadow: var(--shadow-canva); position: relative; overflow: hidden; }
+        .card.d1 { border-left: 5px solid var(--day1-theme); }
+        .card.d2 { border-left: 5px solid var(--day2-theme); }
+        .card.d3 { border-left: 5px solid var(--day3-theme); }
 
         .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .time-badge { font-family: var(--font-sans); font-weight: 800; font-size: 0.8rem; padding: 3px 10px; border-radius: 8px; }
-        .card.d1 .time-badge { background: #fce7f3; color: #be185d; }
-        .card.d2 .time-badge { background: #e0f2fe; color: #0369a1; }
-        .card.d3 .time-badge { background: #d1fae5; color: #047857; }
+        .time-badge { font-family: var(--font-sans); font-weight: 800; font-size: 0.78rem; padding: 3px 12px; border-radius: 12px; letter-spacing: 0.5px; }
+        .card.d1 .time-badge { background: #fdf2f0; color: var(--day1-theme); }
+        .card.d2 .time-badge { background: #edf4f1; color: var(--day2-theme); }
+        .card.d3 .time-badge { background: #fdf8f2; color: var(--day3-theme); }
 
-        .card-title-text { font-size: 1.02rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-        .card-desc { font-size: 0.85rem; color: #475569; margin: 6px 0; line-height: 1.55; }
+        .card-title-text { font-size: 1.08rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 6px; margin-top: 4px; font-family: var(--font-mincho); }
+        .card-desc { font-size: 0.86rem; color: #475569; margin: 8px 0; line-height: 1.6; }
 
-        .card-hero-img { width: 100%; height: auto; max-height: 280px; object-fit: contain; background: #0f172a; border-radius: 12px; margin: 8px 0; border: 1px solid var(--border-color); display: block; }
-        .card-hero-img.fit-cover { height: 160px; object-fit: cover; }
+        .card-hero-img { width: 100%; height: auto; max-height: 280px; object-fit: contain; background: #2d3748; border-radius: 16px; margin: 10px 0; border: 1px solid #eae5dc; display: block; }
+        .card-hero-img.fit-cover { height: 170px; object-fit: cover; }
 
-        
-        /* Unified FUJIFILM Camera Box Styling */
+        /* Canva Styling FUJIFILM Camera Box */
         .cam-box {
             background: #f8fafc;
             color: #334155;
@@ -149,22 +152,17 @@
             font-weight: 800;
         }
 
+        /* Canva Magazine Action Buttons */
+        .btns-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+        .btn-action { display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 12px; font-size: 0.78rem; font-weight: 800; text-decoration: none; font-family: var(--font-body); transition: all 0.2s ease; }
+        .btn-action.map { background: var(--terracotta); color: white; flex: 1; justify-content: center; box-shadow: 0 4px 10px rgba(197,123,87,0.25); }
+        .btn-action.search { background: #f1ede6; color: var(--text-main); border: 1px solid #ded8cc; flex: 1; justify-content: center; }
 
-        /* Mobile Action Buttons */
-        .btns-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-        .btn-action { display: inline-flex; align-items: center; gap: 4px; padding: 7px 12px; border-radius: 10px; font-size: 0.78rem; font-weight: 800; text-decoration: none; font-family: var(--font-body); }
-        .btn-action.map { background: var(--accent-blue); color: white; flex: 1; justify-content: center; }
-        .btn-action.search { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; flex: 1; justify-content: center; }
+        /* Canva Style Checklist */
+        .checklist-panel { background: var(--card-white); border-radius: var(--radius-canva); padding: 18px; margin-top: 24px; border: 1px solid #eae5dc; box-shadow: var(--shadow-canva); }
 
-        /* Mobile Native Realtime Walica Panel */
-        .warikan-panel { background: var(--card-bg); border-radius: var(--radius-card); padding: 18px 16px; margin-top: 24px; border: 2px solid #fda4af; box-shadow: var(--shadow-card); scroll-margin-top: 60px; }
-        .warikan-form-box { background: #fff1f2; padding: 14px; border-radius: 14px; border: 1px solid #fecdd3; margin-bottom: 14px; }
-        .warikan-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-        .warikan-input-group label { font-size: 0.72rem; font-weight: 800; color: #9f1239; display: block; margin-bottom: 2px; }
-        .warikan-input-group select, .warikan-input-group input { width: 100%; padding: 9px; border-radius: 8px; border: 1px solid #fda4af; font-size: 0.85rem; font-weight: 700; background: white; outline: none; }
-        .btn-add-walica { width: 100%; background: #be185d; color: white; border: none; padding: 11px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; cursor: pointer; box-shadow: 0 3px 10px rgba(190,24,93,0.25); }
-
-        .warikan-res-card { background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 1px solid #fecdd3; border-radius: 14px; padding: 14px; margin-top: 12px; }
+        /* Canva Subtle PayPay Panel */
+        .warikan-panel { background: var(--card-white); border-radius: var(--radius-canva); padding: 18px; margin-top: 24px; border: 1px solid #eae5dc; box-shadow: var(--shadow-canva); scroll-margin-top: 60px; }
 
         .poke-img { vertical-align: middle; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
     </style>
@@ -172,10 +170,11 @@
 <body>
 
     <header class="hero">
+        <span class="hero-hand">Sweet Memories & Travel</span>
         <img style="position:absolute; left:6px; bottom:6px; width:75px;" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/79.png" alt="ヤドン">
         <img style="position:absolute; right:6px; bottom:6px; width:68px;" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" alt="ピカチュウ">
         <div class="container">
-            <div class="hero-badge">JR四国スタイル プレミアム周遊旅</div>
+            <div class="hero-badge">CANVA STYLE TRAVEL GUIDE</div>
             <h1 class="hero-title">香川・小豆島・愛媛 旅のしおり</h1>
             <div class="hero-tags">
                 <span class="hero-tag-item">📅 8/30 (日) - 9/1 (火)</span>
@@ -190,24 +189,24 @@
 
     <main class="container">
 
-        <!-- Mobile Info Widgets -->
-        <div class="mobile-info-card">
+        <!-- Canva Info Widgets -->
+        <div class="canva-info-card">
             <div>
-                <div style="font-size:0.85rem; font-weight:800;">🌤️ 四国の天気 29°C / 22°C</div>
+                <div style="font-size:0.85rem; font-weight:800; font-family:var(--font-mincho);">🌤️ 四国の天気 29°C / 22°C</div>
                 <div style="font-size:0.75rem; color:#d97706; font-weight:800; margin-top:2px;">🌅 下灘駅日の入り 18:52 頃</div>
             </div>
             <a href="https://music.amazon.co.jp/search/%E7%80%AC%E6%88%B8%E5%86%85%E3%83%89%E3%83%A9%E3%82%A4%E3%83%96" target="_blank" class="btn-amazon-music">🎧 BGM再生</a>
         </div>
 
-        <!-- Mobile Sticky Horizontal Scroll Bar -->
+        <!-- Canva Scroll Navigation Bar -->
         <nav class="nav-sticky">
             <a href="#day1" class="nav-btn d1 active" onclick="navTo('day1')">🌸 DAY 1 香川・小豆島</a>
             <a href="#day2" class="nav-btn d2" onclick="navTo('day2')">🌊 DAY 2 香川・松山</a>
             <a href="#day3" class="nav-btn d3" onclick="navTo('day3')">🌿 DAY 3 下灘・しまなみ</a>
-            <a href="#warikan" class="nav-btn warikan-btn" onclick="navTo('warikan')">👛 割り勘メモ</a>
+            <a href="#warikan" class="nav-btn warikan-btn" onclick="navTo('warikan')">👛 精算メモ</a>
         </nav>
 
-        <!-- Mobile Map Section -->
+        <!-- Canva Map Section -->
         <section class="map-box">
             <div class="map-header">
                 <h3>🗺️ MAP & ROUTE</h3>
@@ -225,7 +224,10 @@
 
         <!-- DAY 1 SECTION -->
         <section id="day1" class="day-section">
-            <h2 class="day-title-head d1">🌸 DAY 1 (8/30 日) 香川・小豆島</h2>
+            <h2 class="day-title-head d1">
+                <span>🌸 DAY 1 (8/30 日)</span>
+                <span style="font-size:0.85rem; font-family:var(--font-sans); font-weight:700;">香川・小豆島</span>
+            </h2>
 
             <div class="card d1">
                 <div class="card-head">
@@ -361,7 +363,10 @@
 
         <!-- DAY 2 SECTION -->
         <section id="day2" class="day-section">
-            <h2 class="day-title-head d2">🌊 DAY 2 (8/31 月) 香川・松山</h2>
+            <h2 class="day-title-head d2">
+                <span>🌊 DAY 2 (8/31 月)</span>
+                <span style="font-size:0.85rem; font-family:var(--font-sans); font-weight:700;">香川・松山</span>
+            </h2>
 
             <div class="card d2">
                 <div class="card-head">
@@ -469,7 +474,10 @@
 
         <!-- DAY 3 SECTION -->
         <section id="day3" class="day-section">
-            <h2 class="day-title-head d3">🌿 DAY 3 (9/1 火) 下灘・しまなみ</h2>
+            <h2 class="day-title-head d3">
+                <span>🌿 DAY 3 (9/1 火)</span>
+                <span style="font-size:0.85rem; font-family:var(--font-sans); font-weight:700;">下灘・しまなみ</span>
+            </h2>
 
             <div class="card d3">
                 <div class="card-head">
@@ -561,19 +569,19 @@
             </div>
         </section>
 
-        <!-- Packing Checklist Component -->
-        <section id="checklist" class="warikan-panel" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 18px 16px; border-radius: 18px; margin-top: 24px; box-shadow: 0 4px 14px rgba(15,23,42,0.04);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
-                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; font-family: var(--font-mincho); display: flex; align-items: center; gap: 6px;">
+        <!-- Canva Style Checklist -->
+        <section id="checklist" class="checklist-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #f1ede6; padding-bottom: 8px;">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); font-family: var(--font-mincho); display: flex; align-items: center; gap: 6px;">
                     <span>🎒 2人の旅の持ち物チェックリスト</span>
                 </h3>
-                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">タップでチェック！</span>
+                <span style="font-size: 0.72rem; color: var(--text-sub); font-weight: 700;">タップでチェック！</span>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
                 <!-- 1. 貴重品・チケット -->
-                <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0;">
-                    <div style="font-weight: 800; font-size: 0.82rem; color: #0284c7; margin-bottom: 6px;">📄 貴重品・チケット</div>
+                <div style="background: #fbf9f5; border-radius: 14px; padding: 12px; border: 1px solid #eae5dc;">
+                    <div style="font-weight: 800; font-size: 0.82rem; color: var(--terracotta); margin-bottom: 6px;">📄 貴重品・チケット</div>
                     <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-1"> ✈️ ANA航空券 (2人分)</label>
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-2"> 🎴 運転免許証 (こうたろう)</label>
@@ -582,9 +590,9 @@
                     </div>
                 </div>
 
-                <!-- 2. ガジェト & カメラ -->
-                <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0;">
-                    <div style="font-weight: 800; font-size: 0.82rem; color: #0f172a; margin-bottom: 6px;">📷 ガジェット & カメラ</div>
+                <!-- 2. ガジェット & カメラ -->
+                <div style="background: #fbf9f5; border-radius: 14px; padding: 12px; border: 1px solid #eae5dc;">
+                    <div style="font-weight: 800; font-size: 0.82rem; color: var(--sage-green); margin-bottom: 6px;">📷 ガジェット & カメラ</div>
                     <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-5"> 📷 FUJIFILM X-S10 & レンズ</label>
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-6"> 🔋 X-S10予備バッテリー & 充電器</label>
@@ -596,8 +604,8 @@
                 </div>
 
                 <!-- 3. ドライブ & 旅のアイテム -->
-                <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0;">
-                    <div style="font-weight: 800; font-size: 0.82rem; color: #059669; margin-bottom: 6px;">🚗 ドライブ & 旅のアイテム</div>
+                <div style="background: #fbf9f5; border-radius: 14px; padding: 12px; border: 1px solid #eae5dc;">
+                    <div style="font-weight: 800; font-size: 0.82rem; color: var(--day3-theme); margin-bottom: 6px;">🚗 ドライブ & 旅のアイテム</div>
                     <div class="chk-group" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-11"> 🕶️ サングラス (小豆島サイクリング)</label>
                         <label><input type="checkbox" onchange="saveChecklistState()" id="chk-12"> 🧢 日よけ帽子 & 羽織もの</label>
@@ -609,24 +617,24 @@
             </div>
         </section>
 
-        <!-- Subtle PayPay Integration Section -->
-        <section id="warikan" class="warikan-panel" style="background: #ffffff; border: 1px solid #e2e8f0; padding: 18px 16px; border-radius: 18px; margin-top: 24px; scroll-margin-top: 60px; box-shadow: 0 4px 14px rgba(15,23,42,0.04);">
+        <!-- Canva Subtle PayPay Integration Section -->
+        <section id="warikan" class="warikan-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px;">
                 <div>
-                    <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; font-family: var(--font-mincho);">
+                    <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); font-family: var(--font-mincho);">
                         👛 旅の立替・精算メモ
                     </h3>
-                    <p style="font-size: 0.75rem; color: #64748b;">確定費用メモ ＆ PayPayグループ精算</p>
+                    <p style="font-size: 0.75rem; color: var(--text-sub);">確定費用メモ ＆ PayPayグループ精算</p>
                 </div>
                 <!-- Pure Direct PayPay Launch Button -->
-                <a href="paypay://" style="background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 10px; font-weight: 800; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                <a href="paypay://" style="background: #f1ede6; color: var(--text-main); border: 1px solid #ded8cc; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                     <span style="color:#ef4444;">🔴</span> PayPayアプリ起動
                 </a>
             </div>
 
             <!-- Fixed Pre-booked Expenses Summary -->
-            <div style="background: #f8fafc; border-radius: 12px; padding: 12px 14px; border: 1px solid #e2e8f0;">
-                <div style="font-weight: 800; font-size: 0.8rem; color: #0f172a; margin-bottom: 6px;">📌 事前予約済み固定費（参考）</div>
+            <div style="background: #fbf9f5; border-radius: 14px; padding: 12px 14px; border: 1px solid #eae5dc;">
+                <div style="font-weight: 800; font-size: 0.8rem; color: var(--text-main); margin-bottom: 6px;">📌 事前予約済み固定費（参考）</div>
                 <div style="font-size: 0.78rem; color: #475569; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
                     <div>・あおい: ANA航空券 42,280円</div>
                     <div>・こうたろう: レンタカー 33,440円</div>
@@ -646,11 +654,6 @@
                     if (liff.isLoggedIn()) {
                         liff.getProfile().then(p => {
                             const name = p.displayName;
-                            const payerSelect = document.getElementById('w-payer');
-                            if (payerSelect && name) {
-                                if (name.includes('あおい')) payerSelect.value = 'あおい';
-                                else if (name.includes('こうたろう')) payerSelect.value = 'こうたろう';
-                            }
                         });
                     }
                 }).catch(err => console.log('LIFF Init:', err));
@@ -694,16 +697,27 @@
             if (btn) btn.classList.add('active');
         }
 
-        
-        function openPayPayGroup(e) {
-            // Attempt to open PayPay app via deep link
-            setTimeout(() => {
-                // If app not installed or fallback needed
-                window.location.href = "https://paypay.ne.jp/";
-            }, 1500);
-        }
+        // Countdown Timer
+        function runCountdown() {
+            const target = new Date("2026-08-30T06:55:00+09:00").getTime();
+            const now = new Date().getTime();
+            const diff = target - now;
+            const elem = document.getElementById('trip-countdown');
+            if (!elem) return;
 
-        
+            if (diff <= 0) {
+                elem.innerText = "🎉 旅行当日です！楽しんできてね！";
+                return;
+            }
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+            elem.innerText = `${d}日 ${h}時間 ${m}分 ${s}秒`;
+        }
+        setInterval(runCountdown, 1000);
+        runCountdown();
+
         // Checklist LocalStorage Persistence
         function saveChecklistState() {
             const state = {};
@@ -727,229 +741,6 @@
             } catch(e){}
         }
         document.addEventListener('DOMContentLoaded', loadChecklistState);
-
-        // Countdown Timer
-        function runCountdown() {
-            const target = new Date("2026-08-30T06:55:00+09:00").getTime();
-            const now = new Date().getTime();
-            const diff = target - now;
-            const elem = document.getElementById('trip-countdown');
-            if (!elem) return;
-
-            if (diff <= 0) {
-                elem.innerText = "🎉 旅行当日です！楽しんできてね！";
-                return;
-            }
-            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const s = Math.floor((diff % (1000 * 60)) / 1000);
-            elem.innerText = `${d}日 ${h}時間 ${m}分 ${s}秒`;
-        }
-        setInterval(runCountdown, 1000);
-        runCountdown();
-
-        
-        // 100% LIFF-Compatible Dual Sync Engine (LocalStorage + Direct REST Sync)
-        const WALICA_STORAGE_KEY = "shikoku_walica_v6";
-        const SYNC_API_ENDPOINT = "https://api.counterapi.dev/v1/shikoku_drive_2026_warikan/sync";
-
-        const initialWalicaItems = [
-            { id: "init-1", payer: 'あおい', target: 'both', name: 'ANA航空券 (2名分)', amount: 42280 },
-            { id: "init-2", payer: 'こうたろう', target: 'both', name: 'トヨタレンタカー (乗捨て込)', amount: 33440 },
-            { id: "init-3", payer: 'こうたろう', target: 'both', name: '1泊目: 高松国際ホテル', amount: 11520 },
-            { id: "init-4", payer: 'こうたろう', target: 'both', name: '2泊目: ダイワロイネットホテル松山', amount: 13530 }
-        ];
-
-        let walicaItems = [];
-
-        function loadWalicaData() {
-            try {
-                const stored = localStorage.getItem(WALICA_STORAGE_KEY);
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        walicaItems = parsed;
-                        return;
-                    }
-                }
-            } catch(e) {}
-            walicaItems = [...initialWalicaItems];
-            saveWalicaData();
-        }
-
-        function saveWalicaData() {
-            try {
-                localStorage.setItem(WALICA_STORAGE_KEY, JSON.stringify(walicaItems));
-            } catch(e) {}
-        }
-
-        // LIFF-Proof Cloud Sync Engine using robust JSON storage
-        async function syncWithPartnerCloud() {
-            const syncStatus = document.getElementById('sync-status-indicator');
-            if (syncStatus) syncStatus.innerText = '🔄 同期中...';
-            try {
-                // Fetch shared cloud data via robust JSON endpoint
-                const res = await fetch("https://json.schemastore.org/package"); // fallback test / robust CORS
-                const storedCloud = localStorage.getItem("shikoku_cloud_backup");
-                if (storedCloud) {
-                    const remoteData = JSON.parse(storedCloud);
-                    mergeExpenses(remoteData);
-                }
-                if (syncStatus) syncStatus.innerText = '✅ 同期完了';
-            } catch(e) {
-                if (syncStatus) syncStatus.innerText = '📱 ローカル保存中';
-            }
-        }
-
-        function mergeExpenses(remoteItems) {
-            if (!Array.isArray(remoteItems) || remoteItems.length === 0) return;
-            let updated = false;
-            const localIds = new Set(walicaItems.map(x => x.id || (x.payer + x.name + x.amount)));
-            remoteItems.forEach(r => {
-                const key = r.id || (r.payer + r.name + r.amount);
-                if (!localIds.has(key)) {
-                    walicaItems.push(r);
-                    localIds.add(key);
-                    updated = true;
-                }
-            });
-            if (updated) {
-                saveWalicaData();
-                renderWalicaUI();
-            }
-        }
-
-        async function pushToPartnerCloud() {
-            saveWalicaData();
-            try {
-                localStorage.setItem("shikoku_cloud_backup", JSON.stringify(walicaItems));
-                const syncStatus = document.getElementById('sync-status-indicator');
-                if (syncStatus) syncStatus.innerText = '✅ 送信完了';
-            } catch(e) {}
-        }
-
-        function renderWalicaUI() {
-            const tbody = document.getElementById('walica-list-tbody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            let netAoi = 0;
-            let netKotaro = 0;
-
-            walicaItems.forEach((item, idx) => {
-                const tr = document.createElement('tr');
-                let targetLabel = "2人均等";
-                if (item.target === 'aoi') targetLabel = "あおい";
-                if (item.target === 'kotaro') targetLabel = "こうたろう";
-
-                tr.innerHTML = `
-                    <td style="padding:8px 4px;"><strong>${item.payer}</strong></td>
-                    <td style="padding:8px 4px;"><span style="background:#e2e8f0; padding:1px 6px; border-radius:4px; font-size:0.72rem;">${targetLabel}</span></td>
-                    <td style="padding:8px 4px;">${item.name}</td>
-                    <td style="padding:8px 4px; font-weight:700;">${item.amount.toLocaleString()}円</td>
-                    <td style="padding:8px 4px; text-align:center;"><button onclick="deleteNativeWalicaItem(${idx})" style="color:#ef4444; background:none; border:none; cursor:pointer; font-weight:800; font-size:1.05rem;">✕</button></td>
-                `;
-                tbody.appendChild(tr);
-
-                let shareAoi = 0;
-                let shareKotaro = 0;
-
-                if (item.target === 'both') {
-                    shareAoi = item.amount / 2;
-                    shareKotaro = item.amount / 2;
-                } else if (item.target === 'aoi') {
-                    shareAoi = item.amount;
-                    shareKotaro = 0;
-                } else if (item.target === 'kotaro') {
-                    shareAoi = 0;
-                    shareKotaro = item.amount;
-                }
-
-                if (item.payer === 'あおい') {
-                    netAoi += (item.amount - shareAoi);
-                    netKotaro -= shareKotaro;
-                } else if (item.payer === 'こうたろう') {
-                    netKotaro += (item.amount - shareKotaro);
-                    netAoi -= shareAoi;
-                }
-            });
-
-            const summaryElem = document.getElementById('walica-settlement-summary');
-            if (!summaryElem) return;
-
-            if (walicaItems.length === 0) {
-                summaryElem.innerText = "立替データがありません";
-            } else if (netAoi > 0) {
-                const payAmt = Math.round(netAoi);
-                summaryElem.innerHTML = `こうたろう ➔ <span style="color:#be185d;">あおい</span> へ <span style="font-size:1.3rem; font-family:var(--font-sans); color:#be185d;">${payAmt.toLocaleString()} 円</span> 支払う`;
-            } else if (netKotaro > 0) {
-                const payAmt = Math.round(netKotaro);
-                summaryElem.innerHTML = `あおい ➔ <span style="color:#be185d;">こうたろう</span> へ <span style="font-size:1.3rem; font-family:var(--font-sans); color:#be185d;">${payAmt.toLocaleString()} 円</span> 支払う`;
-            } else {
-                summaryElem.innerText = "ピッタリ均等（精算なし）";
-            }
-        }
-
-        function addNativeWalicaItem() {
-            const payer = document.getElementById('w-payer').value;
-            const target = document.getElementById('w-target').value;
-            const nameInput = document.getElementById('w-name');
-            const amountInput = document.getElementById('w-amount');
-
-            const name = nameInput.value.trim() || '立替項目';
-            const amount = parseInt(amountInput.value);
-
-            if (isNaN(amount) || amount <= 0) {
-                alert('正しい金額を入力してください');
-                return;
-            }
-
-            const newItem = {
-                id: 'exp-' + Date.now() + '-' + Math.floor(Math.random()*1000),
-                payer,
-                target,
-                name,
-                amount
-            };
-
-            walicaItems.push(newItem);
-            nameInput.value = '';
-            amountInput.value = '';
-            
-            renderWalicaUI();
-            pushToPartnerCloud();
-
-            // Share to LINE chat if LIFF is active
-            if (typeof liff !== 'undefined' && liff.isApiAvailable('shareTargetPicker')) {
-                liff.shareTargetPicker([
-                    {
-                        type: "text",
-                        text: `👛【四国旅 立替メモ追加】
-${payer}が「${name} (${amount.toLocaleString()}円)」を立替追加したよ！
-👉 https://k-oishi02.github.io/shikoku-drive/?v=latest#warikan`
-                    }
-                ]).catch(e => console.log('Share picker:', e));
-            }
-        }
-
-        function deleteNativeWalicaItem(idx) {
-            walicaItems.splice(idx, 1);
-            renderWalicaUI();
-            pushToPartnerCloud();
-        }
-
-        function clearNativeWalica() {
-            if (confirm('立替データを初期状態にリセットしますか？')) {
-                walicaItems = [...initialWalicaItems];
-                renderWalicaUI();
-                pushToPartnerCloud();
-            }
-        }
-
-        loadWalicaData();
-        renderWalicaUI();
-        syncWithPartnerCloud();
-</script>
+    </script>
 </body>
 </html>
