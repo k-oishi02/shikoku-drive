@@ -13,6 +13,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Montserrat:wght@400;700;900&amp;family=Shippori+Gothic:wght@700;800&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="header_shikoku.png">
+    <link rel="stylesheet" href="enhancements.css">
 
     <style>
         :root {
@@ -362,6 +365,41 @@
             </div>
         </div>
 
+        <!-- NOW MODE / DELAY SIMULATOR -->
+        <section id="now-mode" class="now-card" aria-labelledby="now-mode-title">
+            <div class="now-head">
+                <div>
+                    <span class="now-kicker">LIVE TRIP ASSISTANT</span>
+                    <h2 id="now-mode-title">NOW MODE</h2>
+                </div>
+                <span id="offline-status" class="network-status" aria-live="polite">ONLINE</span>
+            </div>
+            <div class="now-body">
+                <span id="now-day" class="now-day">旅行前</span>
+                <div id="now-title" class="now-title">最初の予定を準備中…</div>
+                <div class="now-meta">
+                    <span id="now-time">--:--</span>
+                    <span id="now-countdown">出発時刻を計算中</span>
+                </div>
+                <div class="now-actions">
+                    <a id="now-route" class="now-route" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">ROUTE →</a>
+                    <button type="button" class="now-secondary" onclick="jumpToCurrentTripDay()">TODAY</button>
+                </div>
+            </div>
+            <div class="delay-panel">
+                <div>
+                    <span class="delay-title">DELAY SIMULATOR</span>
+                    <p>選択中の日程を再計算。交通・予約・イベント時刻は固定します。</p>
+                </div>
+                <div class="delay-buttons" role="group" aria-label="遅延時間">
+                    <button type="button" data-delay-minutes="15" onclick="applyDelayScenario(15, this)">+15 MIN</button>
+                    <button type="button" data-delay-minutes="30" onclick="applyDelayScenario(30, this)">+30 MIN</button>
+                    <button type="button" data-delay-minutes="0" onclick="applyDelayScenario(0, this)">RESET</button>
+                </div>
+                <p id="delay-status" class="delay-status" aria-live="polite">DAY 01の予定どおりです。</p>
+            </div>
+        </section>
+
         <!-- Jillion Sticky TAB Bar Navigation -->
         <nav id="nav-bar" class="j-nav-sticky" role="tablist" aria-label="旅程ナビゲーション">
             <button type="button" id="btn-day1" class="j-tab-btn active" role="tab" aria-selected="true" aria-controls="tab-day1" onclick="switchTab('tab-day1', this)">DAY 01</button>
@@ -478,20 +516,30 @@
 
             <!-- DAY 1 - 6: Olive Bus -->
             <div class="j-card">
-                <span class="j-card-time">11:40 - 12:25</span>
+                <span class="j-card-time">12:00 - 12:18</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">BUS</span>土庄港 → 池田港</div>
-                <div class="j-card-desc">10:40便の到着後、路線バスで池田エリアへ。タクシーは使わず、作兵衛近くまで公共交通で移動。</div>
+                <div class="j-card-desc">フェリー11:40着後、12:00発の坂手線に乗車し、池田港ターミナル前へ12:18着。タクシーは使わない。</div>
                 <div class="j-btn-row">
                     <a href="https://www.shodoshima-olive-bus.com/" target="_blank" rel="noopener noreferrer" class="j-btn primary">BUS TIMETABLE →</a>
                 </div>
             </div>
 
+            <div class="j-card">
+                <span class="j-card-time">12:18 - 12:35</span>
+                <div class="j-card-ttl"><span class="j-tag-badge">HELLO CYCLING</span>池田港 → そうめん作兵衛</div>
+                <div class="j-card-desc">池田港付近で電動アシスト自転車を解錠して作兵衛へ。ポートの空車状況はアプリで直前確認。</div>
+                <div class="j-btn-row">
+                    <a href="https://www.hellocycling.jp/app/port/detail/1602" target="_blank" rel="noopener noreferrer" class="j-btn primary">PORT →</a>
+                    <a href="https://www.google.com/maps/dir/?api=1&amp;origin=池田港&amp;destination=作兵衛小豆島&amp;travelmode=bicycling" target="_blank" rel="noopener noreferrer" class="j-btn">ROUTE →</a>
+                </div>
+            </div>
+
             <!-- DAY 1 - 7: Sakubee Somen (TABELOG) -->
             <div class="j-card">
-                <span class="j-card-time">12:25 - 13:05</span>
+                <span class="j-card-time">12:35 - 13:05</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">GOURMET</span>そうめん作兵衛 (小豆島)</div>
                 <img class="j-card-img" src="sakubee_somen.png" alt="そうめん作兵衛の手延べそうめん" loading="lazy">
-                <div class="j-card-desc">池田港から徒歩・自転車で移動。伝統手延べそうめんと天ぷらを40分でゆっくり。</div>
+                <div class="j-card-desc">伝統手延べそうめんと天ぷらを30分で。食後すぐに自転車でオリーブ公園へ向かう。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&amp;query=作兵衛小豆島" target="_blank" rel="noopener noreferrer" class="j-btn primary">VIEW MAP →</a>
                     <a href="https://tabelog.com/kagawa/A3705/A370501/37009141/" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
@@ -505,7 +553,7 @@
             <div class="j-card">
                 <span class="j-card-time">13:05 - 13:45</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">HELLO CYCLING</span>池田 → オリーブ公園</div>
-                <div class="j-card-desc">池田港バス停付近のステーションで電動アシスト自転車を借り、オリーブ公園へ。帰りはバス利用に切り替える。</div>
+                <div class="j-card-desc">作兵衛からオリーブ公園へ移動し、返却まで40分確保。帰りはバス利用に切り替える。</div>
                 <div class="j-btn-row">
                     <a href="https://www.hellocycling.jp/app/port/detail/1602" target="_blank" rel="noopener noreferrer" class="j-btn primary">IKEDA →</a>
                     <a href="https://www.hellocycling.jp/app/port/detail/225" target="_blank" rel="noopener noreferrer" class="j-btn">OLIVE PARK →</a>
@@ -514,10 +562,10 @@
 
             <!-- DAY 1 - 9: Olive Park -->
             <div class="j-card">
-                <span class="j-card-time">13:45 - 15:05</span>
+                <span class="j-card-time">13:45 - 14:50</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">VIEWPOINT</span>道の駅 小豆島オリーブ公園</div>
                 <img class="j-card-img" src="shodoshima.png" alt="小豆島オリーブ公園の風車" loading="lazy">
-                <div class="j-card-desc">魔法のほうき撮影、園内散策、おみやげを1時間20分。エンジェルロードの干潮タイミングに合わせて早めに出発。</div>
+                <div class="j-card-desc">魔法のほうき撮影、園内散策、おみやげを約1時間。14:50に切り上げ、15:00発のバスへ。</div>
                 <div class="j-cam-box">
                     FUJIFILM X-S10 <span class="j-cam-badge">VELVIA</span><br>
                     ほうきジャンプ：SS 1/1000秒 ＋ 連写設定。
@@ -530,9 +578,9 @@
 
             <!-- DAY 1 - 10: Bus to Angel Road -->
             <div class="j-card">
-                <span class="j-card-time">15:05 - 15:45</span>
+                <span class="j-card-time">15:00 - 15:24</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">BUS</span>オリーブ公園口 → エンジェルロード前</div>
-                <div class="j-card-desc">田ノ浦映画村線を利用。オリーブ公園からバスでエンジェルロード前へ移動し、干潮の見頃を狙う。</div>
+                <div class="j-card-desc">15:00発の坂手線で国際ホテル（エンジェルロード前）へ15:24着。公園からバス停へは余裕を持って移動。</div>
                 <div class="j-btn-row">
                     <a href="https://www.shodoshima-olive-bus.com/dia/" target="_blank" rel="noopener noreferrer" class="j-btn primary">BUS TIMETABLE →</a>
                 </div>
@@ -540,9 +588,9 @@
 
             <!-- DAY 1 - 11: Angel Road -->
             <div class="j-card">
-                <span class="j-card-time">15:45 - 16:45</span>
+                <span class="j-card-time">15:24 - 16:50</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">VIEWPOINT</span>エンジェルロード</div>
-                <div class="j-card-desc">干潮前後だけ歩ける砂の道を散策・撮影。潮位によって出現時間が変わるため、当日の潮見表を確認。</div>
+                <div class="j-card-desc">8/30の公式通行可能時間は15:33〜21:33。砂の道が現れる様子から散策・撮影まで楽しみ、16:50にバス停へ。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&amp;query=エンジェルロード" target="_blank" rel="noopener noreferrer" class="j-btn primary">VIEW MAP →</a>
                 </div>
@@ -550,9 +598,9 @@
 
             <!-- DAY 1 - 12: Bus to Port -->
             <div class="j-card">
-                <span class="j-card-time">16:55 - 17:15</span>
+                <span class="j-card-time">17:00 - 17:09</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">BUS</span>エンジェルロード前 → 土庄港</div>
-                <div class="j-card-desc">西浦線などの土庄港方面バスで戻り、17:30発のフェリーに20分弱の余裕を確保。</div>
+                <div class="j-card-desc">17:00発の田ノ浦映画村線で土庄港へ17:09着。17:30発フェリーまで21分確保。</div>
                 <div class="j-btn-row">
                     <a href="https://www.shodoshima-olive-bus.com/dia/" target="_blank" rel="noopener noreferrer" class="j-btn primary">BUS TIMETABLE →</a>
                 </div>
@@ -638,9 +686,9 @@
 
             <!-- DAY 2 - 3: Shikoku Aquarium -->
             <div class="j-card">
-                <span class="j-card-time">10:15 - 13:55</span>
+                <span class="j-card-time">10:15 - 15:20</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">AQUARIUM</span>四国水族館</div>
-                <div class="j-card-desc">水族館を主役にゆったり鑑賞。11:00・13:00のイルカ、11:45のカワウソ、13:45のペンギンフィーディングまで楽しんでから出発。</div>
+                <div class="j-card-desc">水族館を主役にたっぷり鑑賞。11:00・13:00・15:00のイルカ、11:45のカワウソ、13:45のペンギンフィーディングまで楽しんでから出発。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&amp;query=四国水族館" target="_blank" rel="noopener noreferrer" class="j-btn primary">VIEW MAP →</a>
                     <a href="https://shikoku-aquarium.jp/" target="_blank" rel="noopener noreferrer" class="j-btn">OFFICIAL HP</a>
@@ -663,10 +711,10 @@
 
             <!-- DAY 2 - 1: Chichibugahama -->
             <div id="father-beach-card" class="j-card">
-                <span class="j-card-time">14:45 - 15:10</span>
+                <span class="j-card-time">16:30 - 17:00</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">VIEWPOINT</span>父母ヶ浜 (ちちぶがはま)</div>
                 <img class="j-card-img" src="chichibugahama.png" alt="父母ヶ浜の鏡面リフレクション" loading="lazy">
-                <div class="j-card-desc">水族館のペンギンフィーディング後、退出・駐車場移動の時間を含めて到着。25分の海辺休憩で、瀬戸内の海景を楽しんでから松山へ向かう。</div>
+                <div class="j-card-desc">水族館を15:20に出発し、8/31の公式撮影推奨時間16:30〜19:00の開始直後を狙う。日没混雑を避けながら鏡面写真を30分撮影。</div>
                 <div class="j-cam-box">
                     FUJIFILM X-S10 <span class="j-cam-badge">CLASSIC NEGA</span><br>
                     水面ギリギリのローアングル構図。
@@ -679,9 +727,9 @@
 
             <!-- DAY 2 - 5: DAIWA ROYNET MATSUYAMA (CONFIRMED YAD 389020) -->
             <div id="matsuyama-drive-card" class="j-card">
-                <span class="j-card-time">15:10 - 17:05</span>
+                <span class="j-card-time">17:00 - 19:10</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">DRIVE</span>愛媛県松山市へ移動 ＆ ホテル</div>
-                <div class="j-card-desc">父母ヶ浜から高速道路経由で松山市内へ。渋滞・休憩を見込み、ダイワロイネットホテル松山へ早めにチェックイン。</div>
+                <div class="j-card-desc">父母ヶ浜から高速道路経由でダイワロイネットホテル松山へ。19:10までに駐車・チェックインし、19:20頃に五志喜へ向かう。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&amp;query=ダイワロイネットホテル松山" target="_blank" rel="noopener noreferrer" class="j-btn primary">VIEW MAP →</a>
                     <a href="https://www.jalan.net/yad389020/" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
@@ -695,25 +743,9 @@
             <div class="j-card">
                 <span class="j-card-time">OPTIONAL</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">OPTIONAL</span>石鎚山SA（休憩・景色）</div>
-                <div class="j-card-desc">松山道の長い移動に疲れた場合の20〜25分休憩候補。立ち寄る場合はホテル到着を17:25〜17:35頃に後ろ倒しします。</div>
+                <div class="j-card-desc">松山道の長い移動に疲れた場合のみ10分休憩。五志喜19:30予約を守るため、17:50時点で到着予測を確認して判断。</div>
                 <div class="j-btn-row">
                     <a href="https://www.google.com/maps/search/?api=1&amp;query=石鎚山サービスエリア" target="_blank" rel="noopener noreferrer" class="j-btn primary">VIEW MAP →</a>
-                </div>
-            </div>
-
-            <!-- DAY 2 - 6: Dogo Onsen -->
-            <div class="j-card">
-                <span class="j-card-time">18:00 - 19:00</span>
-                <div class="j-card-ttl"><span class="j-tag-badge">SPA</span>道後温泉本館 散策 ＆ 入浴</div>
-                <img class="j-card-img" src="dogo_onsen.png" alt="夜の道後温泉本館" loading="lazy">
-                <div class="j-card-desc">歴史ある温泉街の建築鑑賞・外湯入浴およびハイカラ通り散策。</div>
-                <div class="j-cam-box">
-                    FUJIFILM X-S10 <span class="j-cam-badge">CLASSIC NEGA</span><br>
-                    手ブレ補正を活用した夜景手持ち撮影。
-                </div>
-                <div class="j-btn-row">
-                    <a href="https://www.google.com/maps/search/?api=1&amp;query=道後温泉本館" target="_blank" rel="noopener noreferrer" class="j-btn primary">VIEW MAP →</a>
-                    <a href="https://www.dogo.mom/onsen/honkan" target="_blank" rel="noopener noreferrer" class="j-btn">OFFICIAL HP</a>
                 </div>
             </div>
 
@@ -728,6 +760,22 @@
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAACO0lEQVR4nO3cW26DMBBAUYi6yrK+ZJup+pEqD142psxc7v1PZPloHFSgfbdD9+/uvsf30utvXd/8O1t9kagxsTd9iajxsas+KGwe6EvpB8Q9rpq9LwIW9/hKDVaNvLB5j+zFCRY3bmtsZoHFjd+S0SSwuHmasyq+irZcjQI7vfmaMvsAFjdvY3YvwOLm793Q32B4f8BOL6dnSycYnsBnAPZ45vUwdYLhCQyv93hm5wTDExiewPAEhicwPIHhCQxPYHhfXcauB768ODR/AXDXnGB4AsMTGJ7A8ASGJzA8geEJDE9geALDExiewPC4T1XW3JAYct1IWJMTDE9geALDExiewPAEhicwPIHhCQxPYHgCwxMYnsDwBIYnMDyB4QkMT2B4AsMTGJ7A8ASGJzA8geEJDE9geALDExiewPAEhicwPIHh5XkB/Mj/MJv4hfEcExwRN/K6UgFH38Rr7PXFBg6+eRnWGRc48KZlWm9cYGuSwPAEhicwPIHhCQxPYHgCw4sLnOAP+RnWGxc48KZlWmds4OCbl2F98YEjb+IQdF0pb/gbeIKtOoHhCQxPYHgCw7v0ty7+tb5V9WvrBMMT+AzAHtO8HqZOMDyBzwLsMc3p2dIJhvcC7BTn793wY4JFztuY3egRLXK+psz8DYY3CewU52nOanaCRY7fktHiES1y3NbYFN0q9AG9GJUMXdFFltN8fKUGxVfRIh9Xzd5veprDI/t/2jJUzR7XEbttrU7KXZ7HErurao+fvx/Jj3iWFzLb/QAAAABJRU5ErkJggg==" class="j-app-icon" alt="食べログ">
                         <span>TABELOG</span>
                     </a>
+                </div>
+            </div>
+
+            <!-- DAY 2 - 6: Dogo Onsen -->
+            <div class="j-card">
+                <span class="j-card-time">21:20 - 22:20</span>
+                <div class="j-card-ttl"><span class="j-tag-badge">SPA</span>道後温泉本館 夜景撮影 ＆ 入浴</div>
+                <img class="j-card-img" src="dogo_onsen.png" alt="夜の道後温泉本館" loading="lazy">
+                <div class="j-card-desc">夕食後はライトアップされた本館・道後温泉駅・坊っちゃんカラクリ時計を撮影。土産店は閉店が多い時間なので買い物枠ではなく、夜景と神の湯階下（札止22:30）を優先。</div>
+                <div class="j-cam-box">
+                    FUJIFILM X-S10 <span class="j-cam-badge">CLASSIC NEGA</span><br>
+                    手ブレ補正ON・AUTO ISO上限6400。人通りが切れた瞬間に本館正面を撮影。
+                </div>
+                <div class="j-btn-row">
+                    <a href="https://www.google.com/maps/search/?api=1&amp;query=道後温泉本館" target="_blank" rel="noopener noreferrer" class="j-btn primary">VIEW MAP →</a>
+                    <a href="https://dogo.jp/onsen/honkan" target="_blank" rel="noopener noreferrer" class="j-btn">OFFICIAL HP</a>
                 </div>
             </div>
         </div>
@@ -905,21 +953,35 @@
                 </div>
             </section>
 
-            <div class="j-card">
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:0.84rem; color:#b0b0b0;">
+            <div class="j-card checklist-card">
+                <div class="checklist-head">
                     <div>
-                        <div style="font-family:var(--font-mont); font-size:0.8rem; font-weight:900; color:#ffffff; letter-spacing:1px; margin-bottom:6px;">DOCUMENTS</div>
-                        <div>・ANA Flight Tickets (Wallet App)</div>
-                        <div>・Driver's License (Kotaro)</div>
-                        <div>・Cash for Udon Restaurants</div>
-                        <div>・Health Insurance Cards</div>
+                        <span class="now-kicker">SAVED ON THIS DEVICE</span>
+                        <strong id="checklist-progress">0 / 12 COMPLETE</strong>
                     </div>
-                    <div>
-                        <div style="font-family:var(--font-mont); font-size:0.8rem; font-weight:900; color:#ffffff; letter-spacing:1px; margin-bottom:6px;">EQUIPMENT</div>
-                        <div>・FUJIFILM X-S10 &amp; Lenses</div>
-                        <div>・Car Fast USB Charger</div>
-                        <div>・Car Phone Holder</div>
-                        <div>・Power Bank &amp; Cables</div>
+                    <button type="button" class="mini-button" onclick="resetChecklist()">RESET</button>
+                </div>
+                <div class="checklist-grid">
+                    <div class="checklist-group">
+                        <div class="checklist-group-title">DOCUMENTS</div>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="ana-ticket"><span>ANA航空券（Wallet）</span></label>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="license"><span>運転免許証</span></label>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="cash"><span>うどん店用の現金</span></label>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="insurance"><span>保険証・常備薬</span></label>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="etc"><span>ETCカード</span></label>
+                    </div>
+                    <div class="checklist-group">
+                        <div class="checklist-group-title">CAMERA &amp; POWER</div>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="camera"><span>FUJIFILM X-S10・レンズ</span></label>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="battery"><span>予備バッテリー・SDカード</span></label>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="charger"><span>車載USB充電器</span></label>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="holder"><span>車載スマホホルダー</span></label>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="powerbank"><span>モバイルバッテリー・ケーブル</span></label>
+                    </div>
+                    <div class="checklist-group">
+                        <div class="checklist-group-title">BEACH</div>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="sandals"><span>サンダル・足拭きタオル</span></label>
+                        <label class="checklist-item"><input type="checkbox" data-check-id="sun"><span>日焼け止め・帽子</span></label>
                     </div>
                 </div>
             </div>
@@ -934,6 +996,52 @@
                     <i class="j-sec-line"></i>
                 </div>
             </section>
+
+            <div class="j-card expense-card">
+                <div class="expense-head">
+                    <div>
+                        <span class="now-kicker">LOCAL SPLIT LEDGER</span>
+                        <h3>旅費を記録</h3>
+                    </div>
+                    <button type="button" class="mini-button" onclick="clearExpenses()">ALL CLEAR</button>
+                </div>
+                <form id="expense-form" class="expense-form">
+                    <label>
+                        <span>金額</span>
+                        <input id="expense-amount" type="number" min="1" step="1" inputmode="numeric" placeholder="例：3200" required>
+                    </label>
+                    <label>
+                        <span>支払った人</span>
+                        <select id="expense-payer">
+                            <option value="aoi">あおい</option>
+                            <option value="kotaro">こうたろう</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>カテゴリ</span>
+                        <select id="expense-category">
+                            <option value="食事">食事</option>
+                            <option value="交通">交通</option>
+                            <option value="観光">観光</option>
+                            <option value="買い物">買い物</option>
+                            <option value="宿泊">宿泊</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </label>
+                    <label class="expense-note-field">
+                        <span>メモ</span>
+                        <input id="expense-note" type="text" maxlength="40" placeholder="例：五志喜">
+                    </label>
+                    <button type="submit" class="expense-submit">ADD EXPENSE</button>
+                </form>
+                <div class="expense-summary" aria-live="polite">
+                    <div><span>TOTAL</span><strong id="expense-total">¥0</strong></div>
+                    <div><span>1人分</span><strong id="expense-share">¥0</strong></div>
+                    <div class="expense-settlement"><span>精算</span><strong id="expense-settlement">まだ支出はありません</strong></div>
+                </div>
+                <ul id="expense-list" class="expense-list" aria-label="支出一覧"></ul>
+                <p class="local-save-note">金額はこの端末内だけに保存され、外部へ送信しません。</p>
+            </div>
 
             <!-- PAYPAY NATIVE APP + WEB LINK -->
             <div class="j-widget" style="margin-top:12px;">
@@ -1175,6 +1283,7 @@
                     { name: '四国水族館', coords: [34.3123308, 133.8077902] },
                     { name: '父母ヶ浜', coords: [34.1883098, 133.6468310] },
                     { name: 'ダイワロイネットホテル松山', coords: [33.8415157, 132.7715136] },
+                    { name: '五志喜 本店', coords: [33.8380795, 132.7687091] },
                     { name: '道後温泉本館', coords: [33.8520617, 132.7864036] },
                     { name: '松山ホテルへ', coords: [33.8415157, 132.7715136] }
                 ]
@@ -1412,5 +1521,6 @@
         setInterval(runCountdown, 1000);
         runCountdown();
     </script>
+    <script src="enhancements.js"></script>
 </body>
 </html>

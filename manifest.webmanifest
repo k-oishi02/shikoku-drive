@@ -1,0 +1,31 @@
+{
+  "name": "SHIKOKU DRIVE 2026",
+  "short_name": "四国しおり",
+  "description": "あおい＆こうたろうの四国ドライブ旅程、ルート、天気、持ち物、割り勘をまとめた旅行しおり",
+  "lang": "ja",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1c1c1c",
+  "theme_color": "#242424",
+  "icons": [
+    {
+      "src": "header_shikoku.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "今日の旅程",
+      "short_name": "NOW",
+      "url": "./#now-mode"
+    },
+    {
+      "name": "持ち物",
+      "short_name": "CHECK",
+      "url": "./#tab-checklist"
+    }
+  ]
+}
