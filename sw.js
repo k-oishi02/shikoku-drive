@@ -1,11 +1,11 @@
-const CACHE_NAME = 'shikoku-drive-v15';
+const CACHE_NAME = 'shikoku-drive-v16';
 const APP_SHELL = [
   './',
   './index.html',
   './travel_guide.html',
-  './enhancements.css?v=15',
-  './enhancements.js?v=15',
-  './firebase-sync.js?v=15',
+  './enhancements.css?v=16',
+  './enhancements.js?v=16',
+  './firebase-sync.js?v=16',
   './manifest.webmanifest',
   './header_shikoku.png',
   './yadon_park.png',

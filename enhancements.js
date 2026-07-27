@@ -572,7 +572,8 @@
         renderExpenses();
     }
 
-    function expenseCategoryForBadge(badge) {
+    function expenseCategoryForBadge(badge, title = '') {
+        if (badge === 'POKÉMON' && /フェリー/.test(title)) return '交通';
         if (['GOURMET', 'DINNER', 'FOOD LIST'].includes(badge)) return '食事';
         if (['FLIGHT', 'RENTAL CAR', 'FERRY', 'BUS', 'HELLO CYCLING', 'DRIVE', 'BREAK'].includes(badge)) return '交通';
         if (['AQUARIUM', 'VIEWPOINT', 'MUSEUM', 'SPA', 'PARK', 'STATION'].includes(badge)) return '観光';
@@ -606,16 +607,18 @@
         ]);
         document.querySelectorAll('#tab-day1 .j-card, #tab-day2 .j-card, #tab-day3 .j-card').forEach(card => {
             const badge = card.querySelector('.j-tag-badge')?.textContent.trim().toUpperCase() || '';
-            if (!shareableBadges.has(badge) || card.querySelector('.expense-shortcut')) return;
             const titleClone = card.querySelector('.j-card-ttl')?.cloneNode(true);
             titleClone?.querySelector('.j-tag-badge')?.remove();
             const rawTitle = titleClone?.textContent.replace(/\s+/g, ' ').trim() || '旅費';
+            const isLikelyShared = shareableBadges.has(badge) ||
+                (badge === 'POKÉMON' && /フェリー/.test(rawTitle));
+            if (!isLikelyShared || card.querySelector('.expense-shortcut')) return;
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'j-btn expense-shortcut';
             button.textContent = '支払った → 割り勘';
             button.addEventListener('click', () => {
-                window.openExpenseShortcut(expenseCategoryForBadge(badge), rawTitle);
+                window.openExpenseShortcut(expenseCategoryForBadge(badge, rawTitle), rawTitle);
             });
             let row = card.querySelector('.j-btn-row');
             if (!row) {
