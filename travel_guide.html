@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="header_shikoku.png">
-    <link rel="stylesheet" href="enhancements.css?v=13">
+    <link rel="stylesheet" href="enhancements.css?v=14">
 
     <style>
         :root {
@@ -388,30 +388,36 @@
                 </div>
             </div>
             <div class="delay-panel">
-                <div>
-                    <span class="delay-title">LIVE SCHEDULE ADVISOR</span>
+                <div class="advisor-summary">
+                    <div>
+                        <span class="delay-title">LIVE SCHEDULE ADVISOR</span>
+                        <p>早着・遅延に合わせて今後を再調整</p>
+                    </div>
+                    <button id="advisor-toggle" type="button" aria-expanded="false" aria-controls="advisor-content" onclick="toggleScheduleAdvisor()">OPEN ＋</button>
+                </div>
+                <div id="advisor-content" class="advisor-content" hidden>
                     <p>現在の進み具合を入力すると、今後の時刻・Optional可否・寄り道候補を再計算します。</p>
+                    <form id="progress-form" class="progress-form">
+                        <label>
+                            <span>予定との差</span>
+                            <select id="progress-direction" aria-label="予定より早いか遅いか">
+                                <option value="-1">予定より早い</option>
+                                <option value="1">予定より遅い</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>分数</span>
+                            <input id="progress-minutes" type="number" min="0" max="180" step="5" inputmode="numeric" value="0" aria-label="予定との差（分）">
+                        </label>
+                        <button type="submit">再調整</button>
+                        <button type="button" class="progress-reset" onclick="resetProgressAdvisor()">RESET</button>
+                    </form>
+                    <div id="progress-advice" class="progress-advice" aria-live="polite">
+                        <strong>ON SCHEDULE</strong>
+                        <span>予定どおりです。Optionalは現地の混雑を見て判断できます。</span>
+                    </div>
+                    <div id="optional-advice" class="optional-advice" aria-live="polite"></div>
                 </div>
-                <form id="progress-form" class="progress-form">
-                    <label>
-                        <span>予定との差</span>
-                        <select id="progress-direction" aria-label="予定より早いか遅いか">
-                            <option value="-1">予定より早い</option>
-                            <option value="1">予定より遅い</option>
-                        </select>
-                    </label>
-                    <label>
-                        <span>分数</span>
-                        <input id="progress-minutes" type="number" min="0" max="180" step="5" inputmode="numeric" value="0" aria-label="予定との差（分）">
-                    </label>
-                    <button type="submit">再調整</button>
-                    <button type="button" class="progress-reset" onclick="resetProgressAdvisor()">RESET</button>
-                </form>
-                <div id="progress-advice" class="progress-advice" aria-live="polite">
-                    <strong>ON SCHEDULE</strong>
-                    <span>予定どおりです。Optionalは現地の混雑を見て判断できます。</span>
-                </div>
-                <div id="optional-advice" class="optional-advice" aria-live="polite"></div>
             </div>
         </section>
 
@@ -1563,7 +1569,7 @@
         setInterval(runCountdown, 1000);
         runCountdown();
     </script>
-    <script src="enhancements.js?v=13"></script>
-    <script type="module" src="firebase-sync.js?v=13"></script>
+    <script src="enhancements.js?v=14"></script>
+    <script type="module" src="firebase-sync.js?v=14"></script>
 </body>
 </html>

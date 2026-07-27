@@ -238,6 +238,7 @@
         const tabButton = document.querySelector(`[aria-controls="${panelId}"]`);
         if (typeof window.switchTab === 'function') window.switchTab(panelId, tabButton);
         window.applyProgressAdvisor(difference);
+        window.toggleScheduleAdvisor(true);
 
         const advice = document.getElementById('progress-advice');
         const message = advice?.querySelector('span');
@@ -252,6 +253,16 @@
         button.textContent = 'RECORDED ✓';
         window.setTimeout(() => { button.textContent = 'DEPARTURE NOW'; }, 1800);
         advice?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
+    window.toggleScheduleAdvisor = function (forceOpen) {
+        const content = document.getElementById('advisor-content');
+        const toggle = document.getElementById('advisor-toggle');
+        if (!content || !toggle) return;
+        const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : content.hidden;
+        content.hidden = !shouldOpen;
+        toggle.setAttribute('aria-expanded', String(shouldOpen));
+        toggle.textContent = shouldOpen ? 'CLOSE −' : 'OPEN ＋';
     };
 
     window.jumpToCurrentTripDay = function () {
@@ -590,9 +601,8 @@
 
     function setupExpenseShortcuts() {
         const shareableBadges = new Set([
-            'GOURMET', 'DINNER', 'FOOD LIST', 'FLIGHT', 'RENTAL CAR', 'FERRY',
-            'BUS', 'HELLO CYCLING', 'DRIVE', 'BREAK', 'AQUARIUM', 'VIEWPOINT',
-            'MUSEUM', 'SPA', 'SHOPPING', 'POKÉMON', 'HOTEL'
+            'GOURMET', 'DINNER', 'FOOD LIST', 'RENTAL CAR', 'FERRY',
+            'AQUARIUM', 'MUSEUM', 'SPA', 'HOTEL'
         ]);
         document.querySelectorAll('#tab-day1 .j-card, #tab-day2 .j-card, #tab-day3 .j-card').forEach(card => {
             const badge = card.querySelector('.j-tag-badge')?.textContent.trim().toUpperCase() || '';

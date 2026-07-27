@@ -167,6 +167,35 @@
     letter-spacing: 1.4px;
 }
 
+.advisor-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.advisor-summary button {
+    min-width: 82px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid #565656;
+    border-radius: 0;
+    background: #292929;
+    color: #fff;
+    font-family: var(--font-mont);
+    font-size: 0.62rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.advisor-content[hidden] {
+    display: none;
+}
+
+.advisor-content {
+    padding-top: 9px;
+}
+
 .delay-panel p {
     margin-top: 3px;
     color: #a1a1a1;
