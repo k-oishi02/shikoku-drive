@@ -12,6 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Montserrat:wght@400;700;900&amp;family=Shippori+Gothic:wght@700;800&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 
     <style>
         :root {
@@ -236,6 +237,42 @@
         /* Jillion Widget / PayPay Section */
         .j-widget { background: var(--bg-card); border: 1px solid var(--border-line); padding: 18px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 
+        .route-map-head {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
+        }
+        .route-map-filters { display: flex; gap: 5px; flex-wrap: wrap; }
+        .route-map-filter {
+            border: 1px solid var(--border-line); background: transparent; color: var(--text-sub);
+            padding: 5px 8px; font-family: var(--font-bebas); font-size: 0.92rem;
+            letter-spacing: 1px; cursor: pointer;
+        }
+        .route-map-filter.active {
+            background: #ffffff; border-color: #ffffff; color: #111111;
+        }
+        #main-map {
+            width: 100%; height: 320px; border: 1px solid var(--border-line);
+            background: #181818; z-index: 1;
+        }
+        .route-map-legend {
+            display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px;
+            color: var(--text-sub); font-family: var(--font-mont); font-size: 0.68rem;
+        }
+        .route-map-legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .route-map-swatch { width: 18px; height: 3px; display: inline-block; }
+        .route-map-ferry { width: 20px; border-top: 2px dashed #ffffff; }
+        .route-map-note {
+            margin-top: 8px; color: var(--text-sub); font-size: 0.72rem; line-height: 1.6;
+        }
+        .leaflet-container { font-family: var(--font-gothic); }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #242424; color: #ffffff; }
+        .leaflet-popup-content { margin: 10px 12px; font-size: 0.78rem; }
+        .trip-map-marker {
+            border: 2px solid #ffffff; border-radius: 50%; color: #111111;
+            display: grid; place-items: center; font-family: var(--font-mont);
+            font-size: 0.62rem; font-weight: 900; box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+        }
+
         @media (prefers-reduced-motion: reduce) {
             html { scroll-behavior: auto; }
             *, *::before, *::after {
@@ -333,12 +370,25 @@
             <button type="button" id="btn-paypay" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-paypay" onclick="switchTab('tab-paypay', this)">PAYPAY</button>
         </nav>
 
-        <!-- MAP SECTION (Shared Route Map) -->
+        <!-- MAP SECTION (Three-day Movement Overview) -->
         <div class="j-card" style="margin-bottom:24px;">
-            <div class="j-card-ttl" style="font-family:var(--font-bebas); font-size:1.5rem; letter-spacing:1px;">ROUTE MAP</div>
-            <div style="width:100%; height:220px; border:1px solid var(--border-line); overflow:hidden;">
-                <iframe id="main-map" title="四国ドライブ全体ルート地図" src="https://maps.google.com/maps?q=%E9%AB%98%E6%9D%BE%E7%A9%BA%E6%B8%AF+to+%E3%81%B2%E3%81%A0%E3%81%BE%E3%82%8A%E5%85%AC%E5%9C%92%E3%81%82%E3%82%84%E3%81%8C%E3%82%8F+to+%E5%B0%8F%E8%B1%86%E5%B3%B6%E3%82%AA%E3%83%AA%E3%83%BC%E3%83%96%E5%85%AC%E5%9C%92+to+%E7%88%B6%E6%AF%8D%E3%83%B6%E6%B5%9C+to+%E9%81%93%E5%BE%8C%E6%B8%A9%E6%B3%89%E6%9C%A9%E9%A4%A8+to+%E4%B8%8B%E7%80%B9%E9%A7%85+to+%E6%9D%BE%E5%B1%B1%E7%A9%BA%E6%B8%AF&amp;t=&amp;z=9&amp;ie=UTF8&amp;iwloc=&amp;output=embed" style="width:100%; height:100%; border:0;" loading="lazy"></iframe>
+            <div class="route-map-head">
+                <div class="j-card-ttl" style="font-family:var(--font-bebas); font-size:1.5rem; letter-spacing:1px; margin:0;">3-DAY ROUTE OVERVIEW</div>
+                <div class="route-map-filters" aria-label="表示する旅程">
+                    <button type="button" class="route-map-filter active" data-map-filter="all" aria-pressed="true" onclick="filterOverviewMap('all', this)">ALL</button>
+                    <button type="button" class="route-map-filter" data-map-filter="day1" aria-pressed="false" onclick="filterOverviewMap('day1', this)">DAY 01</button>
+                    <button type="button" class="route-map-filter" data-map-filter="day2" aria-pressed="false" onclick="filterOverviewMap('day2', this)">DAY 02</button>
+                    <button type="button" class="route-map-filter" data-map-filter="day3" aria-pressed="false" onclick="filterOverviewMap('day3', this)">DAY 03</button>
+                </div>
             </div>
+            <div id="main-map" role="img" aria-label="3日間の四国移動全体図"></div>
+            <div class="route-map-legend" aria-label="地図の凡例">
+                <span><i class="route-map-swatch" style="background:#59d9b0;"></i>DAY 01</span>
+                <span><i class="route-map-swatch" style="background:#ffbf47;"></i>DAY 02</span>
+                <span><i class="route-map-swatch" style="background:#73a7ff;"></i>DAY 03</span>
+                <span><i class="route-map-ferry"></i>FERRY</span>
+            </div>
+            <p class="route-map-note">移動順を線で結んだ概略図です。道路・バス・自転車の詳細経路は各スポットの「MAP」から確認してください。</p>
         </div>
 
         <!-- ==================== TAB PANEL 1: DAY 01 ==================== -->
@@ -861,6 +911,7 @@
     </div>
 
     <!-- SCRIPT FOR WEATHER &amp; TAB SWITCHING -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
         const WEATHER_REFRESH_MS = 30 * 60 * 1000;
         const weatherLocations = {
@@ -1055,6 +1106,136 @@
             }, 1200);
         }
 
+        const TRIP_ROUTES = {
+            day1: {
+                color: '#59d9b0',
+                ferryLegs: [2, 7],
+                stops: [
+                    { name: '高松空港', coords: [34.2151743, 134.0194008] },
+                    { name: 'ひだまり公園あやがわ', coords: [34.2471397, 133.9329243] },
+                    { name: '高松港', coords: [34.3519321, 134.0499868] },
+                    { name: '土庄港', coords: [34.4890145, 134.1720787] },
+                    { name: '作兵衛', coords: [34.4811988, 134.2453428] },
+                    { name: '小豆島オリーブ公園', coords: [34.4728411, 134.2736368] },
+                    { name: 'エンジェルロード', coords: [34.4776107, 134.1886468] },
+                    { name: '土庄港（帰路）', coords: [34.4890145, 134.1720787] },
+                    { name: '高松港（帰着）', coords: [34.3519321, 134.0499868] },
+                    { name: '高松国際ホテル', coords: [34.3331208, 134.0708409] }
+                ]
+            },
+            day2: {
+                color: '#ffbf47',
+                ferryLegs: [],
+                stops: [
+                    { name: '高松国際ホテル', coords: [34.3331208, 134.0708409] },
+                    { name: '山越うどん', coords: [34.2257280, 133.9282810] },
+                    { name: '四国水族館', coords: [34.3123308, 133.8077902] },
+                    { name: '父母ヶ浜', coords: [34.1883098, 133.6468310] },
+                    { name: 'ダイワロイネットホテル松山', coords: [33.8415157, 132.7715136] },
+                    { name: '道後温泉本館', coords: [33.8520617, 132.7864036] },
+                    { name: '松山ホテルへ', coords: [33.8415157, 132.7715136] }
+                ]
+            },
+            day3: {
+                color: '#73a7ff',
+                ferryLegs: [],
+                stops: [
+                    { name: 'ダイワロイネットホテル松山', coords: [33.8415157, 132.7715136] },
+                    { name: '下灘駅', coords: [33.6554175, 132.5894116] },
+                    { name: '道の駅 ふたみ', coords: [33.6853313, 132.6341958] },
+                    { name: '白楽天 今治本店', coords: [34.0648, 132.9988] },
+                    { name: 'タオル美術館', coords: [33.9696759, 133.0330906] },
+                    { name: '亀老山展望公園', coords: [34.1201239, 133.0341105] },
+                    { name: '松山空港', coords: [33.8273145, 132.7013265] }
+                ]
+            }
+        };
+
+        let overviewMap = null;
+        const overviewLayers = {};
+        const overviewBounds = {};
+        let allRouteBounds = null;
+
+        function initOverviewMap() {
+            const mapEl = document.getElementById('main-map');
+            if (!mapEl) return;
+            if (!window.L) {
+                mapEl.textContent = '地図を読み込めませんでした。通信状態を確認してください。';
+                mapEl.style.padding = '24px';
+                return;
+            }
+
+            overviewMap = L.map(mapEl, {
+                scrollWheelZoom: false,
+                zoomControl: true
+            });
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
+            }).addTo(overviewMap);
+
+            allRouteBounds = L.latLngBounds([]);
+
+            Object.entries(TRIP_ROUTES).forEach(([dayKey, route]) => {
+                const group = L.layerGroup();
+                const dayBounds = L.latLngBounds([]);
+
+                route.stops.forEach((stop, index) => {
+                    dayBounds.extend(stop.coords);
+                    allRouteBounds.extend(stop.coords);
+
+                    const marker = L.marker(stop.coords, {
+                        icon: L.divIcon({
+                            className: '',
+                            html: `<span class="trip-map-marker" style="width:24px;height:24px;background:${route.color};">${index + 1}</span>`,
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12]
+                        })
+                    });
+                    marker.bindPopup(`<strong>DAY ${dayKey.slice(-1)} — ${index + 1}</strong><br>${stop.name}`);
+                    marker.addTo(group);
+
+                    if (index < route.stops.length - 1) {
+                        const isFerry = route.ferryLegs.includes(index);
+                        L.polyline([stop.coords, route.stops[index + 1].coords], {
+                            color: route.color,
+                            weight: isFerry ? 4 : 5,
+                            opacity: 0.9,
+                            dashArray: isFerry ? '8 9' : null
+                        }).addTo(group);
+                    }
+                });
+
+                overviewLayers[dayKey] = group;
+                overviewBounds[dayKey] = dayBounds;
+                group.addTo(overviewMap);
+            });
+
+            overviewMap.fitBounds(allRouteBounds, { padding: [20, 20] });
+            window.setTimeout(() => overviewMap.invalidateSize(), 150);
+        }
+
+        function filterOverviewMap(filterKey, btnEl) {
+            if (!overviewMap) return;
+
+            Object.entries(overviewLayers).forEach(([dayKey, layer]) => {
+                const shouldShow = filterKey === 'all' || filterKey === dayKey;
+                if (shouldShow && !overviewMap.hasLayer(layer)) layer.addTo(overviewMap);
+                if (!shouldShow && overviewMap.hasLayer(layer)) overviewMap.removeLayer(layer);
+            });
+
+            document.querySelectorAll('.route-map-filter').forEach(button => {
+                const isActive = button.dataset.mapFilter === filterKey;
+                button.classList.toggle('active', isActive);
+                button.setAttribute('aria-pressed', String(isActive));
+            });
+
+            const bounds = filterKey === 'all' ? allRouteBounds : overviewBounds[filterKey];
+            if (bounds?.isValid()) overviewMap.fitBounds(bounds, { padding: [20, 20] });
+            btnEl?.blur();
+        }
+
         function moveFatherBeachCard() {
             const fatherBeachCard = document.getElementById('father-beach-card');
             const driveCard = document.getElementById('matsuyama-drive-card');
@@ -1165,6 +1346,7 @@
         setWeatherTab('kagawa', document.querySelector('.w-tab.active'));
         refreshWeather();
         window.setInterval(refreshWeather, WEATHER_REFRESH_MS);
+        initOverviewMap();
         moveFatherBeachCard();
         moveDay1HotelCard();
         setupDaySwipe();
