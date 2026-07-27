@@ -1,0 +1,53 @@
+{
+  "year": 2026,
+  "incomes": [
+    { "id": "in_1_1", "month": 1, "source": "トライ（委託）", "type": "commission", "amount": 56540, "taxWithheld": 1715, "actualPaid": 54825, "isEstimated": false },
+    { "id": "in_1_2", "month": 1, "source": "トライ（スタッフ）", "type": "salary", "amount": 3316, "taxWithheld": 0, "actualPaid": 3316, "isEstimated": false },
+    { "id": "in_2_1", "month": 2, "source": "トライ（委託）", "type": "commission", "amount": 53350, "taxWithheld": 1634, "actualPaid": 51716, "isEstimated": false },
+    { "id": "in_2_2", "month": 2, "source": "トライ（スタッフ）", "type": "salary", "amount": 11329, "taxWithheld": 0, "actualPaid": 11329, "isEstimated": false },
+    { "id": "in_3_1", "month": 3, "source": "トライ（委託）", "type": "commission", "amount": 36350, "taxWithheld": 1113, "actualPaid": 35237, "isEstimated": false },
+    { "id": "in_3_2", "month": 3, "source": "トライ（スタッフ）", "type": "salary", "amount": 12820, "taxWithheld": 0, "actualPaid": 12820, "isEstimated": false },
+    { "id": "in_4_1", "month": 4, "source": "トライ（委託）", "type": "commission", "amount": 42020, "taxWithheld": 1287, "actualPaid": 40733, "isEstimated": false },
+    { "id": "in_4_2", "month": 4, "source": "トライ（スタッフ）", "type": "salary", "amount": 9412, "taxWithheld": 0, "actualPaid": 9412, "isEstimated": false },
+    { "id": "in_5_1", "month": 5, "source": "トライ（委託）", "type": "commission", "amount": 49450, "taxWithheld": 1514, "actualPaid": 47936, "isEstimated": false },
+    { "id": "in_5_2", "month": 5, "source": "トライ（スタッフ）", "type": "salary", "amount": 7478, "taxWithheld": 0, "actualPaid": 7478, "isEstimated": false },
+    { "id": "in_6_1", "month": 6, "source": "トライ（委託）", "type": "commission", "amount": 62050, "taxWithheld": 1900, "actualPaid": 60150, "isEstimated": false },
+    { "id": "in_6_2", "month": 6, "source": "トライ（スタッフ）", "type": "salary", "amount": 6999, "taxWithheld": 0, "actualPaid": 6999, "isEstimated": false },
+    { "id": "in_7_1", "month": 7, "source": "トライ（委託）", "type": "commission", "amount": 57100, "taxWithheld": 1748, "actualPaid": 55352, "isEstimated": true },
+    { "id": "in_7_2", "month": 7, "source": "ふるさと創研", "type": "commission", "amount": 100000, "taxWithheld": 0, "actualPaid": 100000, "isEstimated": true },
+    { "id": "in_10_1", "month": 10, "source": "TA（大学）", "type": "salary", "amount": 60000, "taxWithheld": 0, "actualPaid": 60000, "isEstimated": true },
+    { "id": "in_10_2", "month": 10, "source": "ふるさと創研（見込み）", "type": "commission", "amount": 100000, "taxWithheld": 0, "actualPaid": 100000, "isEstimated": true }
+  ],
+  "expenses": [
+    { "id": "ex_tri_1", "month": 1, "category": "交通費", "source": "トライ（委託）", "amount": 4676, "memo": "指導交通費 (上本郷〜松戸 14回)" },
+    { "id": "ex_tri_2", "month": 2, "category": "交通費", "source": "トライ（委託）", "amount": 3674, "memo": "指導交通費 (上本郷〜松戸 11回)" },
+    { "id": "ex_tri_3", "month": 3, "category": "交通費", "source": "トライ（委託）", "amount": 4342, "memo": "指導交通費 (上本郷〜松戸 13回)" },
+    { "id": "ex_tri_4", "month": 4, "category": "交通費", "source": "トライ（委託）", "amount": 3674, "memo": "指導交通費 (上本郷〜松戸 11回)" },
+    { "id": "ex_tri_5", "month": 5, "category": "交通費", "source": "トライ（委託）", "amount": 4676, "memo": "指導交通費 (上本郷〜松戸 14回)" },
+    { "id": "ex_tri_6", "month": 6, "category": "交通費", "source": "トライ（委託）", "amount": 3674, "memo": "指導交通費 (上本郷〜松戸 11回)" },
+    { "id": "ex_tri_7", "month": 7, "category": "交通費", "source": "トライ（委託）", "amount": 5010, "memo": "指導交通費 (上本郷〜松戸 15回)" },
+    { "id": "ex_home_1", "month": 1, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_2", "month": 2, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_3", "month": 3, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_4", "month": 4, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_5", "month": 5, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_6", "month": 6, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_7", "month": 7, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_8", "month": 8, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_9", "month": 9, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_10", "month": 10, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_11", "month": 11, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_home_12", "month": 12, "category": "家賃・通信費", "source": "自宅作業環境", "amount": 8220, "memo": "家事按分 (家賃15%+Wi-Fi40%)" },
+    { "id": "ex_device_1", "month": 7, "category": "消耗品費", "source": "ふるさと創研", "amount": 5480, "memo": "Webカメラ (Web会議用)" },
+    { "id": "ex_device_2", "month": 7, "category": "消耗品費", "source": "ふるさと創研", "amount": 8980, "memo": "Xiaomi Redmi Buds 5 Pro相当 (Web会議用)" }
+  ],
+  "allowances": [
+    { "id": "al_1", "month": 1, "source": "仕送り", "amount": 120000 },
+    { "id": "al_2", "month": 2, "source": "仕送り", "amount": 170000 },
+    { "id": "al_3", "month": 3, "source": "仕送り", "amount": 150000 },
+    { "id": "al_4", "month": 4, "source": "仕送り", "amount": 400000 },
+    { "id": "al_5", "month": 5, "source": "仕送り", "amount": 150000 },
+    { "id": "al_6", "month": 6, "source": "仕送り", "amount": 100000 },
+    { "id": "al_7", "month": 7, "source": "仕送り", "amount": 100000 }
+  ]
+}
