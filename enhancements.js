@@ -8,7 +8,34 @@
     };
     const CHECKLIST_KEY = 'shikoku-drive-checklist-v1';
     const EXPENSE_KEY = 'shikoku-drive-expenses-v1';
-    let activeDelayMinutes = 0;
+    const DEVICE_OWNER_KEY = 'shikoku-drive-device-owner-v1';
+    let activeProgressMinutes = 0;
+    const OPTIONAL_RULES = {
+        'tab-day1': [
+            { match: /うどんバカ一代/, required: 45, baseline: 0 }
+        ],
+        'tab-day2': [
+            { match: /長田 in 香の香/, required: 45, baseline: 0 },
+            { match: /石鎚山SA/, required: 10, baseline: 10 }
+        ],
+        'tab-day3': [
+            { match: /食べ逃し回収リスト/, required: 35, baseline: 0 }
+        ]
+    };
+    const DETOUR_SUGGESTIONS = {
+        'tab-day1': [
+            { minutes: 15, text: '高松港周辺でヤドン撮影スポットを1か所（約15分）' },
+            { minutes: 30, text: '高松港周辺の港散歩＋買い物（約30分）' }
+        ],
+        'tab-day2': [
+            { minutes: 10, text: '石鎚山SAで景色とトイレ休憩（約10分）' },
+            { minutes: 20, text: '父母ヶ浜周辺で短いカフェ休憩（約20分）' }
+        ],
+        'tab-day3': [
+            { minutes: 10, text: '道の駅ふたみでじゃこ天と海辺を追加（約10分）' },
+            { minutes: 20, text: '来島海峡SAでバリィさんグッズ確認を延長（約15分）' }
+        ]
+    };
 
     function safeLoad(key, fallback) {
         try {
@@ -123,7 +150,8 @@
         const timeEl = document.getElementById('now-time');
         const countdownEl = document.getElementById('now-countdown');
         const routeEl = document.getElementById('now-route');
-        if (!dayEl || !titleEl || !timeEl || !countdownEl || !routeEl) return;
+        const departureEl = document.getElementById('now-departure');
+        if (!dayEl || !titleEl || !timeEl || !countdownEl || !routeEl || !departureEl) return;
 
         const now = new Date();
         const tripStart = new Date('2026-08-30T06:55:00+09:00');
@@ -137,12 +165,16 @@
             entry = getEntries(panelId)[0];
             dayEl.textContent = 'DAY 01 · 旅行前';
             countdownEl.textContent = `出発まで ${formatDuration(tripStart - now)}`;
+            departureEl.disabled = true;
+            departureEl.textContent = '旅行日に有効';
         } else if (now > tripEnd) {
             dayEl.textContent = 'TRIP COMPLETE';
             titleEl.textContent = '四国ドライブ、おつかれさまでした！';
             timeEl.textContent = 'MEMORIES SAVED';
             countdownEl.textContent = '';
             routeEl.hidden = true;
+            departureEl.disabled = true;
+            departureEl.textContent = 'TRIP COMPLETE';
             return;
         } else if (panelId) {
             const entries = getEntries(panelId);
@@ -153,6 +185,11 @@
             countdownEl.textContent = current
                 ? `終了まで ${formatDuration(entry.end - now)}`
                 : `出発まで ${formatDuration(entry.start - now)}`;
+            departureEl.dataset.targetMinute = String(current ? entry.endMinute : entry.startMinute);
+            departureEl.dataset.panelId = panelId;
+            departureEl.dataset.targetTitle = entry.title;
+            departureEl.disabled = false;
+            departureEl.textContent = 'DEPARTURE NOW';
         } else {
             const future = Object.keys(TRIP_DAYS)
                 .flatMap(id => getEntries(id).map(item => ({ panelId: id, item })))
@@ -174,6 +211,49 @@
         }
     }
 
+    function tokyoMinuteOfDay(date) {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Tokyo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23'
+        }).formatToParts(date);
+        const hour = Number(parts.find(part => part.type === 'hour')?.value || 0);
+        const minute = Number(parts.find(part => part.type === 'minute')?.value || 0);
+        return hour * 60 + minute;
+    }
+
+    window.recordDepartureNow = function () {
+        const button = document.getElementById('now-departure');
+        if (!button || button.disabled) return;
+        const targetMinute = Number(button.dataset.targetMinute);
+        const panelId = button.dataset.panelId;
+        if (!Number.isFinite(targetMinute) || !TRIP_DAYS[panelId]) return;
+
+        const difference = tokyoMinuteOfDay(new Date()) - targetMinute;
+        const direction = document.getElementById('progress-direction');
+        const minutes = document.getElementById('progress-minutes');
+        if (direction) direction.value = difference < 0 ? '-1' : '1';
+        if (minutes) minutes.value = String(Math.abs(difference));
+        const tabButton = document.querySelector(`[aria-controls="${panelId}"]`);
+        if (typeof window.switchTab === 'function') window.switchTab(panelId, tabButton);
+        window.applyProgressAdvisor(difference);
+
+        const advice = document.getElementById('progress-advice');
+        const message = advice?.querySelector('span');
+        if (message) {
+            const timing = difference < 0
+                ? `予定より${Math.abs(difference)}分早く`
+                : difference > 0
+                    ? `予定より${difference}分遅く`
+                    : '予定どおりに';
+            message.textContent = `${button.dataset.targetTitle || '現在地'}を${timing}出発。以降の予定を再調整しました。`;
+        }
+        button.textContent = 'RECORDED ✓';
+        window.setTimeout(() => { button.textContent = 'DEPARTURE NOW'; }, 1800);
+        advice?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
     window.jumpToCurrentTripDay = function () {
         const panelId = nearestTripPanel(new Date());
         const button = document.querySelector(`[aria-controls="${panelId}"]`);
@@ -186,27 +266,81 @@
         return TRIP_DAYS[active] ? active : nearestTripPanel(new Date());
     }
 
-    function removeDelayBadges() {
+    function removeProgressBadges() {
         document.querySelectorAll('.delay-preview').forEach(element => element.remove());
+        document.querySelectorAll('.optional-decision').forEach(element => element.remove());
+        document.querySelectorAll('.optional-go, .optional-no').forEach(card => {
+            card.classList.remove('optional-go', 'optional-no');
+        });
     }
 
-    window.applyDelayScenario = function (minutes, button) {
-        activeDelayMinutes = Number(minutes) || 0;
-        removeDelayBadges();
-        document.querySelectorAll('[data-delay-minutes]').forEach(element => {
-            element.classList.toggle('active', Number(element.dataset.delayMinutes) === activeDelayMinutes);
+    function optionalRuleFor(panelId, title) {
+        return (OPTIONAL_RULES[panelId] || []).find(rule => rule.match.test(title));
+    }
+
+    function renderOptionalAdvice(panelId, signedMinutes) {
+        const panel = document.getElementById(panelId);
+        const advice = document.getElementById('optional-advice');
+        if (!panel || !advice) return { canAdd: 0, cannotAdd: 0 };
+
+        const earlyMinutes = Math.max(0, -signedMinutes);
+        const lateMinutes = Math.max(0, signedMinutes);
+        const decisions = [];
+
+        panel.querySelectorAll('.j-card').forEach(card => {
+            const timeText = card.querySelector('.j-card-time')?.childNodes[0]?.textContent.trim();
+            if (timeText !== 'OPTIONAL') return;
+            const title = card.querySelector('.j-card-ttl')?.textContent.replace(/\s+/g, ' ').trim() || 'Optional';
+            const rule = optionalRuleFor(panelId, title);
+            if (!rule) return;
+
+            const available = Math.max(0, rule.baseline + earlyMinutes - lateMinutes);
+            const canAdd = available >= rule.required;
+            const badge = document.createElement('span');
+            badge.className = `optional-decision ${canAdd ? 'go' : 'no'}`;
+            badge.textContent = canAdd
+                ? `GO · ${available}分確保`
+                : `NO · あと${Math.max(1, rule.required - available)}分必要`;
+            card.querySelector('.j-card-time')?.appendChild(badge);
+            card.classList.add(canAdd ? 'optional-go' : 'optional-no');
+            decisions.push({ title, canAdd, available, required: rule.required });
         });
 
+        const usableLead = earlyMinutes;
+        const detours = (DETOUR_SUGGESTIONS[panelId] || [])
+            .filter(item => item.minutes <= usableLead)
+            .sort((a, b) => b.minutes - a.minutes);
+        const bestDetour = detours[0];
+        const canAdd = decisions.filter(item => item.canAdd);
+        const cannotAdd = decisions.filter(item => !item.canAdd);
+
+        advice.replaceChildren();
+        decisions.forEach(item => {
+            const row = document.createElement('div');
+            row.className = `optional-advice-row ${item.canAdd ? 'go' : 'no'}`;
+            row.innerHTML = `<strong>${item.canAdd ? '入れてOK' : '今回は入れない'}</strong><span>${item.title}</span>`;
+            advice.appendChild(row);
+        });
+        const detour = document.createElement('div');
+        detour.className = 'detour-advice';
+        if (lateMinutes > 0) {
+            detour.innerHTML = '<strong>寄り道判断</strong><span>いまは寄り道を見送り、次の固定予定を優先。</span>';
+        } else if (bestDetour) {
+            detour.innerHTML = `<strong>寄り道候補</strong><span>${bestDetour.text}</span>`;
+        } else {
+            detour.innerHTML = '<strong>寄り道判断</strong><span>10分以上早着したら、動線上の短い寄り道を提案します。</span>';
+        }
+        advice.appendChild(detour);
+        return { canAdd: canAdd.length, cannotAdd: cannotAdd.length };
+    }
+
+    window.applyProgressAdvisor = function (signedMinutes) {
+        activeProgressMinutes = Math.max(-180, Math.min(180, Number(signedMinutes) || 0));
+        removeProgressBadges();
         const panelId = selectedDayPanel();
         const entries = getEntries(panelId);
-        const status = document.getElementById('delay-status');
+        const advice = document.getElementById('progress-advice');
         const dayLabel = TRIP_DAYS[panelId]?.label || 'DAY';
-
-        if (!activeDelayMinutes) {
-            if (status) status.textContent = `${dayLabel}の予定どおりです。`;
-            return;
-        }
-
         let shortened = 0;
         let squeezedMinutes = 0;
         entries.forEach((entry, index) => {
@@ -217,12 +351,18 @@
                 badge.textContent = `FIXED ${minuteLabel(entry.startMinute)}`;
             } else {
                 const nextFixed = entries.slice(index + 1).find(candidate => candidate.fixed);
-                const shiftedStart = entry.startMinute + activeDelayMinutes;
-                let shiftedEnd = entry.endMinute + activeDelayMinutes;
+                const previousFixed = entries.slice(0, index).reverse().find(candidate => candidate.fixed);
+                let shiftedStart = entry.startMinute + activeProgressMinutes;
+                let shiftedEnd = entry.endMinute + activeProgressMinutes;
                 let conflict = 0;
                 if (nextFixed && shiftedEnd > nextFixed.startMinute) {
                     conflict = shiftedEnd - nextFixed.startMinute;
                     shiftedEnd = Math.max(shiftedStart, nextFixed.startMinute);
+                }
+                if (previousFixed && shiftedStart < previousFixed.endMinute) {
+                    const clipped = previousFixed.endMinute - shiftedStart;
+                    shiftedStart = previousFixed.endMinute;
+                    shiftedEnd = Math.max(shiftedStart, shiftedEnd + clipped);
                 }
                 badge.textContent = `${minuteLabel(shiftedStart)}–${minuteLabel(shiftedEnd)}`;
                 if (conflict > 0) {
@@ -235,20 +375,45 @@
             entry.timeEl.appendChild(badge);
         });
 
-        if (status) {
-            status.textContent = shortened
-                ? `${dayLabel} +${activeDelayMinutes}分：固定時刻を守るため${shortened}件を計${squeezedMinutes}分短縮します。`
-                : `${dayLabel} +${activeDelayMinutes}分：固定時刻は維持したまま再計算しました。`;
+        const optional = renderOptionalAdvice(panelId, activeProgressMinutes);
+        if (advice) {
+            const title = advice.querySelector('strong');
+            const message = advice.querySelector('span');
+            if (!activeProgressMinutes) {
+                title.textContent = 'ON SCHEDULE';
+                message.textContent = `${dayLabel}は予定どおり。Optionalは下の判定を確認してください。`;
+            } else if (activeProgressMinutes < 0) {
+                title.textContent = `${Math.abs(activeProgressMinutes)} MIN EARLY`;
+                message.textContent = `${dayLabel}の今後を前倒し。Optionalは${optional.canAdd}件が追加可能です。`;
+            } else {
+                title.textContent = `${activeProgressMinutes} MIN LATE`;
+                message.textContent = shortened
+                    ? `固定時刻を守るため${shortened}件を計${squeezedMinutes}分短縮。Optionalは入れません。`
+                    : '固定時刻は維持。寄り道とOptionalを見送って追いつきます。';
+            }
         }
-        button?.blur();
     };
 
-    function setupTabDelayReset() {
+    window.resetProgressAdvisor = function () {
+        const direction = document.getElementById('progress-direction');
+        const minutes = document.getElementById('progress-minutes');
+        if (direction) direction.value = '-1';
+        if (minutes) minutes.value = '0';
+        window.applyProgressAdvisor(0);
+    };
+
+    function setupProgressAdvisor() {
+        const form = document.getElementById('progress-form');
+        form?.addEventListener('submit', event => {
+            event.preventDefault();
+            const direction = Number(document.getElementById('progress-direction')?.value) || -1;
+            const minutes = Math.max(0, Number(document.getElementById('progress-minutes')?.value) || 0);
+            window.applyProgressAdvisor(direction * minutes);
+        });
         document.querySelectorAll('.j-tab-btn').forEach(button => {
             button.addEventListener('click', () => {
                 window.setTimeout(() => {
-                    if (activeDelayMinutes) window.applyDelayScenario(activeDelayMinutes);
-                    else window.applyDelayScenario(0);
+                    window.applyProgressAdvisor(activeProgressMinutes);
                 }, 0);
             });
         });
@@ -317,16 +482,20 @@
             const textBox = document.createElement('div');
             const title = document.createElement('strong');
             const detail = document.createElement('small');
+            const comment = document.createElement('small');
             const amount = document.createElement('strong');
             const remove = document.createElement('button');
             title.textContent = expense.note || expense.category;
             detail.textContent = expenseLabel(expense);
+            comment.className = 'expense-comment';
+            comment.textContent = expense.comment || '';
+            comment.hidden = !expense.comment;
             amount.textContent = formatYen(expense.amount);
             remove.type = 'button';
             remove.textContent = '×';
             remove.setAttribute('aria-label', `${title.textContent}を削除`);
             remove.addEventListener('click', () => removeExpense(expense.id));
-            textBox.append(title, detail);
+            textBox.append(title, detail, comment);
             row.append(textBox, amount, remove);
             list.appendChild(row);
         });
@@ -355,6 +524,15 @@
 
     function setupExpenses() {
         const form = document.getElementById('expense-form');
+        const deviceOwner = document.getElementById('device-owner');
+        const payer = document.getElementById('expense-payer');
+        const savedOwner = safeLoad(DEVICE_OWNER_KEY, 'kotaro');
+        if (deviceOwner) deviceOwner.value = savedOwner === 'aoi' ? 'aoi' : 'kotaro';
+        if (payer) payer.value = deviceOwner?.value || 'kotaro';
+        deviceOwner?.addEventListener('change', () => {
+            safeSave(DEVICE_OWNER_KEY, deviceOwner.value);
+            if (payer) payer.value = deviceOwner.value;
+        });
         form?.addEventListener('submit', event => {
             event.preventDefault();
             const amount = Number(document.getElementById('expense-amount').value);
@@ -366,6 +544,7 @@
                 payer: document.getElementById('expense-payer').value,
                 category: document.getElementById('expense-category').value,
                 note: document.getElementById('expense-note').value.trim(),
+                comment: document.getElementById('expense-comment').value.trim(),
                 createdAt: new Date().toISOString()
             };
             expenses.unshift(expense);
@@ -380,6 +559,60 @@
             renderExpenses();
         });
         renderExpenses();
+    }
+
+    function expenseCategoryForBadge(badge) {
+        if (['GOURMET', 'DINNER', 'FOOD LIST'].includes(badge)) return '食事';
+        if (['FLIGHT', 'RENTAL CAR', 'FERRY', 'BUS', 'HELLO CYCLING', 'DRIVE', 'BREAK'].includes(badge)) return '交通';
+        if (['AQUARIUM', 'VIEWPOINT', 'MUSEUM', 'SPA', 'PARK', 'STATION'].includes(badge)) return '観光';
+        if (['SHOPPING', 'POKÉMON'].includes(badge)) return '買い物';
+        if (badge === 'HOTEL') return '宿泊';
+        return 'その他';
+    }
+
+    window.openExpenseShortcut = function (category, note) {
+        const paypayButton = document.getElementById('btn-paypay');
+        if (typeof window.switchTab === 'function') window.switchTab('tab-paypay', paypayButton);
+        const categoryField = document.getElementById('expense-category');
+        const noteField = document.getElementById('expense-note');
+        const payerField = document.getElementById('expense-payer');
+        const deviceOwner = document.getElementById('device-owner');
+        const amountField = document.getElementById('expense-amount');
+        if (payerField) payerField.value = deviceOwner?.value || safeLoad(DEVICE_OWNER_KEY, 'kotaro');
+        if (categoryField) categoryField.value = category;
+        if (noteField) noteField.value = note.slice(0, 40);
+        const form = document.getElementById('expense-form');
+        form?.classList.add('expense-prefilled');
+        window.setTimeout(() => form?.classList.remove('expense-prefilled'), 1800);
+        form?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        window.setTimeout(() => amountField?.focus(), 350);
+    };
+
+    function setupExpenseShortcuts() {
+        const shareableBadges = new Set([
+            'GOURMET', 'DINNER', 'FOOD LIST', 'FLIGHT', 'RENTAL CAR', 'FERRY',
+            'BUS', 'HELLO CYCLING', 'DRIVE', 'BREAK', 'AQUARIUM', 'VIEWPOINT',
+            'MUSEUM', 'SPA', 'SHOPPING', 'POKÉMON', 'HOTEL'
+        ]);
+        document.querySelectorAll('#tab-day1 .j-card, #tab-day2 .j-card, #tab-day3 .j-card').forEach(card => {
+            const badge = card.querySelector('.j-tag-badge')?.textContent.trim().toUpperCase() || '';
+            if (!shareableBadges.has(badge) || card.querySelector('.expense-shortcut')) return;
+            const rawTitle = card.querySelector('.j-card-ttl')?.textContent.replace(/\s+/g, ' ').trim() || '旅費';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'j-btn expense-shortcut';
+            button.textContent = '支払った → 割り勘';
+            button.addEventListener('click', () => {
+                window.openExpenseShortcut(expenseCategoryForBadge(badge), rawTitle);
+            });
+            let row = card.querySelector('.j-btn-row');
+            if (!row) {
+                row = document.createElement('div');
+                row.className = 'j-btn-row';
+                card.appendChild(row);
+            }
+            row.appendChild(button);
+        });
     }
 
     window.clearExpenses = function () {
@@ -421,10 +654,11 @@
     function initEnhancements() {
         setupChecklist();
         setupExpenses();
+        setupExpenseShortcuts();
         setupOfflineSupport();
-        setupTabDelayReset();
+        setupProgressAdvisor();
         openLinkedTab();
-        window.applyDelayScenario(0);
+        window.applyProgressAdvisor(0);
         renderNowMode();
         window.setInterval(renderNowMode, 1000);
     }

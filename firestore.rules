@@ -44,7 +44,7 @@ service cloud.firestore {
 
         function validExpense() {
           return request.resource.data.keys().hasOnly([
-              'id', 'amount', 'payer', 'category', 'note', 'createdAt'
+                'id', 'amount', 'payer', 'category', 'note', 'comment', 'createdAt'
             ])
             && request.resource.data.id == expenseId
             && request.resource.data.amount is int
@@ -53,9 +53,11 @@ service cloud.firestore {
             && request.resource.data.payer in ['aoi', 'kotaro']
             && request.resource.data.category is string
             && request.resource.data.category.size() <= 20
-            && request.resource.data.note is string
-            && request.resource.data.note.size() <= 40
-            && request.resource.data.createdAt is string;
+              && request.resource.data.note is string
+              && request.resource.data.note.size() <= 40
+              && request.resource.data.comment is string
+              && request.resource.data.comment.size() <= 80
+              && request.resource.data.createdAt is string;
         }
 
         allow read: if isRoomMember();

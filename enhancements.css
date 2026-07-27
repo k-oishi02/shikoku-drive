@@ -108,6 +108,8 @@
 
 .now-route,
 .now-secondary,
+.now-departure,
+.progress-form button,
 .delay-buttons button,
 .mini-button,
 .expense-submit {
@@ -119,6 +121,22 @@
     font-weight: 900;
     letter-spacing: 1px;
     cursor: pointer;
+}
+
+.now-departure {
+    grid-column: 1 / -1;
+    min-height: 56px;
+    border-color: #59d9b0;
+    background: #59d9b0;
+    color: #101010;
+    font-size: 0.82rem;
+}
+
+.now-departure:disabled {
+    border-color: #454545;
+    background: #262626;
+    color: #777;
+    cursor: not-allowed;
 }
 
 .now-route {
@@ -154,6 +172,125 @@
     color: #a1a1a1;
     font-size: 0.72rem;
     line-height: 1.55;
+}
+
+.progress-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(88px, 0.55fr);
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.progress-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #999;
+    font-family: var(--font-mont);
+    font-size: 0.62rem;
+    font-weight: 800;
+}
+
+.progress-form input,
+.progress-form select {
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 9px;
+    border: 1px solid #4b4b4b;
+    border-radius: 0;
+    background: #1d1d1d;
+    color: #fff;
+    font: inherit;
+    font-size: 0.76rem;
+}
+
+.progress-form button {
+    min-height: 42px;
+    border-color: #ffbf47;
+    background: #ffbf47;
+    color: #111;
+}
+
+.progress-form .progress-reset {
+    border-color: #4b4b4b;
+    background: #292929;
+    color: #bbb;
+}
+
+.progress-advice {
+    display: grid;
+    gap: 3px;
+    margin-top: 11px;
+    padding: 10px;
+    border-left: 3px solid #59d9b0;
+    background: #202020;
+}
+
+.progress-advice strong {
+    color: #59d9b0;
+    font-family: var(--font-mont);
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+}
+
+.progress-advice span {
+    color: #e3e3e3;
+    font-size: 0.72rem;
+    line-height: 1.5;
+}
+
+.optional-advice {
+    display: grid;
+    gap: 6px;
+    margin-top: 9px;
+}
+
+.optional-advice-row,
+.detour-advice {
+    display: grid;
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px 9px;
+    border: 1px solid #3e3e3e;
+    background: rgba(0, 0, 0, 0.18);
+    color: #cfcfcf;
+    font-size: 0.68rem;
+    line-height: 1.45;
+}
+
+.optional-advice-row strong,
+.detour-advice strong {
+    color: #ff7e79;
+    font-family: var(--font-mont);
+    font-size: 0.6rem;
+    letter-spacing: 0.5px;
+}
+
+.optional-advice-row.go strong,
+.detour-advice strong {
+    color: #59d9b0;
+}
+
+.optional-decision {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 6px;
+    border: 1px solid currentColor;
+    color: #ff7e79;
+    font-size: 0.61rem;
+    font-weight: 900;
+}
+
+.optional-decision.go {
+    color: #59d9b0;
+}
+
+.optional-go {
+    box-shadow: inset 3px 0 0 #59d9b0;
+}
+
+.optional-no {
+    box-shadow: inset 3px 0 0 #ff7e79;
 }
 
 .delay-buttons {
@@ -280,6 +417,36 @@
     margin-bottom: 16px;
 }
 
+.device-owner-panel {
+    display: grid;
+    grid-template-columns: auto minmax(120px, 0.65fr);
+    align-items: center;
+    gap: 5px 10px;
+    margin-bottom: 14px;
+    padding: 10px;
+    border: 1px solid #3f3f3f;
+    color: #ddd;
+    font-family: var(--font-mont);
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+.device-owner-panel select {
+    min-height: 38px;
+    border: 1px solid #59d9b0;
+    border-radius: 0;
+    background: #1c1c1c;
+    color: #fff;
+    font: inherit;
+}
+
+.device-owner-panel small {
+    grid-column: 1 / -1;
+    color: #818181;
+    font-size: 0.62rem;
+    line-height: 1.45;
+}
+
 .share-room-panel {
     margin: -2px -2px 18px;
     padding: 14px;
@@ -394,8 +561,23 @@
     font-size: 0.82rem;
 }
 
-.expense-note-field {
+.expense-note-field,
+.expense-comment-field {
     grid-column: 1 / -1;
+}
+
+.expense-form.expense-prefilled {
+    animation: expense-prefill-flash 1.2s ease;
+}
+
+@keyframes expense-prefill-flash {
+    0%, 100% { box-shadow: none; }
+    35% { box-shadow: 0 0 0 3px rgba(89, 217, 176, 0.45); }
+}
+
+.expense-shortcut {
+    border-color: #59d9b0 !important;
+    color: #59d9b0 !important;
 }
 
 .expense-submit {
@@ -460,6 +642,11 @@
     color: #858585;
 }
 
+.expense-list .expense-comment {
+    margin-top: 2px;
+    color: #b8b8b8;
+}
+
 .expense-list button {
     width: 34px;
     height: 34px;
@@ -484,6 +671,10 @@ select:focus-visible,
 }
 
 @media (max-width: 430px) {
+    .progress-form {
+        grid-template-columns: 1fr 0.65fr;
+    }
+
     .checklist-grid {
         grid-template-columns: 1fr;
     }

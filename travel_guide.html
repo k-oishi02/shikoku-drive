@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="header_shikoku.png">
-    <link rel="stylesheet" href="enhancements.css">
+    <link rel="stylesheet" href="enhancements.css?v=12">
 
     <style>
         :root {
@@ -365,7 +365,7 @@
             </div>
         </div>
 
-        <!-- NOW MODE / DELAY SIMULATOR -->
+        <!-- NOW MODE / LIVE SCHEDULE ADVISOR -->
         <section id="now-mode" class="now-card" aria-labelledby="now-mode-title">
             <div class="now-head">
                 <div>
@@ -382,21 +382,36 @@
                     <span id="now-countdown">出発時刻を計算中</span>
                 </div>
                 <div class="now-actions">
+                    <button id="now-departure" type="button" class="now-departure" onclick="recordDepartureNow()" disabled>DEPARTURE NOW</button>
                     <a id="now-route" class="now-route" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">ROUTE →</a>
                     <button type="button" class="now-secondary" onclick="jumpToCurrentTripDay()">TODAY</button>
                 </div>
             </div>
             <div class="delay-panel">
                 <div>
-                    <span class="delay-title">DELAY SIMULATOR</span>
-                    <p>選択中の日程を再計算。交通・予約・イベント時刻は固定します。</p>
+                    <span class="delay-title">LIVE SCHEDULE ADVISOR</span>
+                    <p>現在の進み具合を入力すると、今後の時刻・Optional可否・寄り道候補を再計算します。</p>
                 </div>
-                <div class="delay-buttons" role="group" aria-label="遅延時間">
-                    <button type="button" data-delay-minutes="15" onclick="applyDelayScenario(15, this)">+15 MIN</button>
-                    <button type="button" data-delay-minutes="30" onclick="applyDelayScenario(30, this)">+30 MIN</button>
-                    <button type="button" data-delay-minutes="0" onclick="applyDelayScenario(0, this)">RESET</button>
+                <form id="progress-form" class="progress-form">
+                    <label>
+                        <span>予定との差</span>
+                        <select id="progress-direction" aria-label="予定より早いか遅いか">
+                            <option value="-1">予定より早い</option>
+                            <option value="1">予定より遅い</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>分数</span>
+                        <input id="progress-minutes" type="number" min="0" max="180" step="5" inputmode="numeric" value="0" aria-label="予定との差（分）">
+                    </label>
+                    <button type="submit">再調整</button>
+                    <button type="button" class="progress-reset" onclick="resetProgressAdvisor()">RESET</button>
+                </form>
+                <div id="progress-advice" class="progress-advice" aria-live="polite">
+                    <strong>ON SCHEDULE</strong>
+                    <span>予定どおりです。Optionalは現地の混雑を見て判断できます。</span>
                 </div>
-                <p id="delay-status" class="delay-status" aria-live="polite">DAY 01の予定どおりです。</p>
+                <div id="optional-advice" class="optional-advice" aria-live="polite"></div>
             </div>
         </section>
 
@@ -1020,6 +1035,14 @@
                     </div>
                     <button type="button" class="mini-button" onclick="clearExpenses()">ALL CLEAR</button>
                 </div>
+                <label class="device-owner-panel">
+                    <span>この端末を使う人</span>
+                    <select id="device-owner">
+                        <option value="kotaro">こうたろう</option>
+                        <option value="aoi">あおい</option>
+                    </select>
+                    <small>最初に一度だけ選択。旅程の「支払った → 割り勘」で支払者へ自動入力します。</small>
+                </label>
                 <form id="expense-form" class="expense-form">
                     <label>
                         <span>金額</span>
@@ -1046,6 +1069,10 @@
                     <label class="expense-note-field">
                         <span>メモ</span>
                         <input id="expense-note" type="text" maxlength="40" placeholder="例：五志喜">
+                    </label>
+                    <label class="expense-comment-field">
+                        <span>コメント</span>
+                        <input id="expense-comment" type="text" maxlength="80" placeholder="例：予約分／あとでレシート確認">
                     </label>
                     <button type="submit" class="expense-submit">ADD EXPENSE</button>
                 </form>
@@ -1536,7 +1563,7 @@
         setInterval(runCountdown, 1000);
         runCountdown();
     </script>
-    <script src="enhancements.js?v=11"></script>
-    <script type="module" src="firebase-sync.js?v=11"></script>
+    <script src="enhancements.js?v=12"></script>
+    <script type="module" src="firebase-sync.js?v=12"></script>
 </body>
 </html>

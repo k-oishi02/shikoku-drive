@@ -99,6 +99,7 @@ function cleanExpense(expense) {
         payer: expense.payer === 'kotaro' ? 'kotaro' : 'aoi',
         category: String(expense.category || 'その他').slice(0, 20),
         note: String(expense.note || '').slice(0, 40),
+        comment: String(expense.comment || '').slice(0, 80),
         createdAt: String(expense.createdAt || new Date().toISOString())
     };
 }
