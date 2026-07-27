@@ -998,9 +998,24 @@
             </section>
 
             <div class="j-card expense-card">
+                <div class="share-room-panel">
+                    <div class="share-room-head">
+                        <div>
+                            <span class="now-kicker">TWO-DEVICE LIVE SYNC</span>
+                            <strong id="sync-title">共有ルームへ接続中…</strong>
+                        </div>
+                        <span id="sync-badge" class="sync-badge">CONNECTING</span>
+                    </div>
+                    <p id="sync-status" class="sync-status" aria-live="polite">Firebaseに匿名接続しています。</p>
+                    <div class="share-room-actions">
+                        <button id="share-link-button" type="button" onclick="copyLedgerInviteLink()" disabled>招待リンクをコピー</button>
+                        <span id="sync-room-code" class="sync-room-code">ROOM: ------</span>
+                    </div>
+                    <p class="sync-note">この招待リンクを蒼さんの端末で一度だけ開くと、以後は二人の入力がリアルタイム同期されます。</p>
+                </div>
                 <div class="expense-head">
                     <div>
-                        <span class="now-kicker">LOCAL SPLIT LEDGER</span>
+                        <span class="now-kicker">SHARED SPLIT LEDGER</span>
                         <h3>旅費を記録</h3>
                     </div>
                     <button type="button" class="mini-button" onclick="clearExpenses()">ALL CLEAR</button>
@@ -1040,7 +1055,7 @@
                     <div class="expense-settlement"><span>精算</span><strong id="expense-settlement">まだ支出はありません</strong></div>
                 </div>
                 <ul id="expense-list" class="expense-list" aria-label="支出一覧"></ul>
-                <p class="local-save-note">金額はこの端末内だけに保存され、外部へ送信しません。</p>
+                <p class="local-save-note">入力は端末にも一時保存し、共有ルーム接続時はFirebaseで二人の端末へ同期します。</p>
             </div>
 
             <!-- PAYPAY NATIVE APP + WEB LINK -->
@@ -1522,5 +1537,6 @@
         runCountdown();
     </script>
     <script src="enhancements.js"></script>
+    <script type="module" src="firebase-sync.js"></script>
 </body>
 </html>

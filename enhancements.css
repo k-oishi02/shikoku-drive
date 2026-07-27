@@ -280,6 +280,91 @@
     margin-bottom: 16px;
 }
 
+.share-room-panel {
+    margin: -2px -2px 18px;
+    padding: 14px;
+    border: 1px solid #494949;
+    background:
+        linear-gradient(135deg, rgba(115, 167, 255, 0.12), transparent 55%),
+        #1d1d1d;
+}
+
+.share-room-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.share-room-head strong {
+    display: block;
+    margin-top: 3px;
+    color: #fff;
+    font-size: 0.9rem;
+}
+
+.sync-badge {
+    padding: 3px 7px;
+    border: 1px solid #ffbf47;
+    color: #ffbf47;
+    font-family: var(--font-mont);
+    font-size: 0.56rem;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+}
+
+.sync-badge.live {
+    border-color: #59d9b0;
+    color: #59d9b0;
+}
+
+.sync-badge.error {
+    border-color: #ff7e79;
+    color: #ff7e79;
+}
+
+.sync-status,
+.sync-note {
+    margin-top: 7px;
+    color: #a9a9a9;
+    font-size: 0.7rem;
+    line-height: 1.55;
+}
+
+.share-room-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.share-room-actions button {
+    min-height: 40px;
+    padding: 0 13px;
+    border: 1px solid #73a7ff;
+    background: #73a7ff;
+    color: #111;
+    font-family: var(--font-mont);
+    font-size: 0.65rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.share-room-actions button:disabled {
+    border-color: #444;
+    background: #2a2a2a;
+    color: #777;
+    cursor: wait;
+}
+
+.sync-room-code {
+    color: #858585;
+    font-family: var(--font-mont);
+    font-size: 0.59rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+}
+
 .expense-form {
     display: grid;
     grid-template-columns: 1fr 1fr;

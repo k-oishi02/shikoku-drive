@@ -297,6 +297,10 @@
         return `${expense.category} · ${payer}が支払い`;
     }
 
+    function notifyExpenseAction(detail) {
+        window.dispatchEvent(new CustomEvent('shikoku-expense-action', { detail }));
+    }
+
     function renderExpenses() {
         const expenses = safeLoad(EXPENSE_KEY, []);
         const list = document.getElementById('expense-list');
@@ -346,6 +350,7 @@
         const expenses = safeLoad(EXPENSE_KEY, []).filter(expense => expense.id !== id);
         safeSave(EXPENSE_KEY, expenses);
         renderExpenses();
+        notifyExpenseAction({ type: 'remove', id });
     }
 
     function setupExpenses() {
@@ -355,25 +360,33 @@
             const amount = Number(document.getElementById('expense-amount').value);
             if (!Number.isFinite(amount) || amount <= 0) return;
             const expenses = safeLoad(EXPENSE_KEY, []);
-            expenses.unshift({
+            const expense = {
                 id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
                 amount: Math.round(amount),
                 payer: document.getElementById('expense-payer').value,
                 category: document.getElementById('expense-category').value,
                 note: document.getElementById('expense-note').value.trim(),
                 createdAt: new Date().toISOString()
-            });
+            };
+            expenses.unshift(expense);
             safeSave(EXPENSE_KEY, expenses);
             form.reset();
+            renderExpenses();
+            notifyExpenseAction({ type: 'upsert', expense });
+        });
+        window.addEventListener('shikoku-expenses-remote', event => {
+            const expenses = Array.isArray(event.detail) ? event.detail : [];
+            safeSave(EXPENSE_KEY, expenses);
             renderExpenses();
         });
         renderExpenses();
     }
 
     window.clearExpenses = function () {
-        if (!window.confirm('この端末に保存した支出をすべて削除しますか？')) return;
+        if (!window.confirm('二人の共有台帳から支出をすべて削除しますか？')) return;
         safeSave(EXPENSE_KEY, []);
         renderExpenses();
+        notifyExpenseAction({ type: 'clear' });
     };
 
     function updateNetworkStatus() {

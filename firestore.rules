@@ -1,0 +1,67 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /rooms/{roomId} {
+      allow create: if request.auth != null
+        && roomId.size() == 43
+        && request.resource.data.keys().hasOnly([
+          'createdBy', 'members', 'inviteHash', 'joined', 'createdAt'
+        ])
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.members.size() == 1
+        && request.resource.data.members[request.auth.uid] == true
+        && request.resource.data.inviteHash is string
+        && request.resource.data.inviteHash.size() == 64
+        && request.resource.data.joined == false;
+
+      allow get: if request.auth != null
+        && resource.data.members[request.auth.uid] == true;
+      allow list, delete: if false;
+
+      allow update: if request.auth != null
+        && resource.data.joined == false
+        && request.resource.data.joined == true
+        && request.resource.data.joinProof == resource.data.inviteHash
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.inviteHash == resource.data.inviteHash
+        && request.resource.data.members.size() == 2
+        && request.resource.data.members[request.auth.uid] == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'members', 'joined', 'joinProof'
+        ])
+        && request.resource.data.members.diff(resource.data.members)
+          .addedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.members.diff(resource.data.members)
+          .removedKeys().size() == 0;
+
+      match /expenses/{expenseId} {
+        function isRoomMember() {
+          return request.auth != null
+            && get(/databases/$(database)/documents/rooms/$(roomId))
+              .data.members[request.auth.uid] == true;
+        }
+
+        function validExpense() {
+          return request.resource.data.keys().hasOnly([
+              'id', 'amount', 'payer', 'category', 'note', 'createdAt'
+            ])
+            && request.resource.data.id == expenseId
+            && request.resource.data.amount is int
+            && request.resource.data.amount > 0
+            && request.resource.data.amount < 10000000
+            && request.resource.data.payer in ['aoi', 'kotaro']
+            && request.resource.data.category is string
+            && request.resource.data.category.size() <= 20
+            && request.resource.data.note is string
+            && request.resource.data.note.size() <= 40
+            && request.resource.data.createdAt is string;
+        }
+
+        allow read: if isRoomMember();
+        allow create, update: if isRoomMember() && validExpense();
+        allow delete: if isRoomMember();
+      }
+    }
+  }
+}
