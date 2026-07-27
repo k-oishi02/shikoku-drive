@@ -597,7 +597,9 @@
         document.querySelectorAll('#tab-day1 .j-card, #tab-day2 .j-card, #tab-day3 .j-card').forEach(card => {
             const badge = card.querySelector('.j-tag-badge')?.textContent.trim().toUpperCase() || '';
             if (!shareableBadges.has(badge) || card.querySelector('.expense-shortcut')) return;
-            const rawTitle = card.querySelector('.j-card-ttl')?.textContent.replace(/\s+/g, ' ').trim() || '旅費';
+            const titleClone = card.querySelector('.j-card-ttl')?.cloneNode(true);
+            titleClone?.querySelector('.j-tag-badge')?.remove();
+            const rawTitle = titleClone?.textContent.replace(/\s+/g, ' ').trim() || '旅費';
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'j-btn expense-shortcut';
