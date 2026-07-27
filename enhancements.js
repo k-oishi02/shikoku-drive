@@ -601,8 +601,8 @@
 
     function setupExpenseShortcuts() {
         const shareableBadges = new Set([
-            'GOURMET', 'DINNER', 'FOOD LIST', 'RENTAL CAR', 'FERRY',
-            'AQUARIUM', 'MUSEUM', 'SPA', 'HOTEL'
+            'GOURMET', 'DINNER', 'FOOD LIST', 'FERRY',
+            'AQUARIUM', 'MUSEUM', 'SPA'
         ]);
         document.querySelectorAll('#tab-day1 .j-card, #tab-day2 .j-card, #tab-day3 .j-card').forEach(card => {
             const badge = card.querySelector('.j-tag-badge')?.textContent.trim().toUpperCase() || '';
