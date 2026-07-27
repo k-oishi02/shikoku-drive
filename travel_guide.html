@@ -769,8 +769,8 @@
             </div>
 
             <!-- DAY 3 - 3: Hakurakuten (TABELOG) -->
-            <div class="j-card">
-                <span class="j-card-time">12:10 - 13:00</span>
+            <div id="day3-lunch-card" class="j-card">
+                <span class="j-card-time">13:40 - 14:30</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">GOURMET</span>今治名物「焼豚玉子飯」 (白楽天)</div>
                 <div class="j-card-desc">白楽天にて今治名物B級グルメ焼豚玉子飯ランチ。</div>
                 <div class="j-btn-row">
@@ -783,8 +783,8 @@
             </div>
 
             <!-- DAY 3 - 4: Towel Museum -->
-            <div class="j-card">
-                <span class="j-card-time">13:25 - 14:30</span>
+            <div id="towel-museum-card" class="j-card">
+                <span class="j-card-time">12:10 - 13:15</span>
                 <div class="j-card-ttl"><span class="j-tag-badge">MUSEUM</span>タオル美術館 ICHIHIRO</div>
                 <div class="j-card-desc">タオルアート展示の観覧および高品質今治タオルの閲覧。</div>
                 <div class="j-btn-row">
@@ -1174,8 +1174,8 @@
                     { name: 'ダイワロイネットホテル松山', coords: [33.8415157, 132.7715136] },
                     { name: '下灘駅', coords: [33.6554175, 132.5894116] },
                     { name: '道の駅 ふたみ', coords: [33.6853313, 132.6341958] },
-                    { name: '白楽天 今治本店', coords: [34.0648, 132.9988] },
                     { name: 'タオル美術館', coords: [33.9696759, 133.0330906] },
+                    { name: '白楽天 今治本店', coords: [34.0648, 132.9988] },
                     { name: '亀老山展望公園', coords: [34.1201239, 133.0341105] },
                     { name: '松山空港', coords: [33.8273145, 132.7013265] }
                 ]
@@ -1277,6 +1277,12 @@
             const hotelCard = document.getElementById('day1-hotel-card');
             const pokemonCard = document.getElementById('pokemon-center-card');
             if (hotelCard && pokemonCard) pokemonCard.parentNode.insertBefore(hotelCard, pokemonCard);
+        }
+
+        function moveTowelMuseumBeforeLunch() {
+            const towelCard = document.getElementById('towel-museum-card');
+            const lunchCard = document.getElementById('day3-lunch-card');
+            if (towelCard && lunchCard) lunchCard.parentNode.insertBefore(towelCard, lunchCard);
         }
 
         function switchTab(panelId, btnEl) {
@@ -1388,6 +1394,7 @@
         filterOverviewMap('day1', document.querySelector('[data-map-filter="day1"]'));
         moveFatherBeachCard();
         moveDay1HotelCard();
+        moveTowelMuseumBeforeLunch();
         setupDaySwipe();
         setInterval(runCountdown, 1000);
         runCountdown();
