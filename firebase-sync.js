@@ -9,12 +9,14 @@ import {
     doc,
     getDoc,
     getDocs,
-    getFirestore,
     onSnapshot,
     serverTimestamp,
     setDoc,
     updateDoc,
-    writeBatch
+    writeBatch,
+    initializeFirestore,
+    persistentLocalCache,
+    persistentMultipleTabManager
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -193,7 +195,11 @@ async function startSync() {
         const { roomId, invite } = ensureRoomParameters();
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
+        const db = initializeFirestore(app, {
+            localCache: persistentLocalCache({
+                tabManager: persistentMultipleTabManager()
+            })
+        });
         await signInAnonymously(auth);
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Anonymous authentication failed');
