@@ -651,7 +651,18 @@
         window.addEventListener('offline', updateNetworkStatus);
         if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(() => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    // Check if update is waiting and force reload
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log("New ServiceWorker installed. Refreshing PWA cache...");
+                                window.location.reload();
+                            }
+                        });
+                    });
+                }).catch(() => {
                     const status = document.getElementById('offline-status');
                     if (status) status.textContent = 'ONLINE';
                 });
