@@ -1,11 +1,11 @@
-const CACHE_NAME = 'shikoku-drive-1785213204';
+const CACHE_NAME = 'shikoku-drive-sync-1785213273';
 const APP_SHELL = [
   './',
   './index.html',
   './travel_guide.html',
-  './enhancements.css?v=1785213204',
-  './enhancements.js?v=1785213204',
-  './firebase-sync.js?v=1785213204',
+  './enhancements.css?v=1785213273',
+  './enhancements.js?v=1785213273',
+  './firebase-sync.js?v=1785213273',
   './manifest.webmanifest',
   './header_shikoku.png',
   './yadon_park.png',
@@ -41,15 +41,20 @@ self.addEventListener('fetch', event => {
   const requestUrl = new URL(event.request.url);
   if (requestUrl.hostname === 'api.open-meteo.com') return;
 
+  // STRICT NETWORK-FIRST FOR HTML NAVIGATION TO ENSURE LATEST VERSION VIA CLEAN SHARED URL
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          }
           return response;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(() => {
+          return caches.match('./index.html') || caches.match('./travel_guide.html');
+        })
     );
     return;
   }
