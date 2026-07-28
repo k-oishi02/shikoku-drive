@@ -649,14 +649,51 @@
         updateNetworkStatus();
         window.addEventListener('online', updateNetworkStatus);
         window.addEventListener('offline', updateNetworkStatus);
+        
         if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+            // FORCE UNREGISTER OLD WORKERS AND CACHES ONCE TO CRUSH STUCK v16/v17/v18 GHOSTS
+            const lastReset = localStorage.getItem('last_sw_reset_v19');
+            if (!lastReset) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    for (let registration of registrations) {
+                        registration.unregister();
+                    }
+                    caches.keys().then(names => {
+                        for (let name of names) caches.delete(name);
+                    });
+                    localStorage.setItem('last_sw_reset_v19', 'true');
+                    console.log("Ultimate PWA Cache Reset triggered! Reloading...");
+                    window.location.reload();
+                });
+                return;
+            }
+
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (!refreshing) {
                     refreshing = true;
-                    console.log("Service Worker updated! Force reloading...");
+                    console.log("Service Worker updated! Force reloading to apply latest PAID button...");
                     window.location.reload();
                 }
+            });
+
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                newWorker.postMessage({ action: 'skipWaiting' });
+                            }
+                        });
+                    });
+                }).catch(() => {
+                    const status = document.getElementById('offline-status');
+                    if (status) status.textContent = 'ONLINE';
+                });
+            });
+        }
+    }
             });
 
             window.addEventListener('load', () => {
