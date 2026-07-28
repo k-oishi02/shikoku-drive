@@ -1,11 +1,11 @@
-const CACHE_NAME = 'shikoku-drive-v16';
+const CACHE_NAME = 'shikoku-drive-v17';
 const APP_SHELL = [
   './',
   './index.html',
   './travel_guide.html',
-  './enhancements.css?v=16',
-  './enhancements.js?v=16',
-  './firebase-sync.js?v=16',
+  './enhancements.css?v=17',
+  './enhancements.js?v=17',
+  './firebase-sync.js?v=17',
   './manifest.webmanifest',
   './header_shikoku.png',
   './yadon_park.png',
@@ -29,7 +29,9 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+      .then(keys => Promise.all(
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+      ))
       .then(() => self.clients.claim())
   );
 });
@@ -63,7 +65,13 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => cached);
-      return cached || networkFetch;
+      
+      // Stale-While-Revalidate for CSS/JS/HTML, Cache-First for static assets (PNG)
+      const isStaticAsset = requestUrl.pathname.endsWith('.png') || requestUrl.pathname.endsWith('.woff2');
+      if (isStaticAsset) {
+        return cached || networkFetch;
+      }
+      return networkFetch.catch(() => cached);
     })
   );
 });
