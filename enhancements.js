@@ -616,7 +616,7 @@
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'j-btn expense-shortcut';
-            button.textContent = '支払った → 割り勘';
+            button.textContent = 'PAID';
             button.addEventListener('click', () => {
                 window.openExpenseShortcut(expenseCategoryForBadge(badge, rawTitle), rawTitle);
             });
@@ -675,25 +675,6 @@
                     console.log("Service Worker updated! Force reloading to apply latest PAID button...");
                     window.location.reload();
                 }
-            });
-
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(reg => {
-                    reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                newWorker.postMessage({ action: 'skipWaiting' });
-                            }
-                        });
-                    });
-                }).catch(() => {
-                    const status = document.getElementById('offline-status');
-                    if (status) status.textContent = 'ONLINE';
-                });
-            });
-        }
-    }
             });
 
             window.addEventListener('load', () => {
