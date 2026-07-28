@@ -650,16 +650,34 @@
         window.addEventListener('online', updateNetworkStatus);
         window.addEventListener('offline', updateNetworkStatus);
         if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+            // Reload page automatically when service worker is updated and claims control
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    console.log("Service Worker updated! Force reloading to apply latest content...");
+                    window.location.reload();
+                }
+            });
+
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').then(reg => {
-                    // Check if update is waiting and force reload
+                    // Check if an update is found and trigger install state checks
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log("New ServiceWorker installed. Refreshing PWA cache...");
-                                window.location.reload();
+                                newWorker.postMessage({ action: 'skipWaiting' });
                             }
+                        });
+                    });
+                }).catch(() => {
+                    const status = document.getElementById('offline-status');
+                    if (status) status.textContent = 'ONLINE';
+                });
+            });
+        }
+    }
                         });
                     });
                 }).catch(() => {
