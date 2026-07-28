@@ -650,19 +650,17 @@
         window.addEventListener('online', updateNetworkStatus);
         window.addEventListener('offline', updateNetworkStatus);
         if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-            // Reload page automatically when service worker is updated and claims control
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (!refreshing) {
                     refreshing = true;
-                    console.log("Service Worker updated! Force reloading to apply latest content...");
+                    console.log("Service Worker updated! Force reloading...");
                     window.location.reload();
                 }
             });
 
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').then(reg => {
-                    // Check if an update is found and trigger install state checks
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;
                         newWorker.addEventListener('statechange', () => {
@@ -678,16 +676,6 @@
             });
         }
     }
-                        });
-                    });
-                }).catch(() => {
-                    const status = document.getElementById('offline-status');
-                    if (status) status.textContent = 'ONLINE';
-                });
-            });
-        }
-    }
-
     function openLinkedTab() {
         const panelId = window.location.hash.slice(1);
         if (!/^tab-(day[1-3]|checklist|paypay)$/.test(panelId)) return;
