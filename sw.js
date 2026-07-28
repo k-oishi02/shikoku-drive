@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shikoku-drive-ultimate-1785214933';
+const CACHE_NAME = 'shikoku-drive-ultimate-1785215343';
 const APP_SHELL = [
   './',
   './index.html',
@@ -41,7 +41,7 @@ self.addEventListener('fetch', event => {
   const requestUrl = new URL(event.request.url);
   if (requestUrl.hostname === 'api.open-meteo.com') return;
 
-  // Enforce Network-First for main assets (HTML, CSS, JS, manifest) when online
+  // Network-First strategy for critical web assets to bypass cache when online
   const isWebAsset = requestUrl.pathname.endsWith('.html') || 
                      requestUrl.pathname.endsWith('.js') || 
                      requestUrl.pathname.endsWith('.css') || 
@@ -64,7 +64,6 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache-First for static large image files
   event.respondWith(
     caches.match(event.request).then(cached => {
       return cached || fetch(event.request).then(response => {
