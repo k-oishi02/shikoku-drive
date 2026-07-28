@@ -1,6 +1,26 @@
 ﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
+    <script>
+        // ULTIMATE INSTANT CACHE RESET HANDLER v20
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                let hadRegistrations = false;
+                for (let r of registrations) {
+                    r.unregister();
+                    hadRegistrations = true;
+                }
+                if (hadRegistrations) {
+                    caches.keys().then(keys => {
+                        for (let k of keys) caches.delete(k);
+                    });
+                    console.log("Stuck PWA Cache destroyed instantly. Reloading...");
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+
     <meta charset="UTF-8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -15,7 +35,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="header_shikoku.png">
-    <link rel="stylesheet" href="enhancements.css?v=1785214933">
+    <link rel="stylesheet" href="enhancements.css?v=1785215343">
 
     <style>
         :root {
@@ -1585,7 +1605,7 @@
         setInterval(runCountdown, 1000);
         runCountdown();
     </script>
-    <script src="enhancements.js?v=1785214933"></script>
-    <script type="module" src="firebase-sync.js?v=1785214933"></script>
+    <script src="enhancements.js?v=1785215343"></script>
+    <script type="module" src="firebase-sync.js?v=1785215343"></script>
 </body>
 </html>
