@@ -1,11 +1,11 @@
-const CACHE_NAME = 'shikoku-drive-sync-1785213273';
+const CACHE_NAME = 'shikoku-drive-ultimate-1785214933';
 const APP_SHELL = [
   './',
   './index.html',
   './travel_guide.html',
-  './enhancements.css?v=1785213273',
-  './enhancements.js?v=1785213273',
-  './firebase-sync.js?v=1785213273',
+  './enhancements.css',
+  './enhancements.js',
+  './firebase-sync.js',
   './manifest.webmanifest',
   './header_shikoku.png',
   './yadon_park.png',
@@ -41,8 +41,15 @@ self.addEventListener('fetch', event => {
   const requestUrl = new URL(event.request.url);
   if (requestUrl.hostname === 'api.open-meteo.com') return;
 
-  // STRICT NETWORK-FIRST FOR HTML NAVIGATION TO ENSURE LATEST VERSION VIA CLEAN SHARED URL
-  if (event.request.mode === 'navigate') {
+  // Enforce Network-First for main assets (HTML, CSS, JS, manifest) when online
+  const isWebAsset = requestUrl.pathname.endsWith('.html') || 
+                     requestUrl.pathname.endsWith('.js') || 
+                     requestUrl.pathname.endsWith('.css') || 
+                     requestUrl.pathname.endsWith('.webmanifest') ||
+                     requestUrl.pathname === '/' ||
+                     requestUrl.pathname.endsWith('/');
+
+  if (isWebAsset) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
@@ -52,30 +59,21 @@ self.addEventListener('fetch', event => {
           }
           return response;
         })
-        .catch(() => {
-          return caches.match('./index.html') || caches.match('./travel_guide.html');
-        })
+        .catch(() => caches.match(event.request) || caches.match('./index.html'))
     );
     return;
   }
 
+  // Cache-First for static large image files
   event.respondWith(
     caches.match(event.request).then(cached => {
-      const networkFetch = fetch(event.request)
-        .then(response => {
-          if (response && (response.ok || response.type === 'opaque')) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      
-      const isStaticAsset = requestUrl.pathname.endsWith('.png') || requestUrl.pathname.endsWith('.woff2');
-      if (isStaticAsset) {
-        return cached || networkFetch;
-      }
-      return networkFetch.catch(() => cached);
+      return cached || fetch(event.request).then(response => {
+        if (response && (response.ok || response.type === 'opaque')) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        }
+        return response;
+      });
     })
   );
 });
