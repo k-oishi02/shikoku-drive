@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="header_shikoku.png">
-    <link rel="stylesheet" href="enhancements.css?v=16">
+    <link rel="stylesheet" href="enhancements.css?v=17">
 
     <style>
         :root {
@@ -1194,7 +1194,9 @@
             document.getElementById('w-sunset').innerText = data.sunset;
             document.getElementById('w-cond').innerText = data.cond;
             document.getElementById('w-link').href = location.link;
-            document.getElementById('w-updated').innerText = data.error ? '取得失敗・WEBで確認' : `更新 ${formatUpdatedAt(data.fetchedAt)}`;
+            const fetchedDate = typeof data.fetchedAt === 'string' ? new Date(data.fetchedAt) : data.fetchedAt;
+            const isCache = data.offline ? ' (キャッシュ)' : '';
+            document.getElementById('w-updated').innerText = data.error ? '取得失敗・WEBで確認' : `更新 ${formatUpdatedAt(fetchedDate)}${isCache}`;
         }
 
         async function fetchWeather(key) {
@@ -1225,7 +1227,7 @@
                 ? `最低 ${formatTemp(daily.temperature_2m_min?.[index])} / 最高 ${formatTemp(daily.temperature_2m_max?.[index])}`
                 : `現在値 ${formatTemp(current.temperature_2m)}（旅行日の予報は出発16日前から）`;
 
-            weatherCache[key] = {
+            const weatherResult = {
                 loc: `${location.label}｜${hasTripForecast ? `旅行日 ${formatDateLabel(location.tripDate)}` : '現在値'}`,
                 temp: formatTemp(temp),
                 range,
@@ -1233,14 +1235,27 @@
                 pop: formatPercent(daily.precipitation_probability_max?.[index]),
                 sunset: formatSunset(daily.sunset?.[index]),
                 cond: hasTripForecast ? weatherCodeToLabel(weatherCode) : `現在 ${weatherCodeToLabel(weatherCode)}`,
-                fetchedAt: new Date(),
+                fetchedAt: new Date().toISOString(),
                 error: false
             };
+            weatherCache[key] = weatherResult;
+            try {
+                localStorage.setItem(`cached_weather_${key}`, JSON.stringify(weatherResult));
+            } catch(e) {}
         }
 
         function renderWeatherError(key) {
             const location = weatherLocations[key];
             if (!location) return;
+            try {
+                const cached = localStorage.getItem(`cached_weather_${key}`);
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    parsed.offline = true;
+                    weatherCache[key] = parsed;
+                    return;
+                }
+            } catch(e) {}
             weatherCache[key] = {
                 loc: `${location.label}｜API取得失敗`, temp: '--°C', range: '出発前に確認', icon: '⚠️',
                 pop: '--%', sunset: '要確認', cond: '取得失敗（WEBで確認）', fetchedAt: new Date(), error: true
@@ -1569,7 +1584,7 @@
         setInterval(runCountdown, 1000);
         runCountdown();
     </script>
-    <script src="enhancements.js?v=16"></script>
-    <script type="module" src="firebase-sync.js?v=16"></script>
+    <script src="enhancements.js?v=17"></script>
+    <script type="module" src="firebase-sync.js?v=17"></script>
 </body>
 </html>
