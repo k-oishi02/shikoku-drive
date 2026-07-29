@@ -2,10 +2,10 @@
 <html lang="ja">
 <head>
         <script>
-        // GLOBAL ERROR CAPTURER / PWA SELF-HEALING ENGINE
+        // GLOBAL ERROR CAPTURER / PWA SELF-HEALING ENGINE (RELOAD LOOPS PREVENTED)
         window.addEventListener('error', function(e) {
             console.error("Fatal PWA Script Error detected: ", e.message);
-            // If we hit a script loading error that causes black screen, reset cache and reload!
+            // If we hit a script loading error that causes black screen, reset cache
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(registrations => {
                     for (let r of registrations) {
@@ -15,10 +15,7 @@
                         for (let k of keys) caches.delete(k);
                     });
                     localStorage.clear();
-                    console.log("Self-healing triggered. Cache cleared. Reloading clean...");
-                    // Append temporary cache-busting timestamp to bypass hardware PWA proxy cache
-                    const cleanUrl = window.location.origin + window.location.pathname + '?v=' + Date.now();
-                    window.location.replace(cleanUrl);
+                    console.log("Self-healing: Cache cleared. Reloading disabled to prevent loops.");
                 });
             }
         });
