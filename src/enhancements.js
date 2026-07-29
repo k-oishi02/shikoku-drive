@@ -7,32 +7,9 @@
     const EXPENSE_KEY = `expenses-${tripId}-v1`;
     const DEVICE_OWNER_KEY = 'shikoku-drive-device-owner-v1';
     let activeProgressMinutes = 0;
-    const OPTIONAL_RULES = {
-        'tab-day1': [
-            { match: /うどんバカ一代/, required: 45, baseline: 0 }
-        ],
-        'tab-day2': [
-            { match: /長田 in 香の香/, required: 45, baseline: 0 },
-            { match: /石鎚山SA/, required: 10, baseline: 10 }
-        ],
-        'tab-day3': [
-            { match: /食べ逃し回収リスト/, required: 35, baseline: 0 }
-        ]
-    };
-    const DETOUR_SUGGESTIONS = {
-        'tab-day1': [
-            { minutes: 15, text: '高松港周辺でヤドン撮影スポットを1か所（約15分）' },
-            { minutes: 30, text: '高松港周辺の港散歩＋買い物（約30分）' }
-        ],
-        'tab-day2': [
-            { minutes: 10, text: '石鎚山SAで景色とトイレ休憩（約10分）' },
-            { minutes: 20, text: '父母ヶ浜周辺で短いカフェ休憩（約20分）' }
-        ],
-        'tab-day3': [
-            { minutes: 10, text: '道の駅ふたみでじゃこ天と海辺を追加（約10分）' },
-            { minutes: 20, text: '来島海峡SAでバリィさんグッズ確認を延長（約15分）' }
-        ]
-    };
+    // Dynamically populated from JSON config, default to empty to prevent hardcoding errors
+    let OPTIONAL_RULES = {};
+    let DETOUR_SUGGESTIONS = {};
 
     function safeLoad(key, fallback) {
         try {
@@ -466,8 +443,13 @@
     }
 
     function expenseLabel(expense) {
-        const payer = expense.payer === 'aoi' ? 'あおい' : 'こうたろう';
-        return `${expense.category} · ${payer}が支払い`;
+        const members = window.currentTripMembers || [
+            { id: 'aoi', name: 'あおい' },
+            { id: 'kotaro', name: 'こうたろう' }
+        ];
+        const payerObj = members.find(m => m.id === expense.payer);
+        const payerName = payerObj ? payerObj.name : expense.payer;
+        return `${expense.category} · ${payerName}が支払い`;
     }
 
     function notifyExpenseAction(detail) {
@@ -476,7 +458,7 @@
 
     function renderExpenses() {
         const expenses = safeLoad(EXPENSE_KEY, []);
-        const list = document.getElementById('expense-list');
+        const list = document.getElementById('expense-list-container');
         if (!list) return;
         list.replaceChildren();
 
@@ -734,21 +716,65 @@
     }
 
     function initEnhancements() {
-        // Parse active trip date from dynamic hero DOM if possible
         const datesVal = document.querySelector('.j-info-val')?.textContent || '';
         if (datesVal) {
             window.currentTripDate = datesVal.split(' ')[0].replace(/\//g, '-');
         }
-        initTripDays();
-        setupChecklist();
-        setupExpenses();
-        setupExpenseShortcuts();
-        setupOfflineSupport();
-        setupProgressAdvisor();
-        openLinkedTab();
-        window.applyProgressAdvisor(0);
-        renderNowMode();
-        window.setInterval(renderNowMode, 1000);
+        
+        // Dynamically fetch and preserve trip members list at runtime
+        fetch(`data/${window.currentTripId}.json`)
+            .then(res => res.json())
+            .then(tripData => {
+                window.currentTripMembers = tripData.members || [
+                    { id: 'aoi', name: 'あおい' },
+                    { id: 'kotaro', name: 'こうたろう' }
+                ];
+                
+                // Parse optional rules from JSON if present, converting match strings into RegExps
+                OPTIONAL_RULES = {};
+                if (tripData.optionalRules) {
+                    Object.keys(tripData.optionalRules).forEach(dayKey => {
+                        OPTIONAL_RULES[dayKey] = tripData.optionalRules[dayKey].map(rule => ({
+                            match: new RegExp(rule.match),
+                            required: Number(rule.required),
+                            baseline: Number(rule.baseline)
+                        }));
+                    });
+                }
+                
+                // Parse detour suggestions from JSON if present
+                DETOUR_SUGGESTIONS = tripData.detourSuggestions || {};
+
+                // Parse map center options
+                window.tripMapCenter = tripData.mapCenter || null;
+                window.tripMapZoom = tripData.mapZoom || 9;
+
+                initTripDays();
+                setupChecklist();
+                setupExpenses();
+                setupExpenseShortcuts();
+                setupOfflineSupport();
+                setupProgressAdvisor();
+                openLinkedTab();
+                window.applyProgressAdvisor(0);
+                renderNowMode();
+                window.setInterval(renderNowMode, 1000);
+            }).catch(() => {
+                window.currentTripMembers = [
+                    { id: 'aoi', name: 'あおい' },
+                    { id: 'kotaro', name: 'こうたろう' }
+                ];
+                initTripDays();
+                setupChecklist();
+                setupExpenses();
+                setupExpenseShortcuts();
+                setupOfflineSupport();
+                setupProgressAdvisor();
+                openLinkedTab();
+                window.applyProgressAdvisor(0);
+                renderNowMode();
+                window.setInterval(renderNowMode, 1000);
+            });
     }
 
     if (document.readyState === 'loading') {
