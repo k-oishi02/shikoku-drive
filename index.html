@@ -97,9 +97,13 @@
 
         /* Portal Title Page Styles */
         .portal-view {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .portal-view.fade {
             opacity: 0;
             transform: translateY(10px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
         }
         .portal-view.show {
             opacity: 1;
@@ -301,7 +305,14 @@
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script type="module">
-        import { initSyncEngine } from './src/firebase-sync.js?v=23';
+        // Safe dynamic import: firebase-sync.js failure won't block the app
+        let initSyncEngine = async () => {};
+        try {
+            const mod = await import('./src/firebase-sync.js?v=24');
+            initSyncEngine = mod.initSyncEngine;
+        } catch(e) {
+            console.warn('Firebase sync unavailable:', e.message);
+        }
 
         // Routing setup
         document.addEventListener('DOMContentLoaded', () => {
