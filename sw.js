@@ -7,7 +7,7 @@ const APP_SHELL = [
   './src/enhancements.css',
   './src/enhancements.js',
   './src/firebase-sync.js',
-  './src/manifest.webmanifest',
+  './manifest.webmanifest',
   './images/header_shikoku.png',
   './images/yadon_park.png',
   './images/udon_baka.png',
