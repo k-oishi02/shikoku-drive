@@ -725,8 +725,11 @@
                 setupProgressAdvisor();
                 openLinkedTab();
                 window.applyProgressAdvisor(0);
+                if (window.nowModeInterval) {
+                    window.clearInterval(window.nowModeInterval);
+                }
                 renderNowMode();
-                window.setInterval(renderNowMode, 1000);
+                window.nowModeInterval = window.setInterval(renderNowMode, 1000);
             }).catch(() => {
                 window.currentTripMembers = [
                     { id: 'aoi', name: 'あおい' },
@@ -740,8 +743,11 @@
                 setupProgressAdvisor();
                 openLinkedTab();
                 window.applyProgressAdvisor(0);
+                if (window.nowModeInterval) {
+                    window.clearInterval(window.nowModeInterval);
+                }
                 renderNowMode();
-                window.setInterval(renderNowMode, 1000);
+                window.nowModeInterval = window.setInterval(renderNowMode, 1000);
             });
     }
 
