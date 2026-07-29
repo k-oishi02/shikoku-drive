@@ -36,6 +36,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="manifest" href="src/manifest.webmanifest">
     <link rel="apple-touch-icon" href="images/header_shikoku.png">
+    <link rel="stylesheet" href="src/style.css?v=23">
     <link rel="stylesheet" href="src/enhancements.css?v=23">
 
     <style>
@@ -580,11 +581,7 @@
                                 <div class="j-w-stat"><span class="j-w-lbl">SUNSET</span><span id="w-sunset">--:--</span></div>
                             </div>
                         </div>
-                        <div class="j-w-nav">
-                            <button type="button" class="j-w-btn active" data-loc="takamatsu">高松</button>
-                            <button type="button" class="j-w-btn" data-loc="matsuyama">松山</button>
-                            <button type="button" class="j-w-btn" data-loc="imabari">今治</button>
-                        </div>
+                        <div class="j-w-nav" id="weather-nav-container">${weatherNavHtml}</div>
                     </div>
                 </section>
 
@@ -648,7 +645,7 @@
                                 <h3 class="j-warikan-title">PAYPAY GROUP BILL</h3>
                                 <div class="j-warikan-total">
                                     <div class="j-warikan-total-lbl">お互いの支払合計</div>
-                                    <div class="j-warikan-total-val" id="warikan-ratio">あおい 0円 : こうたろう 0円</div>
+                                    <div class="j-warikan-total-val" id="warikan-ratio">メンバーを読込中...</div>
                                 </div>
                                 <div class="j-warikan-result" id="warikan-result">精算: --</div>
                             </div>
@@ -664,16 +661,7 @@
                                     </div>
                                     <div class="j-form-group">
                                         <label class="j-form-lbl">支払った人</label>
-                                        <div class="j-radio-group">
-                                            <label class="j-radio-lbl">
-                                                <input type="radio" name="exp-payer" value="aoi" checked>
-                                                <span class="j-radio-btn">あおい</span>
-                                            </label>
-                                            <label class="j-radio-lbl">
-                                                <input type="radio" name="exp-payer" value="kotaro">
-                                                <span class="j-radio-btn">こうたろう</span>
-                                            </label>
-                                        </div>
+                                        <div class="j-radio-group" id="payer-radio-container">${payerRadiosHtml}</div>
                                     </div>
                                     <button type="submit" class="j-btn-submit">支出を追加する</button>
                                 </form>
