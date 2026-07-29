@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shikoku-drive-ultimate-1785215343';
+const CACHE_NAME = 'shikoku-drive-sync-v21';
 const APP_SHELL = [
   './',
   './index.html',
@@ -41,7 +41,6 @@ self.addEventListener('fetch', event => {
   const requestUrl = new URL(event.request.url);
   if (requestUrl.hostname === 'api.open-meteo.com') return;
 
-  // Network-First strategy for critical web assets to bypass cache when online
   const isWebAsset = requestUrl.pathname.endsWith('.html') || 
                      requestUrl.pathname.endsWith('.js') || 
                      requestUrl.pathname.endsWith('.css') || 
