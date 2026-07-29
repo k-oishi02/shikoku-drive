@@ -59,6 +59,8 @@
     <link rel="apple-touch-icon" href="images/header_shikoku.png">
     <link rel="stylesheet" href="src/style.css?v=23">
     <link rel="stylesheet" href="src/enhancements.css?v=23">
+    <link rel="stylesheet" href="src/shiori_styles.css?v=25">
+
 
     <style>
         :root {
@@ -277,7 +279,7 @@
         .trip-view.show {
             opacity: 1;
         }
-    </script>
+    </style>
 </head>
 <body>
 
@@ -285,7 +287,7 @@
     <div class="c-mark-right"></div>
 
     <!-- 1. PORTAL TITLE SCREEN (Index List View) -->
-    <div id="view-dashboard" class="portal-view l-container" style="display: none;">
+    <div id="view-dashboard" class="portal-view l-container">
         <header class="db-header">
             <h1 class="db-title">OUR JOURNEYS</h1>
             <p class="db-subtitle">TRAVEL SHIORI ENGINE</p>
@@ -305,37 +307,31 @@
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script type="module">
-        // Safe dynamic import: firebase-sync.js failure won't block the app
-        let initSyncEngine = async () => {};
-        try {
-            const mod = await import('./src/firebase-sync.js?v=24');
-            initSyncEngine = mod.initSyncEngine;
-        } catch(e) {
-            console.warn('Firebase sync unavailable:', e.message);
+        // Routing runs IMMEDIATELY — no await blocking
+        const params = new URLSearchParams(window.location.search);
+        const tripId = params.get('trip');
+
+        if (tripId) {
+            loadTripEngine(tripId, false);
+        } else {
+            loadDashboard(false);
         }
 
-        // Routing setup
-        document.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-            const tripId = params.get('trip');
-
-            if (tripId) {
-                loadTripEngine(tripId, false);
+        // Bind back/forward browser button navigation
+        window.addEventListener('popstate', (event) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentId = urlParams.get('trip');
+            if (currentId) {
+                loadTripEngine(currentId, true);
             } else {
-                loadDashboard(false);
+                loadDashboard(true);
             }
-
-            // Bind back/forward browser button navigation
-            window.addEventListener('popstate', (event) => {
-                const urlParams = new URLSearchParams(window.location.search);
-                const currentId = urlParams.get('trip');
-                if (currentId) {
-                    loadTripEngine(currentId, true);
-                } else {
-                    loadDashboard(true);
-                }
-            });
         });
+
+        // Firebase sync loads in background — non-blocking
+        import('./src/firebase-sync.js?v=25')
+            .then(mod => { window._initSyncEngine = mod.initSyncEngine; })
+            .catch(e => console.warn('Firebase sync unavailable:', e.message));
 
         // Load Portal Page (Title Screen)
         function loadDashboard(isPopState = false) {
@@ -410,8 +406,10 @@
                     script.src = `src/enhancements.js?v=23`;
                     document.body.appendChild(script);
 
-                    // Initialize sync engine for specific Trip ID
-                    initSyncEngine(tripId);
+                    // Initialize sync engine for specific Trip ID (loaded async in background)
+                    if (typeof window._initSyncEngine === 'function') {
+                        window._initSyncEngine(tripId);
+                    }
                     
                     setTimeout(() => view.classList.add('show'), 50);
                     setupInAppDropdown(tripId);
@@ -564,6 +562,31 @@
                     </div>
                 `;
             });
+
+            // Build Weather Navigation buttons from JSON data
+            let weatherNavHtml = '';
+            if (data.weatherLocations) {
+                const wKeys = Object.keys(data.weatherLocations);
+                wKeys.forEach((wKey, idx) => {
+                    const loc = data.weatherLocations[wKey];
+                    const activeClass = idx === 0 ? 'active' : '';
+                    weatherNavHtml += `<button type="button" class="j-w-nav-btn ${activeClass}" data-lat="${loc.lat}" data-lon="${loc.lon}" data-date="${loc.tripDate || ''}">${loc.label}</button>`;
+                });
+            }
+
+            // Build Payer Radio buttons from members JSON data
+            let payerRadiosHtml = '';
+            if (data.members) {
+                data.members.forEach((member, idx) => {
+                    const checked = idx === 0 ? 'checked' : '';
+                    payerRadiosHtml += `
+                        <label class="j-radio-lbl">
+                            <input type="radio" name="payer" value="${member.id}" ${checked}>
+                            <span class="j-radio-box"></span>${member.name}
+                        </label>
+                    `;
+                });
+            }
 
             // Layout
             container.innerHTML = `
