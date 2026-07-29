@@ -5,5 +5,12 @@
     "subtitle": "AOI & KOTARO",
     "date": "2026-08-30",
     "config": "data/shikoku2026.json"
+  },
+  {
+    "id": "hokkaido2027",
+    "title": "HOKKAIDO TRIP 2027",
+    "subtitle": "AOI & KOTARO",
+    "date": "2027-02-15",
+    "config": "data/hokkaido2027.json"
   }
 ]
