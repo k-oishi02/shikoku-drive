@@ -1,16 +1,37 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <script>
-        // ULTIMATE INSTANT CACHE RESET HANDLER v23
-        if ('serviceWorker' in navigator && !localStorage.getItem('ultimate_reset_v23')) {
+        <script>
+        // GLOBAL ERROR CAPTURER / PWA SELF-HEALING ENGINE
+        window.addEventListener('error', function(e) {
+            console.error("Fatal PWA Script Error detected: ", e.message);
+            // If we hit a script loading error that causes black screen, reset cache and reload!
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    for (let r of registrations) {
+                        r.unregister();
+                    }
+                    caches.keys().then(keys => {
+                        for (let k of keys) caches.delete(k);
+                    });
+                    localStorage.clear();
+                    console.log("Self-healing triggered. Cache cleared. Reloading clean...");
+                    // Append temporary cache-busting timestamp to bypass hardware PWA proxy cache
+                    const cleanUrl = window.location.origin + window.location.pathname + '?v=' + Date.now();
+                    window.location.replace(cleanUrl);
+                });
+            }
+        });
+
+        // ULTIMATE INSTANT CACHE RESET HANDLER v24
+        if ('serviceWorker' in navigator && !localStorage.getItem('ultimate_reset_v24')) {
             navigator.serviceWorker.getRegistrations().then(registrations => {
                 let hadRegistrations = false;
                 for (let r of registrations) {
                     r.unregister();
                     hadRegistrations = true;
                 }
-                localStorage.setItem('ultimate_reset_v23', 'true');
+                localStorage.setItem('ultimate_reset_v24', 'true');
                 if (hadRegistrations) {
                     caches.keys().then(keys => {
                         for (let k of keys) caches.delete(k);
@@ -34,7 +55,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;700;900&family=Shippori+Gothic:wght@700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-    <link rel="manifest" href="src/manifest.webmanifest">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="images/header_shikoku.png">
     <link rel="stylesheet" href="src/style.css?v=23">
     <link rel="stylesheet" href="src/enhancements.css?v=23">
