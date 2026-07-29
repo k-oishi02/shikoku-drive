@@ -331,5 +331,80 @@
         "lon": 132.6997
       }
     ]
+  },
+  "members": [
+    {
+      "id": "aoi",
+      "name": "あおい"
+    },
+    {
+      "id": "kotaro",
+      "name": "こうたろう"
+    }
+  ],
+  "mapCenter": [
+    33.8391,
+    132.7656
+  ],
+  "mapZoom": 9,
+  "optionalRules": {
+    "tab-day1": [
+      {
+        "match": "うどんバカ一代",
+        "required": 45,
+        "baseline": 0
+      }
+    ],
+    "tab-day2": [
+      {
+        "match": "長田 in 香の香",
+        "required": 45,
+        "baseline": 0
+      },
+      {
+        "match": "石鎚山SA",
+        "required": 10,
+        "baseline": 10
+      }
+    ],
+    "tab-day3": [
+      {
+        "match": "食べ逃し回収リスト",
+        "required": 35,
+        "baseline": 0
+      }
+    ]
+  },
+  "detourSuggestions": {
+    "tab-day1": [
+      {
+        "minutes": 15,
+        "text": "高松港周辺でヤドン撮影スポットを1か所（約15分）"
+      },
+      {
+        "minutes": 30,
+        "text": "高松港周辺の港散歩＋買い物（約30分）"
+      }
+    ],
+    "tab-day2": [
+      {
+        "minutes": 10,
+        "text": "石鎚山SAで景色とトイレ休憩（約10分）"
+      },
+      {
+        "minutes": 20,
+        "text": "父母ヶ浜周辺で短いカフェ休憩（約20分）"
+      }
+    ],
+    "tab-day3": [
+      {
+        "minutes": 10,
+        "text": "道の駅ふたみでじゃこ天と海辺を追加（約10分）"
+      },
+      {
+        "minutes": 20,
+        "text": "来島海峡SAでバリィさんグッズ確認を延長（約15分）"
+      }
+    ]
   }
 }
