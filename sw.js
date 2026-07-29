@@ -1,21 +1,22 @@
-const CACHE_NAME = 'shikoku-drive-sync-v21';
+const CACHE_NAME = 'shikoku-drive-ultimate-v22';
 const APP_SHELL = [
   './',
   './index.html',
-  './travel_guide.html',
-  './enhancements.css',
-  './enhancements.js',
-  './firebase-sync.js',
-  './manifest.webmanifest',
-  './header_shikoku.png',
-  './yadon_park.png',
-  './udon_baka.png',
-  './sakubee_somen.png',
-  './shodoshima.png',
-  './chichibugahama.png',
-  './dogo_onsen.png',
-  './shimonada.png',
-  './shimanami.png'
+  './data/trips.json',
+  './data/shikoku2026.json',
+  './src/enhancements.css',
+  './src/enhancements.js',
+  './src/firebase-sync.js',
+  './src/manifest.webmanifest',
+  './images/header_shikoku.png',
+  './images/yadon_park.png',
+  './images/udon_baka.png',
+  './images/sakubee_somen.png',
+  './images/shodoshima.png',
+  './images/chichibugahama.png',
+  './images/dogo_onsen.png',
+  './images/shimonada.png',
+  './images/shimanami.png'
 ];
 
 self.addEventListener('install', event => {
@@ -45,7 +46,8 @@ self.addEventListener('fetch', event => {
                      requestUrl.pathname.endsWith('.js') || 
                      requestUrl.pathname.endsWith('.css') || 
                      requestUrl.pathname.endsWith('.webmanifest') ||
-                     requestUrl.pathname === '/' ||
+                     requestUrl.pathname.endsWith('.json') ||
+                     requestUrl === '/' ||
                      requestUrl.pathname.endsWith('/');
 
   if (isWebAsset) {
