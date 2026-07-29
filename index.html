@@ -57,7 +57,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="images/header_shikoku.png">
-    <link rel="stylesheet" href="src/style.css?v=23">
     <link rel="stylesheet" href="src/enhancements.css?v=23">
     <link rel="stylesheet" href="src/shiori_styles.css?v=25">
 
@@ -344,6 +343,20 @@
                 history.pushState(null, '', './');
             }
 
+            // Clear countdown/weather intervals if returning to dashboard
+            if (window.countdownInterval) {
+                clearInterval(window.countdownInterval);
+                window.countdownInterval = null;
+            }
+            if (window.weatherInterval) {
+                clearInterval(window.weatherInterval);
+                window.weatherInterval = null;
+            }
+            if (window.nowModeInterval) {
+                clearInterval(window.nowModeInterval);
+                window.nowModeInterval = null;
+            }
+
             fetch('data/trips.json')
                 .then(res => res.json())
                 .then(trips => {
@@ -387,23 +400,29 @@
             }
 
             // Tear down old Leaflet map instance and DOM hooks if switching trips dynamically
-            if (window.map && typeof window.map.remove === 'function') {
+            if (window.overviewMap && typeof window.overviewMap.remove === 'function') {
                 try {
-                    window.map.remove();
-                    window.map = null;
+                    window.overviewMap.remove();
+                    window.overviewMap = null;
                 } catch(e) {}
             }
             
+            // Clear existing intervals
+            if (window.countdownInterval) clearInterval(window.countdownInterval);
+            if (window.weatherInterval) clearInterval(window.weatherInterval);
+            if (window.nowModeInterval) clearInterval(window.nowModeInterval);
+
             // Fetch and render
             fetch(`data/${tripId}.json`)
                 .then(res => res.json())
                 .then(data => {
                     buildShioriUI(data);
                     window.currentTripId = tripId;
+                    window.currentTripDate = data.startDate;
                     
                     // Import enhancements logic after rendering DOM
                     const script = document.createElement('script');
-                    script.src = `src/enhancements.js?v=23`;
+                    script.src = `src/enhancements.js?v=${Date.now()}`;
                     document.body.appendChild(script);
 
                     // Initialize sync engine for specific Trip ID (loaded async in background)
@@ -411,13 +430,69 @@
                         window._initSyncEngine(tripId);
                     }
                     
+                    // Populate window.weatherLocations dynamically
+                    window.weatherLocations = data.weatherLocations || {};
+                    window.weatherCache = {};
+                    
+                    // Set up countdown values
+                    window.currentTripStart = data.startDate + 'T06:55:00+09:00';
+                    window.currentTripEnd = data.endDate + 'T21:20:00+09:00';
+                    
+                    // Build TRIP_ROUTES dynamically from JSON data
+                    window.TRIP_ROUTES = {};
+                    const colors = ['#59d9b0', '#ffbf47', '#73a7ff', '#ff7373', '#d959d9'];
+                    const keys = Object.keys(data.days).sort();
+                    
+                    keys.forEach((dayKey, idx) => {
+                        const stops = [];
+                        data.days[dayKey].forEach(spot => {
+                            if (spot.lat && spot.lon) {
+                                stops.push({
+                                    name: spot.title,
+                                    coords: [spot.lat, spot.lon]
+                                });
+                            }
+                        });
+                        window.TRIP_ROUTES[dayKey] = {
+                            color: colors[idx % colors.length],
+                            ferryLegs: data.ferryLegs ? data.ferryLegs[dayKey] || [] : (dayKey === 'day1' && tripId === 'shikoku2026' ? [2, 7] : []), // Fallback to ferry legs for Shikoku Day1
+                            stops: stops
+                        };
+                    });
+                    
+                    // Trigger initializers
+                    setTimeout(() => {
+                        const firstWKey = Object.keys(window.weatherLocations)[0];
+                        if (firstWKey) {
+                            window.setWeatherTab(firstWKey, document.querySelector('.w-tab.active'));
+                        }
+                        window.refreshWeather();
+                        window.weatherInterval = setInterval(window.refreshWeather, 30 * 60 * 1000);
+                        
+                        window.initOverviewMap();
+                        const firstDayKey = keys[0];
+                        if (firstDayKey) {
+                            window.filterOverviewMap(firstDayKey, document.querySelector(`[data-map-filter="${firstDayKey}"]`));
+                        }
+                        
+                        window.setupDaySwipe();
+                        
+                        window.runCountdown();
+                        window.countdownInterval = setInterval(window.runCountdown, 1000);
+                        
+                        window.moveFatherBeachCard();
+                        window.moveDay1HotelCard();
+                        window.moveTowelMuseumBeforeLunch();
+                    }, 100);
+
                     setTimeout(() => view.classList.add('show'), 50);
                     setupInAppDropdown(tripId);
                 })
                 .catch(err => {
+                    console.error("Error loading trip:", err);
                     container.innerHTML = `
                         <div class="l-container" style="padding: 100px 20px; text-align: center;">
-                            <h2 style="color: #ff6b6b; margin-bottom: 20px;">Trip Not Found</h2>
+                            <h2 style="color: #ff6b6b; margin-bottom: 20px;">Trip Plan Error</h2>
                             <p style="color: #a1a1a1;">Could not load trip data for "${tripId}".</p>
                             <a href="./" class="j-btn" style="margin-top: 20px; text-decoration: none;">Return to Home</a>
                         </div>
@@ -481,7 +556,7 @@
             }
         }
 
-        // Dynamic Shiori UI DOM Construction
+        // Dynamic Shiori UI DOM Construction (Matching travel_guide.html structure 100%)
         function buildShioriUI(data) {
             const container = document.getElementById('trip-engine-container');
             
@@ -494,31 +569,32 @@
                 const isFirst = idx === 0;
                 const activeClass = isFirst ? 'active' : '';
                 const ariaSelected = isFirst ? 'true' : 'false';
+                const hiddenVal = isFirst ? 'false' : 'true';
                 
-                tabHeaders += `<button type="button" role="tab" aria-selected="${ariaSelected}" aria-controls="tab-${key}" class="j-tab-lnk ${activeClass}">DAY 0${dayNum}</button>`;
+                tabHeaders += `<button type="button" id="btn-${key}" class="j-tab-btn ${activeClass}" role="tab" aria-selected="${ariaSelected}" aria-controls="tab-${key}" onclick="window.switchTab('tab-${key}', this)">DAY 0${dayNum}</button>`;
                 
                 let cardsHtml = '';
                 data.days[key].forEach(card => {
-                    const imgHtml = card.image ? `<img src="${card.image}" class="j-card-img" alt="${card.title}">` : '';
+                    const imgHtml = card.image ? `<img src="${card.image}" class="j-card-img" alt="${card.title}" loading="lazy">` : '';
                     
                     let linksHtml = '';
                     if (card.tabelog) {
-                        linksHtml += `<a href="${card.tabelog}" target="_blank" class="j-btn-mini brand-tabelog">TABELOG</a>`;
+                        linksHtml += `<a href="${card.tabelog}" target="_blank" rel="noopener noreferrer" class="j-btn">TABELOG</a>`;
                     }
                     if (card.jalan) {
-                        linksHtml += `<a href="${card.jalan}" target="_blank" class="j-btn-mini brand-jalan">JALAN</a>`;
+                        linksHtml += `<a href="${card.jalan}" target="_blank" rel="noopener noreferrer" class="j-btn">JALAN</a>`;
                     }
                     if (card.wallet) {
                         linksHtml += `
-                            <a href="${card.wallet.apple}" target="_blank" class="j-btn-mini brand-apple">APPLE WALLET</a>
-                            <a href="${card.wallet.google}" target="_blank" class="j-btn-mini brand-google">GOOGLE WALLET</a>
+                            <a href="${card.wallet.apple}" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">Apple Wallet</a>
+                            <a href="${card.wallet.google}" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">Google Wallet</a>
                         `;
                     }
                     
-                    const buttonRow = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
+                    const buttonRow = linksHtml ? `<div class="j-btn-row"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.title)}" target="_blank" rel="noopener noreferrer" class="j-btn primary">MAP →</a>${linksHtml}</div>` : '';
                     
                     cardsHtml += `
-                        <div class="j-card" data-lat="${card.lat || ''}" data-lon="${card.lon || ''}">
+                        <div class="j-card" id="${card.id || ''}">
                             <span class="j-card-time">${card.time}</span>
                             <div class="j-card-ttl"><span class="j-tag-badge">${card.badge}</span>${card.title}</div>
                             <p class="j-card-desc">${card.desc}</p>
@@ -529,10 +605,15 @@
                 });
                 
                 tabPanels += `
-                    <div id="tab-${key}" role="tabpanel" class="j-tab-pnl ${activeClass}">
-                        <div class="j-timeline">
-                            ${cardsHtml}
-                        </div>
+                    <div id="tab-${key}" class="j-tab-panel j-tab-pnl ${activeClass}" role="tabpanel" aria-labelledby="btn-${key}" aria-hidden="${hiddenVal}">
+                        <section class="j-sec-header">
+                            <h2 class="j-sec-en">DAY 0${dayNum}</h2>
+                            <div class="j-sec-ja">
+                                <span>${data.dayLabels ? data.dayLabels[key] : ''}</span>
+                                <i class="j-sec-line"></i>
+                            </div>
+                        </section>
+                        ${cardsHtml}
                     </div>
                 `;
             });
@@ -541,58 +622,66 @@
             data.checklist.forEach((cat, catIdx) => {
                 let itemsHtml = '';
                 cat.items.forEach((item, itemIdx) => {
-                    const itemId = `chk-${catIdx}-${itemIdx}`;
+                    const checkId = `chk-${catIdx}-${itemIdx}`;
                     itemsHtml += `
-                        <div class="j-chk-item">
-                            <input type="checkbox" id="${itemId}">
-                            <label for="${itemId}">
-                                <span class="j-chk-box"></span>
-                                <div class="j-chk-txt">
-                                    <div class="j-chk-lbl">${item.name}</div>
-                                    <div class="j-chk-sub">${item.desc}</div>
-                                </div>
-                            </label>
-                        </div>
+                        <label class="checklist-item">
+                            <input type="checkbox" data-check-id="${checkId}">
+                            <span>${item.name}</span>
+                        </label>
                     `;
                 });
                 checklistHtml += `
-                    <div class="j-chk-group">
-                        <div class="j-chk-grp-title">${cat.category}</div>
+                    <div class="checklist-group">
+                        <div class="checklist-group-title">${cat.category}</div>
                         ${itemsHtml}
                     </div>
                 `;
             });
 
-            // Build Weather Navigation buttons from JSON data
+            // Build Weather Navigation buttons dynamically
             let weatherNavHtml = '';
             if (data.weatherLocations) {
                 const wKeys = Object.keys(data.weatherLocations);
                 wKeys.forEach((wKey, idx) => {
                     const loc = data.weatherLocations[wKey];
                     const activeClass = idx === 0 ? 'active' : '';
-                    weatherNavHtml += `<button type="button" class="j-w-nav-btn ${activeClass}" data-lat="${loc.lat}" data-lon="${loc.lon}" data-date="${loc.tripDate || ''}">${loc.label}</button>`;
+                    const pressed = idx === 0 ? 'true' : 'false';
+                    weatherNavHtml += `<button type="button" class="w-tab ${activeClass}" aria-pressed="${pressed}" onclick="window.updateWeather('${wKey}', this)">${loc.label}</button>`;
                 });
             }
 
-            // Build Payer Radio buttons from members JSON data
-            let payerRadiosHtml = '';
+            // Build Owner and Payer options dynamically
+            let ownerOptionsHtml = '';
+            let payerOptionsHtml = '';
             if (data.members) {
                 data.members.forEach((member, idx) => {
-                    const checked = idx === 0 ? 'checked' : '';
-                    payerRadiosHtml += `
-                        <label class="j-radio-lbl">
-                            <input type="radio" name="payer" value="${member.id}" ${checked}>
-                            <span class="j-radio-box"></span>${member.name}
-                        </label>
-                    `;
+                    const selected = member.id === 'kotaro' ? 'selected' : '';
+                    ownerOptionsHtml += `<option value="${member.id}" ${selected}>${member.name}</option>`;
+                    payerOptionsHtml += `<option value="${member.id}">${member.name}</option>`;
                 });
+            } else {
+                ownerOptionsHtml = `
+                    <option value="kotaro" selected>こうたろう</option>
+                    <option value="aoi">あおい</option>
+                `;
+                payerOptionsHtml = `
+                    <option value="aoi">あおい</option>
+                    <option value="kotaro">こうたろう</option>
+                `;
             }
 
-            // Layout
+            // Build Map Filters dynamically
+            let mapFiltersHtml = `<button type="button" class="route-map-filter active" data-map-filter="all" aria-pressed="true" onclick="window.filterOverviewMap('all', this)">ALL</button>`;
+            keys.forEach((key, idx) => {
+                const dayNum = idx + 1;
+                mapFiltersHtml += `<button type="button" class="route-map-filter" data-map-filter="${key}" aria-pressed="false" onclick="window.filterOverviewMap('${key}', this)">DAY 0${dayNum}</button>`;
+            });
+
+            // Layout matching travel_guide.html exactly
             container.innerHTML = `
-                <!-- Dynamic Hero with Selector Menu -->
-                <header class="j-hero l-container">
-                    <span class="j-hero-badge">TRAVEL GUIDE</span>
+                <!-- Jillion Main Visual Hero -->
+                <header class="j-hero">
+                    <span class="j-hero-badge">OFFICIAL TRAVEL GUIDE</span>
                     <div class="title-select-container" id="dropdown-trigger">
                         <h1 class="j-hero-bebas" style="margin: 0; line-height: 0.95;">${data.title}</h1>
                         <span class="title-select-arrow">▼</span>
@@ -604,141 +693,279 @@
                             <div class="trip-dropdown-portal-link" id="btn-portal-back">PORTAL BACK</div>
                         </div>
                     </div>
-                    
-                    <div class="j-hero-grid" style="margin-top: 18px;">
-                        <div class="j-hero-info">
-                            <span class="j-info-lbl">MEMBERS</span>
-                            <span class="j-info-val">${data.subtitle}</span>
-                        </div>
-                        <div class="j-hero-info">
-                            <span class="j-info-lbl">DATES</span>
-                            <span class="j-info-val">${data.startDate.replace(/-/g, '/')} - ${data.endDate.replace(/-/g, '/')}</span>
-                        </div>
+                    <div class="j-hero-ja">${data.catchphrase || '感動の力で、二人の思い出の明日を変える。'}</div>
+                    <div class="j-hero-meta">
+                        <span>DATE: ${data.startDate.replace(/-/g, '.')} — ${data.endDate.replace(/-/g, '.')}</span>
+                        <span>MEMBERS: ${data.subtitle}</span>
+                    </div>
+
+                    <!-- Jillion Style Countdown Widget -->
+                    <div class="j-countdown">
+                        <span class="j-countdown-txt">COUNTDOWN TO DEPARTURE</span>
+                        <span id="trip-countdown" class="j-countdown-num">CALCULATING...</span>
                     </div>
                 </header>
 
-                <!-- Weather forecast -->
-                <section class="l-container">
-                    <div class="j-w-widget">
-                        <div class="j-w-header">
-                            <div class="j-w-loc" id="w-location">Loading location...</div>
-                            <div class="j-w-upd" id="w-updated">取得中...</div>
-                        </div>
-                        <div class="j-w-body">
-                            <div class="j-w-row-main">
-                                <div class="j-w-temp" id="w-temp">--°C</div>
-                                <div class="j-w-icon" id="w-icon">🌤️</div>
-                            </div>
-                            <div class="j-w-row-sub">
-                                <div class="j-w-stat"><span class="j-w-lbl">COND</span><span id="w-cond">---</span></div>
-                                <div class="j-w-stat"><span class="j-w-lbl">RANGE</span><span id="w-range">-- / --</span></div>
-                                <div class="j-w-stat"><span class="j-w-lbl">RAIN</span><span id="w-rain">--%</span></div>
-                                <div class="j-w-stat"><span class="j-w-lbl">SUNSET</span><span id="w-sunset">--:--</span></div>
-                            </div>
-                        </div>
-                        <div class="j-w-nav" id="weather-nav-container">${weatherNavHtml}</div>
-                    </div>
-                </section>
-
-                <!-- Live Advisor -->
-                <section class="l-container" style="margin-top: 20px;">
-                    <div class="j-advisor">
-                        <div class="j-advisor-header">
-                            <div class="j-advisor-title">LIVE SCHEDULE ADVISOR</div>
-                            <div class="j-advisor-badge" id="adv-badge">STANDBY</div>
-                        </div>
-                        <div class="j-advisor-body">
-                            <p class="j-advisor-desc" id="adv-desc">NOW MODEを有効にすると、現在の進行状況に応じたアドバイスが表示されます。</p>
-                            <div class="j-advisor-row-btn" id="adv-actions" style="display: none;">
-                                <button type="button" class="j-btn action-now-dept" id="btn-now-dept">DEPARTURE NOW</button>
-                                <button type="button" class="j-btn-sub action-now-skip" id="btn-now-skip">SKIP SPOTS</button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Interactive Map Frame -->
-                <section class="l-container" style="margin-top: 20px;">
-                    <div class="j-map-frame">
-                        <div id="map" class="j-map-inner"></div>
-                        <button type="button" class="j-map-btn" id="btn-toggle-follow" style="display: none;">
-                            <span class="j-map-btn-dot"></span>NOW TRACKING
-                        </button>
-                    </div>
-                </section>
-
-                <!-- Tab navigation -->
-                <div class="l-container" style="margin-top: 30px;">
-                    <nav class="j-tabs-wrapper">
-                        <div class="j-tabs-nav" role="tablist">
-                            ${tabHeaders}
-                            <button type="button" role="tab" aria-selected="false" aria-controls="tab-checklist" class="j-tab-lnk">CHECK</button>
-                            <button type="button" role="tab" aria-selected="false" aria-controls="tab-paypay" class="j-tab-lnk">PAY</button>
-                        </div>
-                    </nav>
-
-                    <!-- Tab panels -->
-                    ${tabPanels}
-
-                    <!-- Packing Checklist Tab Panel -->
-                    <div id="tab-checklist" role="tabpanel" class="j-tab-pnl">
-                        <div class="j-checklist-card">
-                            <div class="j-chk-header">
-                                <h3 class="j-chk-title">PACKING CHECKLIST</h3>
-                                <p class="j-chk-desc">出発前夜と当日の朝に最終チェック！</p>
-                            </div>
-                            <div class="j-chk-body">
-                                ${checklistHtml}
-                            </div>
+                <!-- PREMIUM INTERACTIVE WEATHER WIDGET CARD -->
+                <div class="weather-card">
+                    <div class="weather-header">
+                        <span class="weather-title">🌤️ FORECAST CHECK</span>
+                        <div class="weather-tabs" id="weather-nav-container">
+                            ${weatherNavHtml}
                         </div>
                     </div>
 
-                    <!-- PayPay Group Split Tab Panel -->
-                    <div id="tab-paypay" role="tabpanel" class="j-tab-pnl">
-                        <div class="j-warikan-card">
-                            <div class="j-warikan-header">
-                                <h3 class="j-warikan-title">PAYPAY GROUP BILL</h3>
-                                <div class="j-warikan-total">
-                                    <div class="j-warikan-total-lbl">お互いの支払合計</div>
-                                    <div class="j-warikan-total-val" id="warikan-ratio">メンバーを読込中...</div>
-                                </div>
-                                <div class="j-warikan-result" id="warikan-result">精算: --</div>
+                    <div class="weather-body">
+                        <div>
+                            <div id="w-location" style="font-family:var(--font-gothic); font-weight:800; font-size:1.05rem; color:#ffffff;">取得中...</div>
+                            <div class="weather-temp-group" style="margin-top:4px;">
+                                <span id="w-temp" class="weather-temp-main">--°C</span>
+                                <span id="w-range" class="weather-temp-sub">--</span>
                             </div>
-                            <div class="j-warikan-body">
-                                <form class="j-warikan-form" id="expense-form">
-                                    <div class="j-form-group">
-                                        <label for="exp-title" class="j-form-lbl">支出項目</label>
-                                        <input type="text" id="exp-title" class="j-form-input" placeholder="例: うどんバカ一代, ガソリン代" required>
-                                    </div>
-                                    <div class="j-form-group">
-                                        <label for="exp-amount" class="j-form-lbl">金額 (円)</label>
-                                        <input type="number" id="exp-amount" class="j-form-input" placeholder="金額を入力してください" required>
-                                    </div>
-                                    <div class="j-form-group">
-                                        <label class="j-form-lbl">支払った人</label>
-                                        <div class="j-radio-group" id="payer-radio-container">${payerRadiosHtml}</div>
-                                    </div>
-                                    <button type="submit" class="j-btn-submit">支出を追加する</button>
-                                </form>
+                        </div>
+                        <div id="w-icon" class="weather-icon-box" aria-hidden="true">🌤️</div>
+                    </div>
 
-                                <div class="j-expense-list">
-                                    <div class="j-list-header">
-                                        <div class="j-list-title">最近の支出</div>
-                                        <button type="button" class="j-list-clear" id="btn-clear-expenses">履歴をリセット</button>
-                                    </div>
-                                    <div class="j-list-body" id="expense-list-container">
-                                        <div class="j-list-empty">登録された支出はありません。</div>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="weather-details">
+                        <div>
+                            <div>POP (降水確率)</div>
+                            <div id="w-pop" class="w-detail-val">--%</div>
+                        </div>
+                        <div>
+                            <div>SUNSET (夕日)</div>
+                            <div id="w-sunset" class="w-detail-val">--:--</div>
+                        </div>
+                        <div>
+                            <div>CONDITION</div>
+                            <div id="w-cond" class="w-detail-val">--</div>
+                        </div>
+                    </div>
+                    <p class="weather-note">※Open-Meteoから自動更新します。</p>
+
+                    <div class="weather-footer">
+                        <span class="weather-status">
+                            <span style="font-family:var(--font-mont); font-size:0.68rem; color:var(--text-sub);">LATEST FORECAST</span>
+                            <span id="w-updated" class="weather-updated" aria-live="polite">取得中...</span>
+                        </span>
+                        <div style="display:flex; gap:4px;">
+                            <a href="https://weathernews.jp/onebox/tenki/kagawa/" id="w-app-link" data-app-url="wni://" onclick="window.openAppWithFallback(event, this)" target="_blank" rel="noopener noreferrer" class="j-btn app-accent" aria-label="ウェザーニュースアプリを開く">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAMAAABt6vClAAAAeFBMVEUAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATxU4bAAAAKXRSTlMABggKDA8QExYYGhwdHyEjJCcqKywtLzAzNDY4Ojw+QEJDREVHSElKS0y5qDkGAAAD0ElEQVR4nO2byZaCMBCFBWMCoozIqKCo+P8/exVwIEzV0Wp2n3NyM5XhVroLVbVqfKCHHnoYE1q96Q059j39gE/oW+V2kC0P9kSjF4y3r+42KzFz6HvmW9f6vYp/oZk/hWq3E0sU+pb5xpH+S84mSvykUN0/Zg99Tf/jRP8ts6eM/qOUPT0W/yF76Gvs72v9L/S55mNl8jB76Gsae52pS7N/Y/aB0i8WZw99Tv317G0z+0LpZ3OzBz4H/q7eP1/nQ+b3oNlV2UPfkL/5ZtbO38z/j2ZXZw98Av7eG1w328xep9ldmD18xZz+nrv0BvW2me2U7tPsruyBL9rP35F643ubmc0Z1RnM7sQe+IL9/A2pE79pZlvGZ3OzBz4H/pbeP1/nF+3bZjanvD2D2UPf0P8YqdfN2vlL97bZTe1O7MHf0T9v5x/v22a2o3x2Zg98Q/7m21nfe5vZa8rHZvZgQv/8/e7bZrbP1ezM7iXk73eT3rveNvsx5Z/Z3UvI35Z6/Xqb2TPMv1G32f8p+9ts9nvI7DnhzG7zCvkP5vP3oWb/Z/Yr5J/Yf/C39W0z+xVyo0d76MteM96+utv/f8itHveR/w+5xeM/4P8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3J7x3/6/yG3d9yn/x9ye8d/+v8ht3fcp/8fcnvHf/r/Ibd33Kf/H3h/y/f+Z758=" class="j-app-icon" alt="WNI">
+                                <span>WNI</span>
+                            </a>
+                            <a id="w-link" href="https://weathernews.jp/" target="_blank" rel="noopener noreferrer" class="j-btn" style="padding:4px 8px;">🌐 WEB</a>
                         </div>
                     </div>
                 </div>
 
-                <!-- Floating network status bar -->
-                <div class="j-offline-bar" id="offline-status">ONLINE</div>
+                <!-- NOW MODE / LIVE SCHEDULE ADVISOR -->
+                <section id="now-mode" class="now-card" aria-labelledby="now-mode-title">
+                    <div class="now-head">
+                        <div>
+                            <span class="now-kicker">LIVE TRIP ASSISTANT</span>
+                            <h2 id="now-mode-title">NOW MODE</h2>
+                        </div>
+                        <span id="offline-status" class="network-status" aria-live="polite">ONLINE</span>
+                    </div>
+                    <div class="now-body">
+                        <span id="now-day" class="now-day">旅行前</span>
+                        <div id="now-title" class="now-title">最初の予定を準備中…</div>
+                        <div class="now-meta">
+                            <span id="now-time">--:--</span>
+                            <span id="now-countdown">出発時刻を計算中</span>
+                        </div>
+                        <div class="now-actions">
+                            <button id="now-departure" type="button" class="now-departure" onclick="recordDepartureNow()" disabled>DEPARTURE NOW</button>
+                            <a id="now-route" class="now-route" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">ROUTE →</a>
+                            <button type="button" class="now-secondary" onclick="jumpToCurrentTripDay()">TODAY</button>
+                        </div>
+                    </div>
+                    <div class="delay-panel">
+                        <div class="advisor-summary">
+                            <div>
+                                <span class="delay-title">LIVE SCHEDULE ADVISOR</span>
+                                <p>早着・遅延に合わせて今後を再調整</p>
+                            </div>
+                            <button id="advisor-toggle" type="button" aria-expanded="false" aria-controls="advisor-content" onclick="toggleScheduleAdvisor()">OPEN ＋</button>
+                        </div>
+                        <div id="advisor-content" class="advisor-content" hidden>
+                            <p>現在の進み具合を入力すると、今後の時刻・Optional可否・寄り道候補を再計算します。</p>
+                            <form id="progress-form" class="progress-form">
+                                <label>
+                                    <span>予定との差</span>
+                                    <select id="progress-direction" aria-label="予定より早いか遅いか">
+                                        <option value="-1">予定より早い</option>
+                                        <option value="1">予定より遅い</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>分数</span>
+                                    <input id="progress-minutes" type="number" min="0" max="180" step="5" inputmode="numeric" value="0" aria-label="予定との差（分）">
+                                </label>
+                                <button type="submit">再調整</button>
+                                <button type="button" class="progress-reset" onclick="resetProgressAdvisor()">RESET</button>
+                            </form>
+                            <div id="progress-advice" class="progress-advice" aria-live="polite">
+                                <strong>ON SCHEDULE</strong>
+                                <span>予定どおりです。Optionalは現地の混雑を見て判断できます。</span>
+                            </div>
+                            <div id="optional-advice" class="optional-advice" aria-live="polite"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Jillion Sticky TAB Bar Navigation -->
+                <nav id="nav-bar" class="j-nav-sticky" role="tablist" aria-label="旅程ナビゲーション">
+                    ${tabHeaders}
+                    <button type="button" id="btn-checklist" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" onclick="window.switchTab('tab-checklist', this)">CHECKLIST</button>
+                    <button type="button" id="btn-paypay" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-paypay" onclick="window.switchTab('tab-paypay', this)">PAYPAY</button>
+                </nav>
+
+                <!-- MAP SECTION (Movement Overview) -->
+                <div class="j-card" style="margin-bottom:24px;">
+                    <div class="route-map-head">
+                        <div class="j-card-ttl" style="font-family:var(--font-bebas); font-size:1.5rem; letter-spacing:1px; margin:0;">ROUTE OVERVIEW</div>
+                        <div class="route-map-filters" aria-label="表示する旅程" id="map-filters-container">
+                            ${mapFiltersHtml}
+                        </div>
+                    </div>
+                    <div id="main-map" role="img" aria-label="移動全体図"></div>
+                    <div class="route-map-legend" aria-label="地図の凡例">
+                        <span><i class="route-map-swatch" style="background:#59d9b0;"></i>DAY 01</span>
+                        <span><i class="route-map-swatch" style="background:#ffbf47;"></i>DAY 02</span>
+                        <span><i class="route-map-swatch" style="background:#73a7ff;"></i>DAY 03</span>
+                        <span><i class="route-map-ferry"></i>FERRY</span>
+                    </div>
+                    <p class="route-map-note">移動順を線で結んだ概略図です。道路・バス・自転車の詳細経路は各スポットの「MAP」から確認してください。</p>
+                </div>
+
+                <!-- Day Panels -->
+                ${tabPanels}
+
+                <!-- Packing Checklist Tab Panel -->
+                <div id="tab-checklist" class="j-tab-panel j-tab-pnl" role="tabpanel" aria-labelledby="btn-checklist" aria-hidden="true">
+                    <section class="j-sec-header">
+                        <h2 class="j-sec-en">CHECKLIST</h2>
+                        <div class="j-sec-ja">
+                            <span>PACKING CHECKLIST</span>
+                            <i class="j-sec-line"></i>
+                        </div>
+                    </section>
+
+                    <div class="j-card checklist-card">
+                        <div class="checklist-head">
+                            <div>
+                                <span class="now-kicker">SAVED ON THIS DEVICE</span>
+                                <strong id="checklist-progress">0 / 0 COMPLETE</strong>
+                            </div>
+                            <button type="button" class="mini-button" onclick="resetChecklist()">RESET</button>
+                        </div>
+                        <div class="checklist-grid">
+                            ${checklistHtml}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PayPay Tab Panel -->
+                <div id="tab-paypay" class="j-tab-panel j-tab-pnl" role="tabpanel" aria-labelledby="btn-paypay" aria-hidden="true">
+                    <section class="j-sec-header">
+                        <h2 class="j-sec-en">PAYPAY SPLIT</h2>
+                        <div class="j-sec-ja">
+                            <span>PayPay グループ割り勘</span>
+                            <i class="j-sec-line"></i>
+                        </div>
+                    </section>
+
+                    <div class="j-card expense-card">
+                        <div class="share-room-panel">
+                            <div class="share-room-head">
+                                <div>
+                                    <span class="now-kicker">TWO-DEVICE LIVE SYNC</span>
+                                    <strong id="sync-title">共有ルームへ接続中…</strong>
+                                </div>
+                                <span id="sync-badge" class="sync-badge">CONNECTING</span>
+                            </div>
+                            <p id="sync-status" class="sync-status" aria-live="polite">Firebaseに匿名接続しています。</p>
+                            <div class="share-room-actions">
+                                <button id="share-link-button" type="button" onclick="copyLedgerInviteLink()" disabled>招待リンクをコピー</button>
+                                <span id="sync-room-code" class="sync-room-code">ROOM: ------</span>
+                            </div>
+                            <p class="sync-note">この招待リンクを蒼さんの端末で一度だけ開くと、以後は二人の入力がリアルタイム同期されます。</p>
+                        </div>
+                        <div class="expense-head">
+                            <div>
+                                <span class="now-kicker">SHARED SPLIT LEDGER</span>
+                                <h3>旅費を記録</h3>
+                            </div>
+                            <button type="button" class="mini-button" onclick="clearExpenses()">ALL CLEAR</button>
+                        </div>
+                        <label class="device-owner-panel">
+                            <span>この端末を使う人</span>
+                            <select id="device-owner">
+                                ${ownerOptionsHtml}
+                            </select>
+                            <small>最初に一度だけ選択。旅程の「PAID」ボタンで支払者へ自動入力します。</small>
+                        </label>
+                        <form id="expense-form" class="expense-form">
+                            <label>
+                                <span>金額</span>
+                                <input id="expense-amount" type="number" min="1" step="1" inputmode="numeric" placeholder="例：3200" required>
+                            </label>
+                            <label>
+                                <span>支払った人</span>
+                                <select id="expense-payer">
+                                    ${payerOptionsHtml}
+                                </select>
+                            </label>
+                            <label>
+                                <span>カテゴリ</span>
+                                <select id="expense-category">
+                                    <option value="食事">食事</option>
+                                    <option value="交通">交通</option>
+                                    <option value="観光">観光</option>
+                                    <option value="買い物">買い物</option>
+                                    <option value="宿泊">宿泊</option>
+                                    <option value="その他">その他</option>
+                                </select>
+                            </label>
+                            <label class="expense-note-field">
+                                <span>メモ</span>
+                                <input id="expense-note" type="text" maxlength="40" placeholder="例：五志喜">
+                            </label>
+                            <label class="expense-comment-field">
+                                <span>コメント</span>
+                                <input id="expense-comment" type="text" maxlength="80" placeholder="例：予約分／あとでレシート確認">
+                            </label>
+                            <button type="submit" class="expense-submit">ADD EXPENSE</button>
+                        </form>
+                        <div class="expense-summary" aria-live="polite">
+                            <div><span>TOTAL</span><strong id="expense-total">¥0</strong></div>
+                            <div><span>1人分</span><strong id="expense-share">¥0</strong></div>
+                            <div class="expense-settlement"><span>精算</span><strong id="expense-settlement">まだ支出はありません</strong></div>
+                        </div>
+                        <ul id="expense-list" class="expense-list" aria-label="支出一覧"></ul>
+                        <p class="local-save-note">入力は端末にも一時保存し、共有ルーム接続時はFirebaseで二人の端末へ同期します。</p>
+                    </div>
+
+                    <!-- PAYPAY NATIVE APP + WEB LINK -->
+                    <div class="j-widget" style="margin-top:12px;">
+                        <div>
+                            <h3 style="font-family:var(--font-bebas); font-size:1.6rem; letter-spacing:1px; color:#ffffff;">PAYPAY SPLIT</h3>
+                            <p style="font-size:0.78rem; color:var(--text-sub);">あおい ＆ こうたろう グループ会計（アプリ起動後にグループ・金額を設定）</p>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <a href="https://paypay.ne.jp/" data-app-url="paypay://launch" onclick="window.openAppWithFallback(event, this)" target="_blank" rel="noopener noreferrer" class="j-btn app-accent" style="padding:10px 16px;">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAMAAABt6vClAAAAP1BMVEUAAAD35/fv3+fPx7+fn4fHw6+Ph3+Hf2+Hb19HX0dHP0dHP0c/Pz8/Pzc/NzcvJy8vJzcvJzcvJy8vJy8vJy8vJy/4Y8iVAAAAEnRSTlMAAQsSEhQVFhcYGRsdHyEkJSssLy8wMzM0Nzg5Ojs9P0FCRUVIU1NVVlhZWltdXmBhZGZoaWtseHp7fX+Bg4aHioyOkZOYnJ6goqSmp1a7eQYAAALISURBVGjN7drbctowFIDhRUgCoSRcy1xcy5x7/7fdwQ69cO3O7E6/u2nK1kAf0V/yD/yhhx56qEv79vYkexG2t2u90v/Q/Vz9j2yv2/fQ/eB4+xJ6y34v9pPjxL/M+ZfhV67/0P38H8z+kLM/4z/Zf/gPvZLz/eZf2X/4D/2X861m/2f/4T/0T87/s7+b/Uf3B/6D+X/zfzT7R/cH/oP5P5t9qvv6Kee5+e1x9iHjXOfv7B/d/4S8/w6xHqY/Uv9C6VfHs2eE/H1kXzL6T2b3lH52OHvmgN+7Zk/L8D/1H3KrLzm7L3s4xP1mF4X+/9Hss9nFfWbXgA/u32q6b+a/0+wa9OEQ92212b/Kvsxmpw11+5C+zTbz12bHnZqd2IP0rTP7Wdmxmd1TeqPZPXfIn82uP5t9KrvO7JnSz81uj9LPrj+bfa3swR76Oee5mZ2U/nVmD4e43zY7tqG3mb90v53Zgz3cr5sdGeqN7kPmr9zvZg/2wBftb2a3mb1kv8zsFj/e7+4/5Jbuj99/yC1dH7/vwR4Ocb+Zfb4T/+L+wB/yg9g/uT/wx0M8/wP+Ibd//Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8fcgfHf/r/IXdw/Kf/H3IHx3/6/yF3cPyn/x9yB8d/+v8hd3D8p/8f+f8Bw4o9t1+lH2EAAAAASUVORK5CYII=" class="j-app-icon" alt="PayPay">
+                                <span>APP</span>
+                            </a>
+                            <a href="https://paypay.ne.jp/" target="_blank" rel="noopener noreferrer" class="j-btn" style="padding:10px 16px;">🌐 WEB</a>
+                        </div>
+                    </div>
+                </div>
             `;
         }
+
+        // Expose helper functions globally
+        window.openAppWithFallback = openAppWithFallback;
     </script>
 </body>
 </html>
