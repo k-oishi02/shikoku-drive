@@ -1,9 +1,11 @@
-const CACHE_NAME = 'shikoku-drive-ultimate-v22';
+const CACHE_NAME = 'shikoku-drive-pwa-v23';
 const APP_SHELL = [
   './',
   './index.html',
+  './admin.html',
   './data/trips.json',
   './data/shikoku2026.json',
+  './data/hokkaido2027.json',
   './src/enhancements.css',
   './src/enhancements.js',
   './src/firebase-sync.js',
@@ -23,7 +25,6 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -35,6 +36,12 @@ self.addEventListener('activate', event => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', event => {
+  if (event.data && (event.data.action === 'SKIP_WAITING' || event.data.action === 'skipWaiting')) {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', event => {
