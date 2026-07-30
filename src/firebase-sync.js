@@ -1,4 +1,4 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
+import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
 import {
     getAuth,
     signInAnonymously
@@ -15,6 +15,7 @@ import {
     updateDoc,
     writeBatch,
     initializeFirestore,
+    getFirestore,
     persistentLocalCache,
     persistentMultipleTabManager
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
@@ -210,13 +211,24 @@ export async function initSyncEngine(tripId) {
     EXPENSE_KEY = `expenses-${tripId}-v1`;
     try {
         const { roomId, invite } = ensureRoomParameters(tripId);
-        const app = initializeApp(firebaseConfig);
+        let app;
+        if (getApps().length === 0) {
+            app = initializeApp(firebaseConfig);
+        } else {
+            app = getApp();
+        }
         const auth = getAuth(app);
-        const db = initializeFirestore(app, {
-            localCache: persistentLocalCache({
-                tabManager: persistentMultipleTabManager()
-            })
-        });
+        
+        let db;
+        try {
+            db = getFirestore(app);
+        } catch (e) {
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({
+                    tabManager: persistentMultipleTabManager()
+                })
+            });
+        }
         await signInAnonymously(auth);
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Anonymous authentication failed');
@@ -328,12 +340,24 @@ export async function initSyncEngine(tripId) {
 
 export async function getDbInstance() {
     try {
-        const app = initializeApp(firebaseConfig);
-        const db = initializeFirestore(app, {
-            localCache: persistentLocalCache({
-                tabManager: persistentMultipleTabManager()
-            })
-        });
+        let app;
+        if (getApps().length === 0) {
+            app = initializeApp(firebaseConfig);
+        } else {
+            app = getApp();
+        }
+        
+        let db;
+        try {
+            db = getFirestore(app);
+        } catch (e) {
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({
+                    tabManager: persistentMultipleTabManager()
+                })
+            });
+        }
+        
         const auth = getAuth(app);
         if (!auth.currentUser) {
             await signInAnonymously(auth);
