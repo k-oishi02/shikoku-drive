@@ -2,20 +2,18 @@
 <html lang="ja">
 <head>
     <script>
-        // ULTIMATE INSTANT CACHE RESET HANDLER
-        if ('serviceWorker' in navigator && !localStorage.getItem('ultimate_reset_v27')) {
-            navigator.serviceWorker.getRegistrations().then(registrations => {
+        // DESTROY PWA CACHE UNCONDITIONALLY
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(async registrations => {
                 let hadRegistrations = false;
                 for (let r of registrations) {
                     r.unregister();
                     hadRegistrations = true;
                 }
-                localStorage.setItem('ultimate_reset_v27', 'true');
                 if (hadRegistrations) {
-                    caches.keys().then(keys => {
-                        for (let k of keys) caches.delete(k);
-                    });
-                    console.log("Stuck PWA Cache destroyed instantly. Reloading...");
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(k => caches.delete(k)));
+                    console.log("PWA Cache destroyed permanently. Reloading...");
                     window.location.reload();
                 }
             });
@@ -1496,47 +1494,11 @@
         let newWorkerWaiting = null;
 
         function initPwaUpdateManager() {
-            if (!('serviceWorker' in navigator) || !window.location.protocol.startsWith('http')) return;
-
-            navigator.serviceWorker.register('./sw.js').then(reg => {
-                const notifyUpdate = (worker) => {
-                    newWorkerWaiting = worker;
-                    const promptEl = document.getElementById('update-prompt');
-                    if (promptEl) promptEl.classList.add('active');
-                };
-
-                if (reg.waiting) {
-                    notifyUpdate(reg.waiting);
-                }
-
-                reg.addEventListener('updatefound', () => {
-                    const newWorker = reg.installing;
-                    if (!newWorker) return;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            notifyUpdate(newWorker);
-                        }
-                    });
-                });
-            }).catch(err => {
-                console.log("SW registration bypassed/failed:", err);
-            });
-
-            let refreshing = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
-                    refreshing = true;
-                    window.location.reload();
-                }
-            });
+            // PWA offline caching has been completely disabled by user request.
         }
 
         function triggerPwaUpdate() {
-            if (newWorkerWaiting) {
-                newWorkerWaiting.postMessage({ action: 'SKIP_WAITING' });
-            } else {
-                window.location.reload();
-            }
+            window.location.reload();
         }
 
         // Fallback open helper
