@@ -428,6 +428,22 @@
         .update-prompt button:hover {
             background: #333333; border-color: #333333;
         }
+
+        /* Portal Tab Bar Styles */
+        .portal-tab-bar {
+            display: flex; gap: 8px; margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-line); padding-bottom: 8px;
+        }
+        .portal-tab-btn {
+            background: transparent; border: none; color: var(--text-sub);
+            font-family: var(--font-mont); font-weight: 800; font-size: 0.72rem;
+            letter-spacing: 1.5px; padding: 8px 12px; cursor: pointer;
+            border-bottom: 2px solid transparent; transition: all 0.2s ease;
+            outline: none;
+        }
+        .portal-tab-btn.active {
+            color: #ffffff; border-bottom-color: var(--accent-color);
+        }
     </style>
 </head>
 <body>
@@ -471,6 +487,12 @@
             <span class="portal-badge">JILLION ARCHITECTURE</span>
             <h1 class="portal-title">TRAVEL GUIDE</h1>
             <p class="portal-sub">旅のしおりを選択してください</p>
+            
+            <div class="portal-tab-bar">
+                <button type="button" class="portal-tab-btn active" id="portal-tab-upcoming" onclick="switchPortalCategory('upcoming')">これからの旅 (UPCOMING)</button>
+                <button type="button" class="portal-tab-btn" id="portal-tab-past" onclick="switchPortalCategory('past')">思い出の旅 (MEMORIES)</button>
+            </div>
+
             <div id="portal-cards" class="portal-cards"></div>
 
             <!-- ADD NEW TRIP INLINE FORM -->
@@ -877,6 +899,9 @@
             window.location.reload();
         }
 
+        let portalTripsCache = [];
+        let currentPortalCategory = 'upcoming';
+
         function renderPortalDashboard() {
             const container = document.getElementById('portal-cards');
             container.innerHTML = '<div style="color:var(--text-sub); font-size:0.88rem; padding:12px 0;">読み込み中...</div>';
@@ -890,6 +915,8 @@
                 localStorage.setItem('joined_trips', JSON.stringify(joined));
             }
 
+            const todayStr = new Date().toISOString().split('T')[0];
+
             // Fetch details for all joined trips in parallel
             const promises = joined.map(tripId => {
                 return fetch(`data/${tripId}.json`)
@@ -897,25 +924,65 @@
                         if (!res.ok) throw new Error("Not Found");
                         return res.json();
                     })
-                    .then(data => ({ id: tripId, title: data.title, subtitle: data.subtitle || '', date: `${data.startDate} - ${data.endDate}` }))
-                    .catch(err => ({ id: tripId, title: `旅程 ID: ${tripId}`, subtitle: '詳細を読み込めませんでした。', date: '--' }));
+                    .then(data => {
+                        const isPast = data.endDate ? (data.endDate < todayStr) : false;
+                        return {
+                            id: tripId,
+                            title: data.title,
+                            subtitle: data.subtitle || '',
+                            date: `${data.startDate} - ${data.endDate}`,
+                            isPast: isPast
+                        };
+                    })
+                    .catch(err => ({
+                        id: tripId,
+                        title: `旅程 ID: ${tripId}`,
+                        subtitle: '詳細を読み込めませんでした。',
+                        date: '--',
+                        isPast: false
+                    }));
             });
 
             Promise.all(promises).then(trips => {
+                portalTripsCache = trips;
                 const nickname = localStorage.getItem('user_nickname') || '';
                 const titleEl = document.querySelector('.portal-sub');
                 if (titleEl) {
                     titleEl.textContent = `${nickname} さんのしおり棚`;
                 }
 
-                container.innerHTML = trips.map(t => `
-                    <a href="?trip=${t.id}" class="portal-card">
-                        <div class="portal-card-title">${t.title}</div>
-                        <div class="portal-card-meta">${t.subtitle ? t.subtitle + ' — ' : ''}${t.date}</div>
-                        <div class="portal-card-arrow">OPEN →</div>
-                    </a>
-                `).join('');
+                filterAndRenderPortalCards();
             });
+        }
+
+        function switchPortalCategory(category) {
+            currentPortalCategory = category;
+            const btnUpcoming = document.getElementById('portal-tab-upcoming');
+            const btnPast = document.getElementById('portal-tab-past');
+            if (btnUpcoming) btnUpcoming.classList.toggle('active', category === 'upcoming');
+            if (btnPast) btnPast.classList.toggle('active', category === 'past');
+            filterAndRenderPortalCards();
+        }
+
+        function filterAndRenderPortalCards() {
+            const container = document.getElementById('portal-cards');
+            const filtered = portalTripsCache.filter(t => currentPortalCategory === 'past' ? t.isPast : !t.isPast);
+
+            if (filtered.length === 0) {
+                const emptyMsg = currentPortalCategory === 'past' 
+                    ? '過去の旅行履歴はまだありません。' 
+                    : 'これからの旅行予定はまだありません。';
+                container.innerHTML = `<div style="color:var(--text-sub); font-size:0.85rem; padding:24px 0; text-align:center; font-style:italic;">\${emptyMsg}</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => `
+                <a href="?trip=\${t.id}" class="portal-card">
+                    <div class="portal-card-title">\${t.title}</div>
+                    <div class="portal-card-meta">\${t.subtitle ? t.subtitle + ' — ' : ''}\${t.date}</div>
+                    <div class="portal-card-arrow">\${t.isPast ? 'MEMORIES →' : 'OPEN →'}</div>
+                </a>
+            `).join('');
         }
 
         function showAddTripInput() {
