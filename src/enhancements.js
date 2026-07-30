@@ -444,8 +444,8 @@
 
     function expenseLabel(expense) {
         const members = window.currentTripMembers || [
-            { id: 'aoi', name: 'あおい' },
-            { id: 'kotaro', name: 'こうたろう' }
+            { id: 'aoi', name: 'メンバー1' },
+            { id: 'kotaro', name: 'メンバー2' }
         ];
         const payerObj = members.find(m => m.id === expense.payer);
         const payerName = payerObj ? payerObj.name : expense.payer;
@@ -694,8 +694,8 @@
             .then(res => res.json())
             .then(tripData => {
                 window.currentTripMembers = tripData.members || [
-                    { id: 'aoi', name: 'あおい' },
-                    { id: 'kotaro', name: 'こうたろう' }
+                    { id: 'aoi', name: 'メンバー1' },
+                    { id: 'kotaro', name: 'メンバー2' }
                 ];
                 
                 // Parse optional rules from JSON if present, converting match strings into RegExps
@@ -732,8 +732,8 @@
                 window.nowModeInterval = window.setInterval(renderNowMode, 1000);
             }).catch(() => {
                 window.currentTripMembers = [
-                    { id: 'aoi', name: 'あおい' },
-                    { id: 'kotaro', name: 'こうたろう' }
+                    { id: 'aoi', name: 'メンバー1' },
+                    { id: 'kotaro', name: 'メンバー2' }
                 ];
                 initTripDays();
                 setupChecklist();
