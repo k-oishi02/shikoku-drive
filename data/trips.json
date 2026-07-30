@@ -2,14 +2,14 @@
   {
     "id": "shikoku2026",
     "title": "SHIKOKU DRIVE 2026",
-    "subtitle": "AOI & KOTARO",
+    "subtitle": "",
     "date": "2026-08-30",
     "config": "data/shikoku2026.json"
   },
   {
     "id": "hokkaido2027",
     "title": "HOKKAIDO TRIP 2027",
-    "subtitle": "AOI & KOTARO",
+    "subtitle": "",
     "date": "2027-02-15",
     "config": "data/hokkaido2027.json"
   }
