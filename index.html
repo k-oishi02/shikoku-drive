@@ -428,67 +428,6 @@
         .update-prompt button:hover {
             background: #333333; border-color: #333333;
         }
-
-        /* Admin Overlay Styles */
-        .admin-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #111111; z-index: 10000; overflow-y: auto;
-            display: none; padding: 40px 24px; box-sizing: border-box;
-        }
-        .admin-overlay.active { display: block; }
-        .admin-inner {
-            max-width: 600px; margin: 0 auto;
-            position: relative; animation: fIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .admin-badge {
-            font-family: var(--font-mont); font-size: 0.65rem; font-weight: 900;
-            letter-spacing: 2px; color: var(--accent-color); text-transform: uppercase;
-            display: block; margin-bottom: 8px;
-        }
-        .admin-title {
-            font-family: var(--font-mont); font-size: 1.8rem; font-weight: 900;
-            letter-spacing: 2px; color: #ffffff; margin-bottom: 8px;
-        }
-        .admin-sub {
-            font-family: var(--font-gothic); font-size: 0.92rem; color: var(--text-sub);
-            font-weight: 700; margin-bottom: 32px;
-            padding-bottom: 20px; border-bottom: 1px solid var(--border-line);
-        }
-        .admin-trip-card {
-            background: #1a1a1a; border: 1px solid var(--border-line);
-            padding: 20px; margin-bottom: 16px;
-            display: flex; flex-direction: column; gap: 12px;
-        }
-        .admin-trip-header {
-            display: flex; justify-content: justify-content; align-items: flex-start;
-        }
-        .admin-trip-title {
-            font-family: var(--font-gothic); font-size: 1.05rem; font-weight: 800; color: #ffffff;
-        }
-        .admin-trip-id-row {
-            display: flex; align-items: center; gap: 8px; font-family: var(--font-mont); font-size: 0.72rem; color: var(--text-sub);
-        }
-        .admin-trip-id {
-            background: #242424; padding: 2px 8px; border: 1px solid #333; color: #fff;
-        }
-        .admin-copy-btn {
-            background: #ffffff; color: #000000; border: none; padding: 2px 8px; cursor: pointer; font-weight: 900;
-            font-family: var(--font-mont); font-size: 0.65rem;
-        }
-        .admin-participants-box {
-            background: #141414; padding: 12px; border: 1px solid #222;
-        }
-        .admin-participants-title {
-            font-family: var(--font-gothic); font-size: 0.78rem; font-weight: 800; color: #888888; margin-bottom: 6px;
-            display: flex; justify-content: space-between;
-        }
-        .admin-participants-list {
-            font-family: var(--font-gothic); font-size: 0.88rem; color: #ffffff; font-weight: 700;
-        }
-        .admin-indicator {
-            display: inline-block; width: 6px; height: 6px; background: #59d9b0; border-radius: 50%; margin-right: 6px;
-            box-shadow: 0 0 8px #59d9b0;
-        }
     </style>
 </head>
 <body>
@@ -553,27 +492,6 @@
                 </div>
             </div>
 
-            <!-- ADMIN ACCESS LINK -->
-            <div style="margin-top: 32px; text-align: center;">
-                <button type="button" class="j-btn" style="border: none; background: transparent; color: var(--text-sub); font-size: 0.68rem; letter-spacing: 2px; font-family: var(--font-mont);" onclick="promptAdminLogin()">🔑 ADMIN CONSOLE</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============ ADMIN CONSOLE OVERLAY ============ -->
-    <div id="admin-overlay" class="admin-overlay">
-        <div class="c-mark-left"></div>
-        <div class="c-mark-right"></div>
-        <div class="admin-inner">
-            <span class="admin-badge">ADMINISTRATION AREA</span>
-            <h1 class="admin-title">ADMIN CONSOLE</h1>
-            <p class="admin-sub">全体の旅程管理と参加者のリアルタイム監視を行います</p>
-            
-            <div id="admin-trips-container">
-                <!-- Loaded dynamically -->
-            </div>
-
-            <button type="button" class="j-btn primary" style="width: 100%; margin-top: 24px; padding: 14px; font-family: var(--font-mont); font-weight: 900; font-size: 0.8rem; letter-spacing: 2px;" onclick="closeAdminConsole()">CLOSE ADMIN CONSOLE</button>
         </div>
     </div>
 
@@ -917,6 +835,7 @@
             if (tripIdParam) {
                 // Direct shiori view override
                 addJoinedTrip(tripIdParam);
+                localStorage.setItem('trip_id', tripIdParam);
                 
                 // Show shiori, hide portal
                 document.getElementById('portal-overlay').classList.remove('active');
@@ -1043,132 +962,11 @@
         }
 
         function backToPortal() {
+            localStorage.removeItem('trip_id');
             history.pushState(null, '', './');
             initAppRouter();
         }
 
-        let adminUnsubscribes = [];
-
-        function promptAdminLogin() {
-            const pass = prompt("管理者用パスコードを入力してください：");
-            if (pass === "admin") {
-                document.getElementById('portal-overlay').classList.remove('active');
-                document.getElementById('admin-overlay').classList.add('active');
-                loadAdminDashboard();
-            } else if (pass !== null) {
-                alert("パスコードが正しくありません。");
-            }
-        }
-
-        function closeAdminConsole() {
-            adminUnsubscribes.forEach(unsub => {
-                if (typeof unsub === 'function') unsub();
-            });
-            adminUnsubscribes = [];
-            
-            document.getElementById('admin-overlay').classList.remove('active');
-            document.getElementById('portal-overlay').classList.add('active');
-            renderPortalDashboard();
-        }
-
-        function loadAdminDashboard() {
-            const container = document.getElementById('admin-trips-container');
-            container.innerHTML = '<div style="color:var(--text-sub); font-size:0.88rem; padding:12px 0;">データを読み込み中...</div>';
-            
-            adminUnsubscribes.forEach(unsub => {
-                if (typeof unsub === 'function') unsub();
-            });
-            adminUnsubscribes = [];
-
-            fetch('data/trips.json')
-                .then(res => res.json())
-                .then(trips => {
-                    const promises = trips.map(t => {
-                        return fetch(`data/${t.id}.json`)
-                            .then(res => {
-                                if (!res.ok) throw new Error("Not Found");
-                                return res.json();
-                            })
-                            .then(data => ({ id: t.id, title: data.title, date: `${data.startDate} - ${data.endDate}` }))
-                            .catch(() => ({ id: t.id, title: `ID: ${t.id}`, date: '--' }));
-                    });
-
-                    return Promise.all(promises);
-                })
-                .then(tripsData => {
-                    container.innerHTML = '';
-                    
-                    tripsData.forEach(t => {
-                        const card = document.createElement('div');
-                        card.className = 'admin-trip-card';
-                        
-                        card.innerHTML = `
-                            <div class="admin-trip-header">
-                                <div>
-                                    <div class="admin-trip-title">\${t.title}</div>
-                                    <div style="font-size:0.75rem; color:var(--text-sub); margin-top:2px;">\${t.date}</div>
-                                </div>
-                                <div class="admin-trip-id-row">
-                                    <span>ID:</span>
-                                    <span class="admin-trip-id">\${t.id}</span>
-                                    <button class="admin-copy-btn" onclick="copyTextToClipboard('\${t.id}', this)">COPY</button>
-                                </div>
-                            </div>
-                            <div class="admin-participants-box">
-                                <div class="admin-participants-title">
-                                    <span>👥 PARTICIPANTS</span>
-                                    <span id="admin-count-\${t.id}">0 ACTIVE</span>
-                                </div>
-                                <div id="admin-list-\${t.id}" class="admin-participants-list">
-                                    <span style="color:#666;">監視接続中...</span>
-                                </div>
-                            </div>
-                        `;
-                        
-                        container.appendChild(card);
-                        
-                        if (window.listenToTripParticipants) {
-                            window.listenToTripParticipants(t.id, (names) => {
-                                const listEl = document.getElementById(`admin-list-\${t.id}`);
-                                const countEl = document.getElementById(`admin-count-\${t.id}`);
-                                
-                                if (listEl && countEl) {
-                                    countEl.textContent = `\${names.length} ACTIVE`;
-                                    if (names.length === 0) {
-                                        listEl.innerHTML = '<span style="color:#666; font-style:italic;">参加メンバーはいません</span>';
-                                    } else {
-                                        listEl.innerHTML = names.map(name => \`
-                                            <span style="margin-right:12px; display:inline-flex; align-items:center;">
-                                                <span class="admin-indicator"></span>\${name}
-                                            </span>
-                                        \`).join('');
-                                    }
-                                }
-                            }).then(unsub => {
-                                if (typeof unsub === 'function') {
-                                    adminUnsubscribes.push(unsub);
-                                }
-                            });
-                        }
-                    });
-                })
-                .catch(err => {
-                    container.innerHTML = '<div class="welcome-error">ダッシュボードの読み込みに失敗しました。</div>';
-                    console.error(err);
-                });
-        }
-
-        function copyTextToClipboard(text, btnEl) {
-            navigator.clipboard.writeText(text).then(() => {
-                const oldText = btnEl.textContent;
-                btnEl.textContent = 'COPIED!';
-                setTimeout(() => {
-                    btnEl.textContent = oldText;
-                }, 1500);
-            }).catch(() => {
-                prompt("旅程IDをコピーしてください：", text);
-            });
-        }
 
         function loadShioriData(tripId) {
             fetch(`data/${tripId}.json`)
