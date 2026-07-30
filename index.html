@@ -452,18 +452,13 @@
         <div class="welcome-inner">
             <span class="welcome-badge">JILLION ARCHITECTURE</span>
             <h1 class="welcome-title">TRAVEL GUIDE</h1>
-            <p class="welcome-sub">ニックネームと旅程IDを設定してください</p>
+            <p class="welcome-sub">ニックネームを設定してください</p>
             <form id="welcome-form" class="welcome-form" onsubmit="handleOnboardingSubmit(event)">
                 <label class="welcome-label">
                     <span>あなたのニックネーム</span>
                     <input id="welcome-nickname" type="text" placeholder="例：こうたろう" required maxlength="15">
                 </label>
-                <label class="welcome-label" style="margin-top: 16px;">
-                    <span>旅程ID (Trip ID)</span>
-                    <input id="welcome-trip-id" type="text" placeholder="例：shikoku2026" required maxlength="25">
-                </label>
-                <div id="welcome-error" class="welcome-error" style="display: none;"></div>
-                <button type="submit" class="welcome-submit-btn">しおりを開く →</button>
+                <button type="submit" class="welcome-submit-btn">登録してしおり棚を開く →</button>
             </form>
         </div>
     </div>
@@ -477,6 +472,25 @@
             <h1 class="portal-title">TRAVEL GUIDE</h1>
             <p class="portal-sub">旅のしおりを選択してください</p>
             <div id="portal-cards" class="portal-cards"></div>
+
+            <!-- ADD NEW TRIP INLINE FORM -->
+            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-line);">
+                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%; padding: 14px; font-family: var(--font-mont); font-size: 0.75rem; letter-spacing: 2px;" onclick="showAddTripInput()">＋ 新しい旅程を追加 (ADD NEW TRIP)</button>
+                
+                <div id="add-trip-container" style="display: none; margin-top: 16px;">
+                    <form onsubmit="handleAddTripSubmit(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                        <label class="welcome-label">
+                            <span>新しい旅程IDを入力</span>
+                            <input id="new-trip-id" type="text" placeholder="例：hokkaido2027" required maxlength="25" style="width: 100%; background: #242424; border: 1px solid var(--border-line); color: #ffffff; padding: 12px 14px; font-family: var(--font-gothic); font-size: 0.92rem; outline: none;">
+                        </label>
+                        <div id="add-trip-error" class="welcome-error" style="display: none; margin-top: 0;"></div>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="submit" class="j-btn primary" style="flex: 1; padding: 10px;">追加</button>
+                            <button type="button" class="j-btn" style="flex: 1; padding: 10px;" onclick="hideAddTripInput()">キャンセル</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -487,7 +501,8 @@
         <div class="l-container">
 
             <!-- Jillion Main Visual Hero -->
-            <header class="j-hero">
+            <header class="j-hero" style="display: flex; flex-direction: column; position: relative;">
+                <button type="button" class="j-btn" onclick="backToPortal()" style="margin-bottom: 16px; width: auto; align-self: flex-start; padding: 4px 12px; font-family: var(--font-mont); font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px;">← BACK TO SHELF</button>
                 <span class="j-hero-badge">OFFICIAL TRAVEL GUIDE</span>
                 <h1 class="j-hero-bebas" id="hero-title">TRAVEL GUIDE</h1>
                 <div class="j-hero-ja" id="hero-catchphrase">感動の力で、二人の思い出の明日を変える。</div>
@@ -803,43 +818,134 @@
 
         function initAppRouter() {
             const nickname = localStorage.getItem('user_nickname');
-            const tripId = localStorage.getItem('trip_id') || new URLSearchParams(window.location.search).get('trip');
+            const urlParams = new URLSearchParams(window.location.search);
+            const tripIdParam = urlParams.get('trip');
 
-            if (!nickname || !tripId) {
-                // Show onboarding welcome screen
+            if (!nickname) {
+                // Show onboarding welcome screen (ask for nickname only)
                 document.getElementById('welcome-overlay').classList.add('active');
+                document.getElementById('portal-overlay').classList.remove('active');
                 document.getElementById('shiori-content').style.display = 'none';
-            } else {
-                // Valid registration. Load shiori!
-                localStorage.setItem('trip_id', tripId); // Ensure it's in storage
-                document.getElementById('welcome-overlay').classList.remove('active');
-                document.getElementById('shiori-content').style.display = 'block';
+                return;
+            }
 
-                loadShioriData(tripId);
+            document.getElementById('welcome-overlay').classList.remove('active');
+
+            if (tripIdParam) {
+                // Direct shiori view override
+                addJoinedTrip(tripIdParam);
+                
+                // Show shiori, hide portal
+                document.getElementById('portal-overlay').classList.remove('active');
+                document.getElementById('shiori-content').style.display = 'block';
+                loadShioriData(tripIdParam);
+            } else {
+                // Show Portal (Trip Shelf)
+                document.getElementById('portal-overlay').classList.add('active');
+                document.getElementById('shiori-content').style.display = 'none';
+                renderPortalDashboard();
+            }
+        }
+
+        function addJoinedTrip(tripId) {
+            let joined = [];
+            try {
+                joined = JSON.parse(localStorage.getItem('joined_trips') || '[]');
+            } catch(e) {}
+            if (!Array.isArray(joined)) joined = [];
+            if (!joined.includes(tripId)) {
+                joined.push(tripId);
+                localStorage.setItem('joined_trips', JSON.stringify(joined));
             }
         }
 
         function handleOnboardingSubmit(e) {
             e.preventDefault();
             const nickname = document.getElementById('welcome-nickname').value.trim();
-            const tripId = document.getElementById('welcome-trip-id').value.trim();
-            const errorEl = document.getElementById('welcome-error');
+            if (!nickname) return;
 
-            if (!nickname || !tripId) return;
+            localStorage.setItem('user_nickname', nickname);
+            
+            // Initialize joined trips with default "shikoku2026"
+            localStorage.setItem('joined_trips', JSON.stringify(['shikoku2026']));
+            
+            window.location.reload();
+        }
+
+        function renderPortalDashboard() {
+            const container = document.getElementById('portal-cards');
+            container.innerHTML = '<div style="color:var(--text-sub); font-size:0.88rem; padding:12px 0;">読み込み中...</div>';
+            
+            let joined = [];
+            try {
+                joined = JSON.parse(localStorage.getItem('joined_trips') || '[]');
+            } catch(e) {}
+            if (!Array.isArray(joined) || joined.length === 0) {
+                joined = ['shikoku2026'];
+                localStorage.setItem('joined_trips', JSON.stringify(joined));
+            }
+
+            // Fetch details for all joined trips in parallel
+            const promises = joined.map(tripId => {
+                return fetch(`data/${tripId}.json`)
+                    .then(res => {
+                        if (!res.ok) throw new Error("Not Found");
+                        return res.json();
+                    })
+                    .then(data => ({ id: tripId, title: data.title, subtitle: data.subtitle || '', date: `${data.startDate} - ${data.endDate}` }))
+                    .catch(err => ({ id: tripId, title: `旅程 ID: ${tripId}`, subtitle: '詳細を読み込めませんでした。', date: '--' }));
+            });
+
+            Promise.all(promises).then(trips => {
+                const nickname = localStorage.getItem('user_nickname') || '';
+                const titleEl = document.querySelector('.portal-sub');
+                if (titleEl) {
+                    titleEl.textContent = `${nickname} さんのしおり棚`;
+                }
+
+                container.innerHTML = trips.map(t => `
+                    <a href="?trip=${t.id}" class="portal-card">
+                        <div class="portal-card-title">${t.title}</div>
+                        <div class="portal-card-meta">${t.subtitle ? t.subtitle + ' — ' : ''}${t.date}</div>
+                        <div class="portal-card-arrow">OPEN →</div>
+                    </a>
+                `).join('');
+            });
+        }
+
+        function showAddTripInput() {
+            document.getElementById('btn-show-add-trip').style.display = 'none';
+            document.getElementById('add-trip-container').style.display = 'block';
+            document.getElementById('add-trip-error').style.display = 'none';
+            document.getElementById('new-trip-id').value = '';
+            document.getElementById('new-trip-id').focus();
+        }
+
+        function hideAddTripInput() {
+            document.getElementById('btn-show-add-trip').style.display = 'block';
+            document.getElementById('add-trip-container').style.display = 'none';
+        }
+
+        function handleAddTripSubmit(e) {
+            e.preventDefault();
+            const newId = document.getElementById('new-trip-id').value.trim();
+            const errorEl = document.getElementById('add-trip-error');
+            if (!newId) return;
+
             errorEl.style.display = 'none';
 
-            fetch(`data/${tripId}.json`)
+            fetch(`data/${newId}.json`)
                 .then(res => {
                     if (!res.ok) throw new Error("Not Found");
                     return res.json();
                 })
                 .then(data => {
-                    localStorage.setItem('user_nickname', nickname);
-                    localStorage.setItem('trip_id', tripId);
-                    window.location.reload();
+                    addJoinedTrip(newId);
+                    hideAddTripInput();
+                    renderPortalDashboard();
                 })
                 .catch(err => {
-                    errorEl.textContent = "旅程IDが見つかりません。正しいIDを入力してください。";
+                    errorEl.textContent = "指定の旅程IDが見つかりませんでした。";
                     errorEl.style.display = 'block';
                 });
         }
@@ -848,8 +954,14 @@
             if (confirm("登録されている名前としおりIDをリセットして、別のしおりを選択しますか？")) {
                 localStorage.removeItem('user_nickname');
                 localStorage.removeItem('trip_id');
+                localStorage.removeItem('joined_trips');
                 window.location.reload();
             }
+        }
+
+        function backToPortal() {
+            history.pushState(null, '', './');
+            initAppRouter();
         }
 
         function loadShioriData(tripId) {
