@@ -307,9 +307,72 @@
             }
         }
     </style>
+
+    <!-- Portal Dashboard Styles -->
+    <style>
+        .portal-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-body); z-index: 9999;
+            overflow-y: auto;
+        }
+        .portal-overlay.active { display: block; }
+        .portal-inner {
+            max-width: 540px; margin: 0 auto; padding: 60px 20px 80px;
+        }
+        .portal-badge {
+            font-family: var(--font-mont); font-size: 0.68rem; font-weight: 900;
+            letter-spacing: 3px; color: var(--text-sub); text-transform: uppercase;
+            display: block; margin-bottom: 12px;
+        }
+        .portal-title {
+            font-family: var(--font-bebas); font-size: 3.6rem; line-height: 0.9;
+            letter-spacing: 2px; color: #ffffff; margin-bottom: 8px;
+        }
+        .portal-sub {
+            font-family: var(--font-gothic); font-size: 0.92rem; color: var(--text-sub);
+            font-weight: 700; margin-bottom: 32px;
+            padding-bottom: 20px; border-bottom: 1px solid var(--border-line);
+        }
+        .portal-cards { display: flex; flex-direction: column; gap: 16px; }
+        .portal-card {
+            background: var(--bg-card); border: 1px solid var(--border-line);
+            padding: 24px; text-decoration: none; color: inherit;
+            transition: border-color 0.2s ease, transform 0.15s ease;
+            display: block;
+        }
+        .portal-card:hover { border-color: #ffffff; transform: translateY(-2px); }
+        .portal-card-title {
+            font-family: var(--font-bebas); font-size: 2rem; letter-spacing: 1.5px;
+            color: #ffffff; margin-bottom: 4px;
+        }
+        .portal-card-meta {
+            font-family: var(--font-mont); font-size: 0.72rem; font-weight: 700;
+            color: var(--text-sub); letter-spacing: 1px;
+        }
+        .portal-card-arrow {
+            font-family: var(--font-mont); font-size: 0.72rem; font-weight: 900;
+            color: #ffffff; margin-top: 12px; letter-spacing: 2px;
+        }
+    </style>
     <meta name="cache-bust" content="1785213204">
 </head>
 <body>
+
+    <!-- ============ PORTAL DASHBOARD ============ -->
+    <div id="portal-overlay" class="portal-overlay">
+        <div class="c-mark-left"></div>
+        <div class="c-mark-right"></div>
+        <div class="portal-inner">
+            <span class="portal-badge">JILLION ARCHITECTURE</span>
+            <h1 class="portal-title">TRAVEL GUIDE</h1>
+            <p class="portal-sub">旅のしおりを選択してください</p>
+            <div id="portal-cards" class="portal-cards"></div>
+        </div>
+    </div>
+
+    <!-- ============ SHIORI MAIN CONTENT ============ -->
+    <div id="shiori-content">
 
     <!-- Jillion Side Brackets Frame -->
     <div class="c-mark-left"></div>
@@ -1606,7 +1669,45 @@
         setInterval(runCountdown, 1000);
         runCountdown();
     </script>
+    <!-- Portal Router Script -->
+    <script>
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const tripId = params.get('trip');
+        const portalEl = document.getElementById('portal-overlay');
+        const shioriEl = document.getElementById('shiori-content');
+
+        if (!tripId) {
+            // Show portal, hide shiori
+            portalEl.classList.add('active');
+            shioriEl.style.display = 'none';
+
+            // Load trip cards
+            fetch('data/trips.json')
+                .then(r => r.json())
+                .then(trips => {
+                    const container = document.getElementById('portal-cards');
+                    container.innerHTML = trips.map(t => `
+                        <a href="?trip=${t.id}" class="portal-card">
+                            <div class="portal-card-title">${t.title}</div>
+                            <div class="portal-card-meta">${t.subtitle} — ${t.date}</div>
+                            <div class="portal-card-arrow">OPEN →</div>
+                        </a>
+                    `).join('');
+                })
+                .catch(() => {
+                    document.getElementById('portal-cards').innerHTML =
+                        '<p style="color:var(--text-sub)">旅行データの読み込みに失敗しました。</p>';
+                });
+        } else {
+            // Show shiori, hide portal
+            portalEl.classList.remove('active');
+            shioriEl.style.display = 'block';
+        }
+    })();
+    </script>
     <script src="src/enhancements.js?v=1785329071"></script>
     <script type="module" src="src/firebase-sync.js?v=1785329071"></script>
+</div><!-- /shiori-content -->
 </body>
 </html>
