@@ -1,17 +1,17 @@
 {
   "tripId": "hokkaido2027",
-  "title": "HOKKAIDO TRIP",
-  "subtitle": "AOI & KOTARO",
+  "title": "TRAVEL GUIDE",
+  "subtitle": "",
   "startDate": "2027-02-15",
   "endDate": "2027-02-17",
   "members": [
     {
       "id": "aoi",
-      "name": "あおい"
+      "name": "メンバー1"
     },
     {
       "id": "kotaro",
-      "name": "こうたろう"
+      "name": "メンバー2"
     }
   ],
   "weatherLocations": {
