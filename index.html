@@ -972,15 +972,15 @@
                 const emptyMsg = currentPortalCategory === 'past' 
                     ? '過去の旅行履歴はまだありません。' 
                     : 'これからの旅行予定はまだありません。';
-                container.innerHTML = `<div style="color:var(--text-sub); font-size:0.85rem; padding:24px 0; text-align:center; font-style:italic;">\${emptyMsg}</div>`;
+                container.innerHTML = `<div style="color:var(--text-sub); font-size:0.85rem; padding:24px 0; text-align:center; font-style:italic;">${emptyMsg}</div>`;
                 return;
             }
 
             container.innerHTML = filtered.map(t => `
-                <a href="?trip=\${t.id}" class="portal-card">
-                    <div class="portal-card-title">\${t.title}</div>
-                    <div class="portal-card-meta">\${t.subtitle ? t.subtitle + ' — ' : ''}\${t.date}</div>
-                    <div class="portal-card-arrow">\${t.isPast ? 'MEMORIES →' : 'OPEN →'}</div>
+                <a href="?trip=${t.id}" class="portal-card">
+                    <div class="portal-card-title">${t.title}</div>
+                    <div class="portal-card-meta">${t.subtitle ? t.subtitle + ' — ' : ''}${t.date}</div>
+                    <div class="portal-card-arrow">${t.isPast ? 'MEMORIES →' : 'OPEN →'}</div>
                 </a>
             `).join('');
         }
