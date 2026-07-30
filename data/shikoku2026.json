@@ -1,7 +1,7 @@
 {
   "tripId": "shikoku2026",
-  "title": "SHIKOKU DRIVE",
-  "subtitle": "AOI & KOTARO",
+  "title": "TRAVEL GUIDE",
+  "subtitle": "",
   "catchphrase": "感動の力で、二人の思い出の明日を変える。",
   "startDate": "2026-08-30",
   "endDate": "2026-09-01",
@@ -21,11 +21,11 @@
   "members": [
     {
       "id": "aoi",
-      "name": "あおい"
+      "name": "メンバー1"
     },
     {
       "id": "kotaro",
-      "name": "こうたろう"
+      "name": "メンバー2"
     }
   ],
   "weatherLocations": {
