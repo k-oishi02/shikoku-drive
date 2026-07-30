@@ -815,6 +815,7 @@
             if (paypayIconImg) paypayIconImg.src = BASE64_ICONS.paypay;
 
             initAppRouter();
+            initPwaUpdateManager();
         });
 
         function initAppRouter() {
@@ -1422,22 +1423,51 @@
             elem.innerText = `${d}D ${h}H ${m}M ${s}S`;
         }
 
-        // ============ PWA MANUAL UPDATE HOOKS ============
-        // Check for Service Worker updates and trigger manual prompt
-        if ('serviceWorker' in navigator) {
+        // ============ PWA STORE-STYLE MANUAL UPDATE MANAGER ============
+        let newWorkerWaiting = null;
+
+        function initPwaUpdateManager() {
+            if (!('serviceWorker' in navigator) || !window.location.protocol.startsWith('http')) return;
+
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+                const notifyUpdate = (worker) => {
+                    newWorkerWaiting = worker;
+                    const promptEl = document.getElementById('update-prompt');
+                    if (promptEl) promptEl.classList.add('active');
+                };
+
+                if (reg.waiting) {
+                    notifyUpdate(reg.waiting);
+                }
+
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    if (!newWorker) return;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            notifyUpdate(newWorker);
+                        }
+                    });
+                });
+            }).catch(err => {
+                console.log("SW registration bypassed/failed:", err);
+            });
+
+            let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                // Prompt the user to update
-                document.getElementById('update-prompt').classList.add('active');
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
             });
         }
 
         function triggerPwaUpdate() {
-            caches.keys().then(keys => {
-                for (let k of keys) caches.delete(k);
-            }).then(() => {
-                localStorage.removeItem('ultimate_reset_v26');
-                window.location.reload(true);
-            });
+            if (newWorkerWaiting) {
+                newWorkerWaiting.postMessage({ action: 'SKIP_WAITING' });
+            } else {
+                window.location.reload();
+            }
         }
 
         // Fallback open helper
