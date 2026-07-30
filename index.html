@@ -814,6 +814,7 @@
         let overviewMap = null;
         let allRouteBounds = null;
         let TRIP_ROUTES = {};
+        let countdownInterval = null;
 
         // Extract base64 icons from raw-icon DOM elements immediately
         window.addEventListener('DOMContentLoaded', () => {
@@ -1051,7 +1052,10 @@
                     moveTowelMuseumBeforeLunch();
                     setupDaySwipe();
                     
-                    window.setInterval(runCountdown, 1000);
+                    if (countdownInterval) {
+                        window.clearInterval(countdownInterval);
+                    }
+                    countdownInterval = window.setInterval(runCountdown, 1000);
                     runCountdown();
 
                     // Trigger Firestore sync initialization if available
@@ -1371,6 +1375,10 @@
         function initOverviewMap() {
             const mapEl = document.getElementById('main-map');
             if (!mapEl) return;
+            if (overviewMap) {
+                overviewMap.remove();
+                overviewMap = null;
+            }
             if (!window.L) {
                 mapEl.textContent = '地図を読み込めませんでした。通信状態を確認してください。';
                 mapEl.style.padding = '24px';
