@@ -325,3 +325,47 @@ export async function initSyncEngine(tripId) {
         setShareEnabled(false);
     }
 }
+
+export async function getDbInstance() {
+    try {
+        const app = initializeApp(firebaseConfig);
+        const db = initializeFirestore(app, {
+            localCache: persistentLocalCache({
+                tabManager: persistentMultipleTabManager()
+            })
+        });
+        const auth = getAuth(app);
+        if (!auth.currentUser) {
+            await signInAnonymously(auth);
+        }
+        return db;
+    } catch (e) {
+        console.error("Error initializing general db instance:", e);
+        return syncContext?.db;
+    }
+}
+
+export async function listenToTripParticipants(tripId, callback) {
+    const db = await getDbInstance();
+    if (!db) {
+        callback([]);
+        return () => {};
+    }
+    const q = collection(db, 'trips', tripId, 'participants');
+    return onSnapshot(q, (snapshot) => {
+        const names = [];
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data && data.nickname) {
+                names.push(data.nickname);
+            }
+        });
+        names.sort();
+        callback(names);
+    }, (error) => {
+        console.error("Error monitoring participants for trip:", tripId, error);
+        callback([]);
+    });
+}
+
+window.listenToTripParticipants = listenToTripParticipants;
