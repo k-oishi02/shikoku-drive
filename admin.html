@@ -192,7 +192,8 @@
                                 <div class="admin-trip-id-row">
                                     <span>ID:</span>
                                     <span class="admin-trip-id">${t.id}</span>
-                                    <button class="admin-copy-btn" id="btn-copy-${t.id}">COPY</button>
+                                    <button class="admin-copy-btn" id="btn-copy-${t.id}">COPY ID</button>
+                                    <button class="admin-copy-btn" id="btn-link-${t.id}" style="background:#59d9b0; color:#000;">SHARE LINK 🔗</button>
                                 </div>
                             </div>
                             <div class="admin-participants-box">
@@ -212,6 +213,13 @@
                         const copyBtn = card.querySelector(`#btn-copy-${t.id}`);
                         copyBtn.addEventListener('click', () => {
                             copyTextToClipboard(t.id, copyBtn);
+                        });
+                        
+                        const linkBtn = card.querySelector(`#btn-link-${t.id}`);
+                        linkBtn.addEventListener('click', () => {
+                            const baseUrl = window.location.href.split('admin.html')[0];
+                            const shareUrl = `${baseUrl}?trip=${t.id}`;
+                            copyTextToClipboard(shareUrl, linkBtn);
                         });
                         
                         // Start real-time monitoring for this trip
