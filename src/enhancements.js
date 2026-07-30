@@ -2,9 +2,8 @@
     'use strict';
 
     let TRIP_DAYS = {};
-    const tripId = window.currentTripId || 'default';
-    const CHECKLIST_KEY = `checklist-${tripId}-v1`;
-    const EXPENSE_KEY = `expenses-${tripId}-v1`;
+    let CHECKLIST_KEY = 'checklist-default-v1';
+    let EXPENSE_KEY = 'expenses-default-v1';
     const DEVICE_OWNER_KEY = 'shikoku-drive-device-owner-v1';
     let activeProgressMinutes = 0;
     // Dynamically populated from JSON config, default to empty to prevent hardcoding errors
@@ -670,24 +669,9 @@
                     window.location.reload();
                 }
             });
-
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(reg => {
-                    reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                newWorker.postMessage({ action: 'skipWaiting' });
-                            }
-                        });
-                    });
-                }).catch(() => {
-                    const status = document.getElementById('offline-status');
-                    if (status) status.textContent = 'ONLINE';
-                });
-            });
         }
     }
+
     function openLinkedTab() {
         const panelId = window.location.hash.slice(1);
         if (!/^tab-(day[1-3]|checklist|paypay)$/.test(panelId)) return;
@@ -701,7 +685,6 @@
         document.querySelectorAll('.j-tab-lnk[aria-controls^="tab-day"]').forEach((lnk, idx) => {
             const panelId = lnk.getAttribute('aria-controls');
             const dayKey = panelId.replace('tab-', '');
-            // Compute trip date based on index relative to start date
             const dateStr = new Date(new Date(window.currentTripDate || '2026-08-30').getTime() + idx * 86400000).toISOString().split('T')[0];
             TRIP_DAYS[panelId] = {
                 key: dayKey,
@@ -712,6 +695,13 @@
     }
 
     function initEnhancements() {
+        if (!window.currentTripId || window.currentTripId === 'undefined') {
+            return;
+        }
+        
+        CHECKLIST_KEY = `checklist-${window.currentTripId}-v1`;
+        EXPENSE_KEY = `expenses-${window.currentTripId}-v1`;
+
         const datesVal = document.querySelector('.j-info-val')?.textContent || '';
         if (datesVal) {
             window.currentTripDate = datesVal.split(' ')[0].replace(/\//g, '-');
@@ -740,11 +730,11 @@
                 
                 // Parse detour suggestions from JSON if present
                 DETOUR_SUGGESTIONS = tripData.detourSuggestions || {};
-
+ 
                 // Parse map center options
                 window.tripMapCenter = tripData.mapCenter || null;
                 window.tripMapZoom = tripData.mapZoom || 9;
-
+ 
                 initTripDays();
                 setupChecklist();
                 setupExpenses();
@@ -779,9 +769,17 @@
             });
     }
 
+    window.initEnhancements = initEnhancements;
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initEnhancements, { once: true });
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.currentTripId && window.currentTripId !== 'undefined') {
+                initEnhancements();
+            }
+        }, { once: true });
     } else {
-        initEnhancements();
+        if (window.currentTripId && window.currentTripId !== 'undefined') {
+            initEnhancements();
+        }
     }
 })();
