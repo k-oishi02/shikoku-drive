@@ -33,6 +33,9 @@ let EXPENSE_KEY = 'shikoku-drive-expenses-v1';
 const pendingActions = [];
 let syncContext = null;
 let inviteUrl = '';
+let unsubscribeRoom = null;
+let unsubscribeExpenses = null;
+let unsubscribeParticipants = null;
 
 function randomToken(byteLength = 32) {
     const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
@@ -200,6 +203,10 @@ async function createOrJoinRoom(db, uid, roomId, invite) {
 }
 
 export async function initSyncEngine(tripId) {
+    if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
+    if (unsubscribeExpenses) { unsubscribeExpenses(); unsubscribeExpenses = null; }
+    if (unsubscribeParticipants) { unsubscribeParticipants(); unsubscribeParticipants = null; }
+
     EXPENSE_KEY = `expenses-${tripId}-v1`;
     try {
         const { roomId, invite } = ensureRoomParameters(tripId);
@@ -224,7 +231,7 @@ export async function initSyncEngine(tripId) {
         }, { merge: true });
 
         // Listen to participant updates for header display and PayPay select options
-        onSnapshot(collection(db, 'trips', tripId, 'participants'), (snapshot) => {
+        unsubscribeParticipants = onSnapshot(collection(db, 'trips', tripId, 'participants'), (snapshot) => {
             const names = [];
             snapshot.forEach(docSnap => {
                 const data = docSnap.data();
@@ -286,7 +293,7 @@ export async function initSyncEngine(tripId) {
             }));
         }
 
-        onSnapshot(roomRef, snapshot => {
+        unsubscribeRoom = onSnapshot(roomRef, snapshot => {
             const members = snapshot.data()?.members || {};
             const count = Object.keys(members).length;
             const roleLabel = role === 'owner' ? '作成者' : '参加者';
@@ -295,7 +302,7 @@ export async function initSyncEngine(tripId) {
             setSyncUi('error', '共有ルームを確認できません', 'Firestoreのセキュリティルールを確認してください。');
         });
 
-        onSnapshot(expensesCollection, snapshot => {
+        unsubscribeExpenses = onSnapshot(expensesCollection, snapshot => {
             const expenses = snapshot.docs
                 .map(item => cleanExpense({ id: item.id, ...item.data() }))
                 .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
