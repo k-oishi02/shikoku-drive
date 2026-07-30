@@ -3,14 +3,14 @@
 <head>
     <script>
         // ULTIMATE INSTANT CACHE RESET HANDLER
-        if ('serviceWorker' in navigator && !localStorage.getItem('ultimate_reset_v26')) {
+        if ('serviceWorker' in navigator && !localStorage.getItem('ultimate_reset_v27')) {
             navigator.serviceWorker.getRegistrations().then(registrations => {
                 let hadRegistrations = false;
                 for (let r of registrations) {
                     r.unregister();
                     hadRegistrations = true;
                 }
-                localStorage.setItem('ultimate_reset_v26', 'true');
+                localStorage.setItem('ultimate_reset_v27', 'true');
                 if (hadRegistrations) {
                     caches.keys().then(keys => {
                         for (let k of keys) caches.delete(k);
