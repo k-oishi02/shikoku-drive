@@ -500,10 +500,23 @@
         } else {
             const aoiCredit = aoiPaid - share;
             if (Math.abs(aoiCredit) < 0.5) settlement.textContent = '精算済み';
-            else if (aoiCredit > 0) settlement.textContent = `こうたろう → あおい ${formatYen(aoiCredit)}`;
-            else settlement.textContent = `あおい → こうたろう ${formatYen(-aoiCredit)}`;
+            else if (aoiCredit > 0) {
+                const kotaroName = window.getMemberName ? window.getMemberName('kotaro') : 'メンバー2';
+                const aoiName = window.getMemberName ? window.getMemberName('aoi') : 'メンバー1';
+                settlement.textContent = `${kotaroName} → ${aoiName} ${formatYen(aoiCredit)}`;
+            } else {
+                const aoiName = window.getMemberName ? window.getMemberName('aoi') : 'メンバー1';
+                const kotaroName = window.getMemberName ? window.getMemberName('kotaro') : 'メンバー2';
+                settlement.textContent = `${aoiName} → ${kotaroName} ${formatYen(-aoiCredit)}`;
+            }
         }
     }
+    window.getMemberName = function(id) {
+        if (id === 'aoi') return window.memberNames?.aoi || 'メンバー1';
+        if (id === 'kotaro') return window.memberNames?.kotaro || 'メンバー2';
+        return id;
+    };
+    window.recalculateExpenses = renderExpenses;
 
     function removeExpense(id) {
         const expenses = safeLoad(EXPENSE_KEY, []).filter(expense => expense.id !== id);
@@ -516,8 +529,23 @@
         const form = document.getElementById('expense-form');
         const deviceOwner = document.getElementById('device-owner');
         const payer = document.getElementById('expense-payer');
-        const savedOwner = safeLoad(DEVICE_OWNER_KEY, 'kotaro');
-        if (deviceOwner) deviceOwner.value = savedOwner === 'aoi' ? 'aoi' : 'kotaro';
+        const savedOwner = safeLoad(DEVICE_OWNER_KEY, '');
+        if (deviceOwner) {
+            if (savedOwner) {
+                deviceOwner.value = savedOwner;
+            } else {
+                const myName = localStorage.getItem('user_nickname');
+                if (myName && window.memberNames) {
+                    if (myName === window.memberNames.aoi) {
+                        deviceOwner.value = 'aoi';
+                    } else if (myName === window.memberNames.kotaro) {
+                        deviceOwner.value = 'kotaro';
+                    }
+                } else {
+                    deviceOwner.value = 'kotaro';
+                }
+            }
+        }
         if (payer) payer.value = deviceOwner?.value || 'kotaro';
         deviceOwner?.addEventListener('change', () => {
             safeSave(DEVICE_OWNER_KEY, deviceOwner.value);
