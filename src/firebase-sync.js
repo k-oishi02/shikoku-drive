@@ -49,6 +49,15 @@ async function sha256(value) {
         .join('');
 }
 
+function getOrCreateDeviceId() {
+    let id = localStorage.getItem('device_id');
+    if (!id) {
+        id = 'dev_' + randomToken(16);
+        localStorage.setItem('device_id', id);
+    }
+    return id;
+}
+
 function ensureRoomParameters(tripId) {
     const url = new URL(window.location.href);
     let roomId = url.searchParams.get('ledger');
@@ -204,6 +213,66 @@ export async function initSyncEngine(tripId) {
         await signInAnonymously(auth);
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Anonymous authentication failed');
+
+        // Register participant nickname in Firestore
+        const nickname = localStorage.getItem('user_nickname') || '名無し';
+        const deviceId = getOrCreateDeviceId();
+        const participantRef = doc(db, 'trips', tripId, 'participants', deviceId);
+        await setDoc(participantRef, {
+            nickname: nickname,
+            lastActive: serverTimestamp()
+        }, { merge: true });
+
+        // Listen to participant updates for header display and PayPay select options
+        onSnapshot(collection(db, 'trips', tripId, 'participants'), (snapshot) => {
+            const names = [];
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                if (data && data.nickname) {
+                    names.push(data.nickname);
+                }
+            });
+            
+            // Sort to ensure stable order across all devices
+            names.sort();
+            
+            window.memberNames = {
+                aoi: names[0] || 'メンバー1',
+                kotaro: names[1] || 'メンバー2'
+            };
+            
+            window.currentTripMembers = [
+                { id: 'aoi', name: window.memberNames.aoi },
+                { id: 'kotaro', name: window.memberNames.kotaro }
+            ];
+
+            // Update UI elements
+            const pElem = document.getElementById('hero-participants');
+            if (pElem) {
+                pElem.textContent = `MEMBERS: ${names.join(', ')}`;
+            }
+
+            const deviceOwner = document.getElementById('device-owner');
+            const expensePayer = document.getElementById('expense-payer');
+            if (deviceOwner && expensePayer) {
+                const savedOwner = deviceOwner.value;
+                const savedPayer = expensePayer.value;
+                
+                const optionsHtml = `
+                    <option value="aoi">${window.memberNames.aoi}</option>
+                    <option value="kotaro">${window.memberNames.kotaro}</option>
+                `;
+                deviceOwner.innerHTML = optionsHtml;
+                expensePayer.innerHTML = optionsHtml;
+                
+                deviceOwner.value = savedOwner || 'aoi';
+                expensePayer.value = savedPayer || 'aoi';
+            }
+            
+            if (window.recalculateExpenses) {
+                window.recalculateExpenses();
+            }
+        });
 
         const { roomRef, role, created } = await createOrJoinRoom(db, uid, roomId, invite);
         const expensesCollection = collection(roomRef, 'expenses');
