@@ -660,16 +660,6 @@
             window.addEventListener('offline', updateNetworkStatus);
         }
 
-        if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-            let refreshing = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
-                    refreshing = true;
-                    console.log("Service Worker updated! Force reloading...");
-                    window.location.reload();
-                }
-            });
-        }
     }
 
     function openLinkedTab() {
