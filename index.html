@@ -869,8 +869,10 @@
 
             localStorage.setItem('user_nickname', nickname);
             
-            // Initialize joined trips with default "shikoku2026"
-            localStorage.setItem('joined_trips', JSON.stringify(['shikoku2026']));
+            const urlParams = new URLSearchParams(window.location.search);
+            const tripIdParam = urlParams.get('trip');
+            const initialTrips = Array.from(new Set(['shikoku2026', tripIdParam].filter(Boolean)));
+            localStorage.setItem('joined_trips', JSON.stringify(initialTrips));
             
             window.location.reload();
         }
