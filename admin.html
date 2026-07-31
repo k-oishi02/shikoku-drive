@@ -140,7 +140,7 @@
         <span class="admin-badge">ADMINISTRATION AREA</span>
         <h1 class="admin-title">ADMIN CONSOLE</h1>
         <p class="admin-sub">全体の旅程管理と参加者のリアルタイム監視を行います</p>
-        
+
         <div id="admin-trips-container">
             <div style="color:var(--text-sub); font-size:0.88rem; padding:12px 0;">読み込み中...</div>
         </div>
@@ -154,7 +154,7 @@
 
         function loadAdminDashboard() {
             const container = document.getElementById('admin-trips-container');
-            
+
             // Clean old unsubscribes
             adminUnsubscribes.forEach(unsub => {
                 if (typeof unsub === 'function') unsub();
@@ -164,7 +164,7 @@
             fetch('data/trips.json')
                 .then(res => res.json())
                 .then(trips => {
-                    const promises = trips.map(t => {
+                    const promises = trips.filter(t => /^[A-Za-z0-9_-]+$/.test(String(t.id || ''))).map(t => {
                         return fetch(`data/${t.id}.json`)
                             .then(res => {
                                 if (!res.ok) throw new Error("Not Found");
@@ -178,22 +178,22 @@
                 })
                 .then(tripsData => {
                     container.innerHTML = '';
-                    
+
                     tripsData.forEach(t => {
                         const card = document.createElement('div');
                         card.className = 'admin-trip-card';
-                        
+
                         card.innerHTML = `
                             <div class="admin-trip-header">
                                 <div>
-                                    <div class="admin-trip-title">${t.title}</div>
-                                    <div style="font-size:0.75rem; color:var(--text-sub); margin-top:2px;">${t.date}</div>
+                                    <div class="admin-trip-title">${escapeHtml(t.title)}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-sub); margin-top:2px;">${escapeHtml(t.date)}</div>
                                 </div>
                                 <div class="admin-trip-id-row">
                                     <span>ID:</span>
-                                    <span class="admin-trip-id">${t.id}</span>
+                                    <span class="admin-trip-id">${escapeHtml(t.id)}</span>
                                     <button class="admin-copy-btn" id="btn-copy-${t.id}">COPY ID</button>
-                                    <button class="admin-copy-btn" id="btn-link-${t.id}" style="background:#59d9b0; color:#000;">SHARE LINK 🔗</button>
+                                    <button class="admin-copy-btn" id="btn-link-${t.id}" style="background:#59d9b0; color:#000;">COPY INVITE 🔗</button>
                                 </div>
                             </div>
                             <div class="admin-participants-box">
@@ -206,7 +206,7 @@
                                 </div>
                             </div>
                         `;
-                        
+
                         container.appendChild(card);
 
                         // Attach COPY event listener
@@ -214,19 +214,17 @@
                         copyBtn.addEventListener('click', () => {
                             copyTextToClipboard(t.id, copyBtn);
                         });
-                        
+
                         const linkBtn = card.querySelector(`#btn-link-${t.id}`);
                         linkBtn.addEventListener('click', () => {
-                            const baseUrl = window.location.href.split('admin.html')[0];
-                            const shareUrl = `${baseUrl}?trip=${t.id}`;
-                            copyTextToClipboard(shareUrl, linkBtn);
+                            copyTextToClipboard(getOrCreateShareUrl(t.id), linkBtn);
                         });
-                        
+
                         // Start real-time monitoring for this trip
                         listenToTripParticipants(t.id, (names) => {
                             const listEl = document.getElementById(`admin-list-${t.id}`);
                             const countEl = document.getElementById(`admin-count-${t.id}`);
-                            
+
                             if (listEl && countEl) {
                                 countEl.textContent = `${names.length} ACTIVE`;
                                 if (names.length === 0) {
@@ -234,7 +232,7 @@
                                 } else {
                                     listEl.innerHTML = names.map(name => `
                                         <span style="margin-right:12px; display:inline-flex; align-items:center;">
-                                            <span class="admin-indicator"></span>${name}
+                                            <span class="admin-indicator"></span>${escapeHtml(name)}
                                         </span>
                                     `).join('');
                                 }
@@ -250,6 +248,39 @@
                     container.innerHTML = '<div style="color:#ff4747; font-size:0.88rem; padding:12px 0;">ダッシュボードの読み込みに失敗しました。</div>';
                     console.error(err);
                 });
+        }
+
+        function escapeHtml(value) {
+            return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function randomToken(byteLength = 32) {
+            const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
+            let binary = '';
+            bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        }
+
+        function getOrCreateShareUrl(tripId) {
+            const storageKey = `admin-share-${tripId}`;
+            let credentials = null;
+            try {
+                credentials = JSON.parse(localStorage.getItem(storageKey) || 'null');
+            } catch (error) {
+                credentials = null;
+            }
+
+            const validToken = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || ''));
+            if (!validToken(credentials?.ledger) || !validToken(credentials?.invite)) {
+                credentials = { ledger: randomToken(), invite: randomToken() };
+                localStorage.setItem(storageKey, JSON.stringify(credentials));
+            }
+
+            const shareUrl = new URL('./', window.location.href);
+            shareUrl.searchParams.set('trip', tripId);
+            shareUrl.searchParams.set('ledger', credentials.ledger);
+            shareUrl.searchParams.set('invite', credentials.invite);
+            return shareUrl.toString();
         }
 
         function copyTextToClipboard(text, btnEl) {

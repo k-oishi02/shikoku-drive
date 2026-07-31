@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shikoku-drive-pwa-v29';
+const CACHE_NAME = 'shikoku-drive-pwa-v32';
 const APP_SHELL = [
   './',
   './index.html',
@@ -18,7 +18,20 @@ const APP_SHELL = [
   './images/chichibugahama.png',
   './images/dogo_onsen.png',
   './images/shimonada.png',
-  './images/shimanami.png'
+  './images/shimanami.png',
+  './images/ana.png',
+  './images/apple_wallet.png',
+  './images/arboliva.png',
+  './images/cocchi.png',
+  './images/google_wallet.png',
+  './images/jalan.png',
+  './images/paypay.png',
+  './images/pikachu.png',
+  './images/revavroom.png',
+  './images/slowpoke.png',
+  './images/tabelog.png',
+  './images/toyota.png',
+  './images/weather.png'
 ];
 
 self.addEventListener('install', event => {
@@ -48,13 +61,16 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const requestUrl = new URL(event.request.url);
   if (requestUrl.hostname === 'api.open-meteo.com') return;
+  // Let external maps, tiles, fonts and app links use the browser's normal network path.
+  // Caching opaque third-party responses here would grow the cache without a safe limit.
+  if (requestUrl.origin !== self.location.origin) return;
 
-  const isWebAsset = requestUrl.pathname.endsWith('.html') || 
-                     requestUrl.pathname.endsWith('.js') || 
-                     requestUrl.pathname.endsWith('.css') || 
+  const isWebAsset = requestUrl.pathname.endsWith('.html') ||
+                     requestUrl.pathname.endsWith('.js') ||
+                     requestUrl.pathname.endsWith('.css') ||
                      requestUrl.pathname.endsWith('.webmanifest') ||
                      requestUrl.pathname.endsWith('.json') ||
-                     requestUrl === '/' ||
+                     requestUrl.pathname === '/' ||
                      requestUrl.pathname.endsWith('/');
 
   if (isWebAsset) {
@@ -67,7 +83,10 @@ self.addEventListener('fetch', event => {
           }
           return response;
         })
-        .catch(() => caches.match(event.request) || caches.match('./index.html'))
+        .catch(() => caches.match(event.request).then(cached => {
+          if (cached || event.request.mode !== 'navigate') return cached;
+          return caches.match('./index.html');
+        }))
     );
     return;
   }

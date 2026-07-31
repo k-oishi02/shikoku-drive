@@ -6,6 +6,10 @@
     let EXPENSE_KEY = 'expenses-default-v1';
     const DEVICE_OWNER_KEY = 'shikoku-drive-device-owner-v1';
     let activeProgressMinutes = 0;
+    let lastEnhancedPanel = null;
+    let lastEnhancedTripId = '';
+    let enhancementRunId = 0;
+    let remoteExpensesBound = false;
     // Dynamically populated from JSON config, default to empty to prevent hardcoding errors
     let OPTIONAL_RULES = {};
     let DETOUR_SUGGESTIONS = {};
@@ -27,6 +31,16 @@
         }
     }
 
+    function expenseStorageKey(tripId, ledgerToken) {
+        const safeTripId = /^[A-Za-z0-9_-]+$/.test(String(tripId || '')) ? String(tripId) : 'default';
+        const safeLedger = /^[A-Za-z0-9_-]{43}$/.test(String(ledgerToken || '')) ? String(ledgerToken) : 'local';
+        return `expenses-${safeTripId}-${safeLedger}-v2`;
+    }
+
+    window.setExpenseStorageScope = function (tripId, ledgerToken) {
+        EXPENSE_KEY = expenseStorageKey(tripId, ledgerToken);
+        renderExpenses();
+    };
     function parseCardTime(text) {
         const match = String(text || '').match(/(\d{1,2}):(\d{2})\s*[-–—]\s*(\d{1,2}):(\d{2})/);
         if (!match) return null;
@@ -55,6 +69,10 @@
     }
 
 
+    function isRigidCard(card) {
+        const badge = card.querySelector('.j-tag-badge')?.textContent.trim().toUpperCase() || '';
+        return ['FLIGHT', 'BUS', 'FERRY', 'DRIVE', 'HELLO CYCLING', 'RENTAL CAR'].includes(badge);
+    }
     function getEntries(panelId) {
         const day = TRIP_DAYS[panelId];
         const panel = document.getElementById(panelId);
@@ -65,7 +83,12 @@
             const parsed = parseCardTime(timeEl?.textContent);
             if (!parsed) return null;
             const title = card.querySelector('.j-card-ttl')?.textContent.replace(/\s+/g, ' ').trim() || '予定';
-            const route = card.querySelector('.j-btn.primary, a[href*="google.com/maps"], a[href*="maps.app.goo.gl"]');
+            // Prefer an explicit route link over the card's generic MAP button.
+            // The latter is useful for the card itself, but NOW mode must open
+            // the actual travel route when one is available.
+            const route = Array.from(card.querySelectorAll('a[href]')).find(link =>
+                /^ROUTE\s*→?$/i.test(link.textContent.trim())
+            ) || card.querySelector('a[href*="google.com/maps/dir"], a[href*="maps.app.goo.gl"], .j-btn.primary, a[href*="google.com/maps"]');
             return {
                 index,
                 card,
@@ -73,6 +96,7 @@
                 title,
                 route: route?.href || '',
                 fixed: isFixedCard(card),
+                rigid: isRigidCard(card),
                 startMinute: parsed.startMinute,
                 endMinute: parsed.endMinute,
                 start: dateAtMinute(day.date, parsed.startMinute),
@@ -331,38 +355,50 @@
         const dayLabel = TRIP_DAYS[panelId]?.label || 'DAY';
         let shortened = 0;
         let squeezedMinutes = 0;
+        let impossible = 0;
+        let previousAdjustedEnd = null;
+
         entries.forEach((entry, index) => {
             const badge = document.createElement('span');
             badge.className = 'delay-preview';
             if (entry.fixed) {
                 badge.classList.add('fixed');
                 badge.textContent = `FIXED ${minuteLabel(entry.startMinute)}`;
+                previousAdjustedEnd = entry.endMinute;
             } else {
+                const duration = Math.max(0, entry.endMinute - entry.startMinute);
                 const nextFixed = entries.slice(index + 1).find(candidate => candidate.fixed);
-                const previousFixed = entries.slice(0, index).reverse().find(candidate => candidate.fixed);
                 let shiftedStart = entry.startMinute + activeProgressMinutes;
-                let shiftedEnd = entry.endMinute + activeProgressMinutes;
+                if (Number.isFinite(previousAdjustedEnd)) shiftedStart = Math.max(shiftedStart, previousAdjustedEnd);
+                let shiftedEnd = shiftedStart + duration;
                 let conflict = 0;
+
                 if (nextFixed && shiftedEnd > nextFixed.startMinute) {
                     conflict = shiftedEnd - nextFixed.startMinute;
-                    shiftedEnd = Math.max(shiftedStart, nextFixed.startMinute);
+                    if (shiftedStart >= nextFixed.startMinute) {
+                        shiftedStart = nextFixed.startMinute;
+                        shiftedEnd = nextFixed.startMinute;
+                    } else {
+                        shiftedEnd = nextFixed.startMinute;
+                    }
                 }
-                if (previousFixed && shiftedStart < previousFixed.endMinute) {
-                    const clipped = previousFixed.endMinute - shiftedStart;
-                    shiftedStart = previousFixed.endMinute;
-                    shiftedEnd = Math.max(shiftedStart, shiftedEnd + clipped);
-                }
+
+                previousAdjustedEnd = shiftedEnd;
                 badge.textContent = `${minuteLabel(shiftedStart)}–${minuteLabel(shiftedEnd)}`;
                 if (conflict > 0) {
                     badge.classList.add('conflict');
-                    badge.textContent += ` / ${conflict}分短縮`;
-                    shortened += 1;
-                    squeezedMinutes += conflict;
+                    if (entry.rigid) {
+                        badge.textContent += ` / 移動時間${conflict}分不足`;
+                        impossible += 1;
+                    } else {
+                        badge.textContent += ` / ${conflict}分短縮`;
+                        shortened += 1;
+                        squeezedMinutes += conflict;
+                    }
                 }
             }
             entry.timeEl.appendChild(badge);
         });
-
         const optional = renderOptionalAdvice(panelId, activeProgressMinutes);
         if (advice) {
             const title = advice.querySelector('strong');
@@ -375,9 +411,11 @@
                 message.textContent = `${dayLabel}の今後を前倒し。Optionalは${optional.canAdd}件が追加可能です。`;
             } else {
                 title.textContent = `${activeProgressMinutes} MIN LATE`;
-                message.textContent = shortened
-                    ? `固定時刻を守るため${shortened}件を計${squeezedMinutes}分短縮。Optionalは入れません。`
-                    : '固定時刻は維持。寄り道とOptionalを見送って追いつきます。';
+                message.textContent = impossible
+                    ? `この遅れでは固定予定までの移動時間が不足します。Optionalを外し、Flexible予定の短縮・省略か早い出発が必要です。`
+                    : shortened
+                        ? `固定時刻を守るため${shortened}件を計${squeezedMinutes}分短縮。Optionalは入れません。`
+                        : '固定時刻は維持。寄り道とOptionalを見送って追いつきます。';
             }
         }
     };
@@ -392,13 +430,18 @@
 
     function setupProgressAdvisor() {
         const form = document.getElementById('progress-form');
-        form?.addEventListener('submit', event => {
-            event.preventDefault();
-            const direction = Number(document.getElementById('progress-direction')?.value) || -1;
-            const minutes = Math.max(0, Number(document.getElementById('progress-minutes')?.value) || 0);
-            window.applyProgressAdvisor(direction * minutes);
-        });
+        if (form && form.dataset.progressBound !== 'true') {
+            form.dataset.progressBound = 'true';
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                const direction = Number(document.getElementById('progress-direction')?.value) || -1;
+                const minutes = Math.max(0, Number(document.getElementById('progress-minutes')?.value) || 0);
+                window.applyProgressAdvisor(direction * minutes);
+            });
+        }
         document.querySelectorAll('.j-tab-btn').forEach(button => {
+            if (button.dataset.progressBound === 'true') return;
+            button.dataset.progressBound = 'true';
             button.addEventListener('click', () => {
                 window.setTimeout(() => {
                     window.applyProgressAdvisor(activeProgressMinutes);
@@ -418,6 +461,8 @@
         const saved = safeLoad(CHECKLIST_KEY, {});
         document.querySelectorAll('[data-check-id]').forEach(input => {
             input.checked = Boolean(saved[input.dataset.checkId]);
+            if (input.dataset.checklistBound === 'true') return;
+            input.dataset.checklistBound = 'true';
             input.addEventListener('change', () => {
                 const state = {};
                 document.querySelectorAll('[data-check-id]').forEach(check => {
@@ -461,7 +506,7 @@
 
     function renderExpenses() {
         const expenses = safeLoad(EXPENSE_KEY, []);
-        const list = document.getElementById('expense-list-container');
+        const list = document.getElementById('expense-list');
         if (!list) return;
         list.replaceChildren();
 
@@ -550,35 +595,45 @@
             }
         }
         if (payer) payer.value = deviceOwner?.value || 'kotaro';
-        deviceOwner?.addEventListener('change', () => {
-            safeSave(DEVICE_OWNER_KEY, deviceOwner.value);
-            if (payer) payer.value = deviceOwner.value;
-        });
-        form?.addEventListener('submit', event => {
-            event.preventDefault();
-            const amount = Number(document.getElementById('expense-amount').value);
-            if (!Number.isFinite(amount) || amount <= 0) return;
-            const expenses = safeLoad(EXPENSE_KEY, []);
-            const expense = {
-                id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-                amount: Math.round(amount),
-                payer: document.getElementById('expense-payer').value,
-                category: document.getElementById('expense-category').value,
-                note: document.getElementById('expense-note').value.trim(),
-                comment: document.getElementById('expense-comment').value.trim(),
-                createdAt: new Date().toISOString()
-            };
-            expenses.unshift(expense);
-            safeSave(EXPENSE_KEY, expenses);
-            form.reset();
-            renderExpenses();
-            notifyExpenseAction({ type: 'upsert', expense });
-        });
-        window.addEventListener('shikoku-expenses-remote', event => {
-            const expenses = Array.isArray(event.detail) ? event.detail : [];
-            safeSave(EXPENSE_KEY, expenses);
-            renderExpenses();
-        });
+        if (deviceOwner && deviceOwner.dataset.expenseBound !== 'true') {
+            deviceOwner.dataset.expenseBound = 'true';
+            deviceOwner.addEventListener('change', () => {
+                safeSave(DEVICE_OWNER_KEY, deviceOwner.value);
+                if (payer) payer.value = deviceOwner.value;
+            });
+        }
+        if (form && form.dataset.expenseBound !== 'true') {
+            form.dataset.expenseBound = 'true';
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                const amount = Number(document.getElementById('expense-amount').value);
+                if (!Number.isFinite(amount) || amount <= 0) return;
+                const expenses = safeLoad(EXPENSE_KEY, []);
+                const expense = {
+                    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                    amount: Math.round(amount),
+                    payer: document.getElementById('expense-payer').value,
+                    category: document.getElementById('expense-category').value,
+                    note: document.getElementById('expense-note').value.trim(),
+                    comment: document.getElementById('expense-comment').value.trim(),
+                    createdAt: new Date().toISOString()
+                };
+                expenses.unshift(expense);
+                safeSave(EXPENSE_KEY, expenses);
+                form.reset();
+                if (payer) payer.value = deviceOwner?.value || safeLoad(DEVICE_OWNER_KEY, 'kotaro');
+                renderExpenses();
+                notifyExpenseAction({ type: 'upsert', expense });
+            });
+        }
+        if (!remoteExpensesBound) {
+            remoteExpensesBound = true;
+            window.addEventListener('shikoku-expenses-remote', event => {
+                const expenses = Array.isArray(event.detail) ? event.detail : [];
+                safeSave(EXPENSE_KEY, expenses);
+                renderExpenses();
+            });
+        }
         renderExpenses();
     }
 
@@ -611,15 +666,13 @@
     };
 
     function setupExpenseShortcuts() {
-        const shareableBadges = new Set([
-            'GOURMET', 'DINNER', 'AQUARIUM', 'MUSEUM', 'SPA'
-        ]);
-        document.querySelectorAll('#tab-day1 .j-card, #tab-day2 .j-card, #tab-day3 .j-card').forEach(card => {
+        // Only cards explicitly marked expenseShortcut=true receive a PAID button.
+        document.querySelectorAll('.j-tab-panel[id^="tab-day"] .j-card').forEach(card => {
             const badge = card.querySelector('.j-tag-badge')?.textContent.trim().toUpperCase() || '';
             const titleClone = card.querySelector('.j-card-ttl')?.cloneNode(true);
             titleClone?.querySelector('.j-tag-badge')?.remove();
             const rawTitle = titleClone?.textContent.replace(/\s+/g, ' ').trim() || '旅費';
-            const isLikelyShared = shareableBadges.has(badge);
+            const isLikelyShared = card.dataset.expenseShortcut === 'true';
             if (!isLikelyShared || card.querySelector('.expense-shortcut')) return;
             const button = document.createElement('button');
             button.type = 'button';
@@ -658,15 +711,18 @@
                 }
             };
             updateNetworkStatus();
-            window.addEventListener('online', updateNetworkStatus);
-            window.addEventListener('offline', updateNetworkStatus);
+            if (bar.dataset.offlineBound !== 'true') {
+                bar.dataset.offlineBound = 'true';
+                window.addEventListener('online', updateNetworkStatus);
+                window.addEventListener('offline', updateNetworkStatus);
+            }
         }
 
     }
 
     function openLinkedTab() {
         const panelId = window.location.hash.slice(1);
-        if (!/^tab-(day[1-3]|checklist|paypay)$/.test(panelId)) return;
+        if (!/^tab-(day\d+|checklist|paypay)$/.test(panelId)) return;
         const button = document.querySelector(`[aria-controls="${panelId}"]`);
         if (typeof window.switchTab === 'function') window.switchTab(panelId, button);
     }
@@ -690,23 +746,30 @@
         if (!window.currentTripId || window.currentTripId === 'undefined') {
             return;
         }
-        
+        const firstDayPanel = document.querySelector('.j-tab-panel[id^="tab-day"]');
+        if (!firstDayPanel) return;
+        if (lastEnhancedTripId === window.currentTripId && lastEnhancedPanel === firstDayPanel) return;
+        lastEnhancedTripId = window.currentTripId;
+        lastEnhancedPanel = firstDayPanel;
+        const currentRunId = ++enhancementRunId;
+
         CHECKLIST_KEY = `checklist-${window.currentTripId}-v1`;
-        EXPENSE_KEY = `expenses-${window.currentTripId}-v1`;
+        EXPENSE_KEY = expenseStorageKey(window.currentTripId, new URLSearchParams(window.location.search).get('ledger'));
 
         if (!window.currentTripDate) {
             window.currentTripDate = new Date().toISOString().slice(0, 10);
         }
-        
+
         // Dynamically fetch and preserve trip members list at runtime
         fetch(`data/${window.currentTripId}.json`)
             .then(res => res.json())
             .then(tripData => {
+                if (currentRunId !== enhancementRunId) return;
                 window.currentTripMembers = tripData.members || [
                     { id: 'aoi', name: 'メンバー1' },
                     { id: 'kotaro', name: 'メンバー2' }
                 ];
-                
+
                 // Parse optional rules from JSON if present, converting match strings into RegExps
                 OPTIONAL_RULES = {};
                 if (tripData.optionalRules) {
@@ -718,14 +781,14 @@
                         }));
                     });
                 }
-                
+
                 // Parse detour suggestions from JSON if present
                 DETOUR_SUGGESTIONS = tripData.detourSuggestions || {};
- 
+
                 // Parse map center options
                 window.tripMapCenter = tripData.mapCenter || null;
                 window.tripMapZoom = tripData.mapZoom || 9;
- 
+
                 initTripDays();
                 setupChecklist();
                 setupExpenses();
@@ -740,6 +803,7 @@
                 renderNowMode();
                 window.nowModeInterval = window.setInterval(renderNowMode, 1000);
             }).catch(() => {
+                if (currentRunId !== enhancementRunId) return;
                 window.currentTripMembers = [
                     { id: 'aoi', name: 'メンバー1' },
                     { id: 'kotaro', name: 'メンバー2' }

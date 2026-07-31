@@ -1,4 +1,4 @@
-﻿import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
+import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
 import {
     getAuth,
     signInAnonymously
@@ -37,6 +37,9 @@ let inviteUrl = '';
 let unsubscribeRoom = null;
 let unsubscribeExpenses = null;
 let unsubscribeParticipants = null;
+let participantHeartbeat = null;
+let syncRunId = 0;
+const PARTICIPANT_ACTIVE_MS = 5 * 60 * 1000;
 
 function randomToken(byteLength = 32) {
     const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
@@ -78,7 +81,7 @@ function ensureRoomParameters(tripId) {
     inviteUrl = url.toString();
     const roomCode = document.getElementById('sync-room-code');
     if (roomCode) roomCode.textContent = `ROOM: ${roomId.slice(-6).toUpperCase()}`;
-    return { roomId: `${tripId}_${roomId}`, invite };
+    return { roomId: `${tripId}_${roomId}`, invite, ledgerToken: roomId };
 }
 
 function setSyncUi(mode, title, message) {
@@ -110,31 +113,64 @@ function readCachedExpenses() {
 
 function cleanExpense(expense) {
     return {
-        id: String(expense.id || ''),
+        id: String(expense.id || '').slice(0, 120),
         amount: Math.max(0, Math.round(Number(expense.amount) || 0)),
         payer: expense.payer === 'kotaro' ? 'kotaro' : 'aoi',
         category: String(expense.category || 'その他').slice(0, 20),
         note: String(expense.note || '').slice(0, 40),
         comment: String(expense.comment || '').slice(0, 80),
-        createdAt: String(expense.createdAt || new Date().toISOString())
+        createdAt: String(expense.createdAt || new Date().toISOString()).slice(0, 40)
     };
+}
+
+function activeParticipantEntries(snapshot) {
+    const cutoff = Date.now() - PARTICIPANT_ACTIVE_MS;
+    return snapshot.docs
+        .map(item => {
+            const data = item.data();
+            const activeAt = data?.lastActive?.toMillis?.() || 0;
+            const nickname = String(data?.nickname || '').trim().slice(0, 40);
+            return nickname && activeAt >= cutoff ? { uid: item.id, nickname, activeAt } : null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.activeAt - a.activeAt);
+}
+
+function activeParticipantNames(snapshot) {
+    return [...new Set(activeParticipantEntries(snapshot).map(item => item.nickname))];
+}
+
+function validExpenseForSync(expense) {
+    return Boolean(
+        expense &&
+        expense.id &&
+        !String(expense.id).includes('/') &&
+        String(expense.id).length <= 120 &&
+        Number.isInteger(expense.amount) &&
+        expense.amount > 0 &&
+        expense.amount < 10000000
+    );
 }
 
 function emitRemoteExpenses(expenses) {
     window.dispatchEvent(new CustomEvent('shikoku-expenses-remote', { detail: expenses }));
 }
 
-async function persistAction(action) {
-    if (!syncContext) {
-        pendingActions.push(action);
-        return;
+async function persistAction(action, queueWhenUnavailable = true) {
+    const actionTripId = String(action?.tripId || window.currentTripId || '');
+    if (!syncContext || syncContext.tripId !== actionTripId) {
+        if (queueWhenUnavailable && actionTripId === String(window.currentTripId || '')) {
+            pendingActions.push({ ...action, tripId: actionTripId });
+        }
+        return false;
     }
 
     const { expensesCollection, db } = syncContext;
     if (action.type === 'upsert' && action.expense) {
         const expense = cleanExpense(action.expense);
+        if (!validExpenseForSync(expense)) return false;
         await setDoc(doc(expensesCollection, expense.id), expense);
-    } else if (action.type === 'remove' && action.id) {
+    } else if (action.type === 'remove' && action.id && !String(action.id).includes('/')) {
         await deleteDoc(doc(expensesCollection, String(action.id)));
     } else if (action.type === 'clear') {
         const snapshot = await getDocs(expensesCollection);
@@ -142,15 +178,25 @@ async function persistAction(action) {
         snapshot.forEach(item => batch.delete(item.ref));
         await batch.commit();
     }
+    return true;
 }
 
-async function flushPendingActions() {
-    while (pendingActions.length) {
-        const action = pendingActions.shift();
-        await persistAction(action);
+async function flushPendingActions(tripId) {
+    const queued = pendingActions.splice(0, pendingActions.length);
+    const retry = [];
+    for (const action of queued) {
+        if (action.tripId !== tripId) {
+            retry.push(action);
+            continue;
+        }
+        try {
+            await persistAction(action, false);
+        } catch (error) {
+            retry.push(action);
+        }
     }
+    pendingActions.push(...retry);
 }
-
 window.copyLedgerInviteLink = async function () {
     const button = document.getElementById('share-link-button');
     try {
@@ -160,12 +206,13 @@ window.copyLedgerInviteLink = async function () {
             if (button) button.textContent = '招待リンクをコピー';
         }, 1800);
     } catch (error) {
-        window.prompt('このリンクを蒼さんへ送ってください', inviteUrl);
+        window.prompt('このリンクを同行者へ送ってください', inviteUrl);
     }
 };
 
 window.addEventListener('shikoku-expense-action', event => {
-    persistAction(event.detail).catch(() => {
+    const action = { ...(event.detail || {}), tripId: String(window.currentTripId || '') };
+    persistAction(action).catch(() => {
         setSyncUi('error', '同期に失敗しました', '通信状態を確認してください。入力内容はこの端末に残っています。');
     });
 });
@@ -205,13 +252,17 @@ async function createOrJoinRoom(db, uid, roomId, invite) {
 }
 
 export async function initSyncEngine(tripId) {
+    const currentRunId = ++syncRunId;
+    syncContext = null;
+    setShareEnabled(false);
     if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
     if (unsubscribeExpenses) { unsubscribeExpenses(); unsubscribeExpenses = null; }
     if (unsubscribeParticipants) { unsubscribeParticipants(); unsubscribeParticipants = null; }
-
-    EXPENSE_KEY = `expenses-${tripId}-v1`;
-    try {
-        const { roomId, invite } = ensureRoomParameters(tripId);
+    if (participantHeartbeat) { window.clearInterval(participantHeartbeat); participantHeartbeat = null; }
+try {
+        const { roomId, invite, ledgerToken } = ensureRoomParameters(tripId);
+        EXPENSE_KEY = `expenses-${tripId}-${ledgerToken}-v2`;
+        window.setExpenseStorageScope?.(tripId, ledgerToken);
         let app;
         if (getApps().length === 0) {
             app = initializeApp(firebaseConfig);
@@ -219,7 +270,7 @@ export async function initSyncEngine(tripId) {
             app = getApp();
         }
         const auth = getAuth(app);
-        
+
         let db;
         try {
             db = initializeFirestore(app, {
@@ -231,36 +282,42 @@ export async function initSyncEngine(tripId) {
             db = getFirestore(app);
         }
         await signInAnonymously(auth);
+        if (currentRunId !== syncRunId) return;
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Anonymous authentication failed');
 
+        const { roomRef, role } = await createOrJoinRoom(db, uid, roomId, invite);
+        if (currentRunId !== syncRunId) return;
+        const expensesCollection = collection(roomRef, 'expenses');
+        syncContext = { db, roomRef, expensesCollection, uid, tripId, ledgerToken, deviceOwnerInitialized: false };
+
         // Register participant nickname in Firestore
-        const nickname = localStorage.getItem('user_nickname') || '名無し';
+        const nickname = String(localStorage.getItem('user_nickname') || '名無し').trim().slice(0, 40) || '名無し';
         const deviceId = uid;
         const participantRef = doc(db, 'trips', tripId, 'participants', deviceId);
         await setDoc(participantRef, {
             nickname: nickname,
             lastActive: serverTimestamp()
         }, { merge: true });
+        if (currentRunId !== syncRunId) return;
+        participantHeartbeat = window.setInterval(() => {
+            setDoc(participantRef, {
+                nickname,
+                lastActive: serverTimestamp()
+            }, { merge: true }).catch(() => {});
+        }, 60 * 1000);
 
         // Listen to participant updates for header display and PayPay select options
         unsubscribeParticipants = onSnapshot(collection(db, 'trips', tripId, 'participants'), (snapshot) => {
-            const names = [];
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data();
-                if (data && data.nickname) {
-                    names.push(data.nickname);
-                }
-            });
-            
-            // Sort to ensure stable order across all devices
-            names.sort();
-            
-            window.memberNames = {
-                aoi: names[0] || 'メンバー1',
-                kotaro: names[1] || 'メンバー2'
-            };
-            
+            if (currentRunId !== syncRunId || !syncContext) return;
+            const participants = activeParticipantEntries(snapshot);
+            const names = [...new Set(participants.map(item => item.nickname))];
+
+            const otherName = participants.find(item => item.uid !== uid)?.nickname;
+            window.memberNames = role === 'owner'
+                ? { aoi: nickname, kotaro: otherName || 'メンバー2' }
+                : { aoi: otherName || 'メンバー1', kotaro: nickname };
+
             window.currentTripMembers = [
                 { id: 'aoi', name: window.memberNames.aoi },
                 { id: 'kotaro', name: window.memberNames.kotaro }
@@ -277,43 +334,52 @@ export async function initSyncEngine(tripId) {
             if (deviceOwner && expensePayer) {
                 const savedOwner = deviceOwner.value;
                 const savedPayer = expensePayer.value;
-                
-                const optionsHtml = `
-                    <option value="aoi">${window.memberNames.aoi}</option>
-                    <option value="kotaro">${window.memberNames.kotaro}</option>
-                `;
-                deviceOwner.innerHTML = optionsHtml;
-                expensePayer.innerHTML = optionsHtml;
-                
-                deviceOwner.value = savedOwner || 'aoi';
-                expensePayer.value = savedPayer || 'aoi';
+                const deviceOwnerId = role === 'owner' ? 'aoi' : 'kotaro';
+
+                const optionData = [
+                    { id: 'aoi', name: window.memberNames.aoi },
+                    { id: 'kotaro', name: window.memberNames.kotaro }
+                ];
+                deviceOwner.replaceChildren(...optionData.map(member => new Option(member.name, member.id)));
+                expensePayer.replaceChildren(...optionData.map(member => new Option(member.name, member.id)));
+
+                if (!syncContext.deviceOwnerInitialized) {
+                    deviceOwner.value = deviceOwnerId;
+                    expensePayer.value = deviceOwnerId;
+                    localStorage.setItem('shikoku-drive-device-owner-v1', JSON.stringify(deviceOwnerId));
+                    syncContext.deviceOwnerInitialized = true;
+                } else {
+                    deviceOwner.value = savedOwner || deviceOwnerId;
+                    expensePayer.value = savedPayer || deviceOwner.value;
+                }
             }
-            
+
             if (window.recalculateExpenses) {
                 window.recalculateExpenses();
             }
         });
 
-        const { roomRef, role, created } = await createOrJoinRoom(db, uid, roomId, invite);
-        const expensesCollection = collection(roomRef, 'expenses');
-        syncContext = { db, roomRef, expensesCollection, uid };
 
-        const cached = readCachedExpenses();
-        await Promise.all(cached.map(expense => {
-            const clean = cleanExpense(expense);
-            return setDoc(doc(expensesCollection, clean.id), clean);
-        }));
+        const cached = readCachedExpenses()
+            .map(cleanExpense)
+            .filter(validExpenseForSync);
+        await Promise.all(cached.map(expense =>
+            setDoc(doc(expensesCollection, expense.id), expense)
+        ));
+        if (currentRunId !== syncRunId) return;
 
         unsubscribeRoom = onSnapshot(roomRef, snapshot => {
+            if (currentRunId !== syncRunId) return;
             const members = snapshot.data()?.members || {};
             const count = Object.keys(members).length;
             const roleLabel = role === 'owner' ? '作成者' : '参加者';
-            setSyncUi('live', `${roleLabel}として接続済み`, `${count}/2台が接続済み。追加・削除は自動同期されます。`);
+            setSyncUi('live', `${roleLabel}として接続済み`, `${count}/2台が登録済み。追加・削除は自動同期されます。`);
         }, () => {
             setSyncUi('error', '共有ルームを確認できません', 'Firestoreのセキュリティルールを確認してください。');
         });
 
         unsubscribeExpenses = onSnapshot(expensesCollection, snapshot => {
+            if (currentRunId !== syncRunId) return;
             const expenses = snapshot.docs
                 .map(item => cleanExpense({ id: item.id, ...item.data() }))
                 .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -322,9 +388,11 @@ export async function initSyncEngine(tripId) {
             setSyncUi('error', '台帳を同期できません', 'Firestoreのセキュリティルールを確認してください。');
         });
 
+        if (currentRunId !== syncRunId) return;
         setShareEnabled(true);
-        await flushPendingActions();
+        await flushPendingActions(tripId);
     } catch (error) {
+        if (currentRunId !== syncRunId) return;
         const code = String(error?.code || '');
         if (code.includes('auth/operation-not-allowed')) {
             setSyncUi('error', '匿名認証が無効です', 'Firebase Authenticationで「匿名」を有効にしてください。');
@@ -345,7 +413,7 @@ export async function getDbInstance() {
         } else {
             app = getApp();
         }
-        
+
         let db;
         try {
             db = initializeFirestore(app, {
@@ -356,7 +424,7 @@ export async function getDbInstance() {
         } catch (e) {
             db = getFirestore(app);
         }
-        
+
         const auth = getAuth(app);
         if (!auth.currentUser) {
             await signInAnonymously(auth);
@@ -376,14 +444,7 @@ export async function listenToTripParticipants(tripId, callback) {
     }
     const q = collection(db, 'trips', tripId, 'participants');
     return onSnapshot(q, (snapshot) => {
-        const names = [];
-        snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            if (data && data.nickname) {
-                names.push(data.nickname);
-            }
-        });
-        names.sort();
+        const names = activeParticipantNames(snapshot);
         callback(names);
     }, (error) => {
         console.error("Error monitoring participants for trip:", tripId, error);

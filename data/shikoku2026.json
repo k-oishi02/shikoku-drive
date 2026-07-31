@@ -12,8 +12,14 @@
                   },
     "ferryLegs":  {
                       "day1":  [
-                                   4,
-                                   13
+                                   {
+                                       "from":  4,
+                                       "to":  5
+                                   },
+                                   {
+                                       "from":  12,
+                                       "to":  13
+                                   }
                                ],
                       "day2":  [
 
@@ -131,7 +137,7 @@
                                   "lon":  134.0194008,
                                   "wallet":  {
                                                  "apple":  "https://support.apple.com/ja-jp/108375",
-                                                 "google":  "https://wallet.app.google/"
+                                                 "google":  "https://support.google.com/wallet/answer/12059332?hl=ja"
                                              },
                                   "mapQuery":  "高松空港",
                                   "official":  "https://www.ana.co.jp/ja/jp/",
@@ -217,6 +223,7 @@
                               {
                                   "time":  "12:35 - 13:05",
                                   "title":  "そうめん作兵衛 (小豆島)",
+                                  "expenseShortcut":  true,
                                   "badge":  "GOURMET",
                                   "desc":  "伝統手延べそうめんと天ぷらを30分で。食後すぐに自転車でオリーブ公園へ向かう。",
                                   "image":  "sakubee_somen.png",
@@ -328,6 +335,7 @@
                               {
                                   "time":  "20:00 - 21:00",
                                   "title":  "骨付鳥 一鶴 (いっかく)",
+                                  "expenseShortcut":  true,
                                   "badge":  "DINNER",
                                   "desc":  "香川名物！スパイシーでジューシーな骨付鳥（親どり・ひなどり）の絶品夕食！",
                                   "lat":  34.3415,
@@ -340,6 +348,7 @@
                               {
                                   "time":  "09:00 - 09:30",
                                   "title":  "2軒目：山越うどん",
+                                  "expenseShortcut":  true,
                                   "badge":  "GOURMET",
                                   "desc":  "高松国際ホテルを8:20頃出発。9:00開店に合わせ、かまたま発祥店舗で釜たまうどん。滞在は30分で、四国水族館へ余裕を持って移動。",
                                   "lat":  34.225728,
@@ -350,6 +359,7 @@
                               {
                                   "time":  "10:15 - 15:20",
                                   "title":  "四国水族館",
+                                  "expenseShortcut":  true,
                                   "badge":  "AQUARIUM",
                                   "desc":  "水族館を主役にたっぷり鑑賞。11:00・13:00・15:00のイルカ、11:45のカワウソ、13:45のペンギンフィーディングまで楽しんでから出発。",
                                   "lat":  34.3123308,
@@ -410,6 +420,7 @@
                               {
                                   "time":  "19:30 - 21:00",
                                   "title":  "五志喜 本店 (19:30予約)",
+                                  "expenseShortcut":  true,
                                   "badge":  "DINNER",
                                   "desc":  "創業390年。伝統の愛媛鯛めし、郷土料理および地酒の夕食。",
                                   "lat":  33.8380795,
@@ -420,6 +431,7 @@
                               {
                                   "time":  "21:20 - 22:20",
                                   "title":  "道後温泉本館 夜景撮影 ＆ 入浴",
+                                  "expenseShortcut":  true,
                                   "badge":  "SPA",
                                   "desc":  "夕食後はライトアップされた本館・道後温泉駅・坊っちゃんカラクリ時計を撮影。土産店は閉店が多い時間なので買い物枠ではなく、夜景と神の湯階下（札止22:30）を優先。",
                                   "image":  "dogo_onsen.png",
@@ -459,6 +471,7 @@
                                   "time":  "12:10 - 13:15",
                                   "desc":  "タオルアート展示の観覧および高品質今治タオルの閲覧。",
                                   "badge":  "MUSEUM",
+                                  "expenseShortcut":  true,
                                   "title":  "タオル美術館 ICHIHIRO",
                                   "lat":  33.9696759
                               },
@@ -471,6 +484,7 @@
                                   "time":  "13:40 - 14:30",
                                   "desc":  "火曜営業の白龍で今治名物・焼豚玉子飯。タオル美術館から亀老山へ向かう経路上にあり、寄り道は約3分。",
                                   "badge":  "GOURMET",
+                                  "expenseShortcut":  true,
                                   "title":  "今治名物「焼豚玉子飯」（白龍）",
                                   "lat":  34.0481515
                               },
@@ -529,6 +543,7 @@
                               {
                                   "time":  "18:40 - 19:00",
                                   "title":  "松山空港 Orange BAR",
+                                  "expenseShortcut":  true,
                                   "badge":  "GOURMET",
                                   "desc":  "1階の「みかんジュース蛇口」で愛媛らしい一杯。19:00には切り上げ、保安検査へ。",
                                   "lat":  33.8273145,
@@ -568,7 +583,7 @@
                                   "lon":  132.7013265,
                                   "wallet":  {
                                                  "apple":  "https://support.apple.com/ja-jp/108375",
-                                                 "google":  "https://wallet.app.google/"
+                                                 "google":  "https://support.google.com/wallet/answer/12059332?hl=ja"
                                              },
                                   "mapQuery":  "羽田空港",
                                   "official":  "https://www.ana.co.jp/ja/jp/",
