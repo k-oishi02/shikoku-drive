@@ -1,4 +1,4 @@
-﻿{
+{
     "tripId":  "shikoku2026",
     "title":  "TRAVEL GUIDE",
     "subtitle":  "",
@@ -135,7 +135,8 @@
                                              },
                                   "mapQuery":  "高松空港",
                                   "official":  "https://www.ana.co.jp/ja/jp/",
-                                  "officialLabel":  "ANA"
+                                  "officialLabel":  "ANA",
+                                  "mapLabel":  "ARRIVAL MAP →"
                               },
                               {
                                   "time":  "08:30 - 09:00",
@@ -145,7 +146,8 @@
                                   "lat":  34.2151743,
                                   "lon":  134.0194008,
                                   "mapQuery":  "トヨタレンタカー高松空港店",
-                                  "official":  "https://rent.toyota.co.jp/"
+                                  "official":  "https://rent.toyota.co.jp/",
+                                  "mapLabel":  "SHOP MAP →"
                               },
                               {
                                   "time":  "09:15 - 09:35",
@@ -155,7 +157,8 @@
                                   "image":  "yadon_park.png",
                                   "lat":  34.2471397,
                                   "lon":  133.9329243,
-                                  "official":  "https://www.town.ayagawa.lg.jp/docs/2023032300021/"
+                                  "official":  "https://www.town.ayagawa.lg.jp/docs/2023032300021/",
+                                  "mapQuery":  "ひだまり公園あやがわ"
                               },
                               {
                                   "time":  "OPTIONAL",
@@ -165,7 +168,8 @@
                                   "image":  "udon_baka.png",
                                   "lat":  34.3375,
                                   "lon":  134.0603,
-                                  "tabelog":  "https://tabelog.com/kagawa/A3701/A370101/37000242/"
+                                  "tabelog":  "https://tabelog.com/kagawa/A3701/A370101/37000242/",
+                                  "mapQuery":  "手打十段うどんバカ一代"
                               },
                               {
                                   "time":  "10:40 - 11:40",
@@ -176,7 +180,8 @@
                                   "lon":  134.0499868,
                                   "mapQuery":  "高松港フェリー乗り場",
                                   "official":  "https://www.shikokuferry.com/yadon",
-                                  "officialLabel":  "YADON FERRY →"
+                                  "officialLabel":  "YADON FERRY →",
+                                  "mapLabel":  "BOARDING MAP →"
                               },
                               {
                                   "time":  "12:00 - 12:18",
@@ -185,9 +190,10 @@
                                   "desc":  "フェリー11:40着後、12:00発の坂手線に乗車し、池田港ターミナル前へ12:18着。タクシーは使わない。",
                                   "lat":  34.4890145,
                                   "lon":  134.1720787,
-                                  "mapQuery":  "土庄港",
                                   "official":  "https://www.shodoshima-olive-bus.com/",
-                                  "officialLabel":  "BUS TIMETABLE →"
+                                  "officialLabel":  "BUS TIMETABLE →",
+                                  "mapQuery":  "土庄港 バス停",
+                                  "mapLabel":  "BUS STOP →"
                               },
                               {
                                   "time":  "12:18 - 12:35",
@@ -205,7 +211,8 @@
                                                     "label":  "ROUTE →",
                                                     "url":  "https://www.google.com/maps/dir/?api=1\u0026origin=池田港\u0026destination=作兵衛小豆島\u0026travelmode=bicycling"
                                                 }
-                                            ]
+                                            ],
+                                  "map":  false
                               },
                               {
                                   "time":  "12:35 - 13:05",
@@ -215,7 +222,8 @@
                                   "image":  "sakubee_somen.png",
                                   "lat":  34.4811988,
                                   "lon":  134.2453428,
-                                  "tabelog":  "https://tabelog.com/kagawa/A3705/A370501/37009141/"
+                                  "tabelog":  "https://tabelog.com/kagawa/A3705/A370501/37009141/",
+                                  "mapQuery":  "そうめん作兵衛 小豆島"
                               },
                               {
                                   "time":  "13:05 - 13:45",
@@ -224,11 +232,15 @@
                                   "desc":  "作兵衛からオリーブ公園へ移動し、返却まで40分確保。帰りはバス利用に切り替える。",
                                   "links":  [
                                                 {
-                                                    "label":  "IKEDA →",
+                                                    "label":  "ROUTE →",
+                                                    "url":  "https://www.google.com/maps/dir/?api=1\u0026origin=作兵衛小豆島\u0026destination=道の駅小豆島オリーブ公園\u0026travelmode=bicycling"
+                                                },
+                                                {
+                                                    "label":  "IKEDA PORT →",
                                                     "url":  "https://www.hellocycling.jp/app/port/detail/1602"
                                                 },
                                                 {
-                                                    "label":  "OLIVE PARK →",
+                                                    "label":  "OLIVE PORT →",
                                                     "url":  "https://www.hellocycling.jp/app/port/detail/225"
                                                 }
                                             ]
@@ -241,7 +253,8 @@
                                   "image":  "shodoshima.png",
                                   "lat":  34.4728411,
                                   "lon":  134.2736368,
-                                  "official":  "https://olive-pk.jp/"
+                                  "official":  "https://olive-pk.jp/",
+                                  "mapQuery":  "道の駅小豆島オリーブ公園"
                               },
                               {
                                   "time":  "15:00 - 15:24",
@@ -251,7 +264,9 @@
                                   "lat":  34.4776107,
                                   "lon":  134.1886468,
                                   "official":  "https://www.shodoshima-olive-bus.com/dia/",
-                                  "officialLabel":  "BUS TIMETABLE →"
+                                  "officialLabel":  "BUS TIMETABLE →",
+                                  "mapQuery":  "オリーブ公園口 バス停",
+                                  "mapLabel":  "BUS STOP →"
                               },
                               {
                                   "time":  "15:24 - 16:50",
@@ -259,7 +274,8 @@
                                   "badge":  "VIEWPOINT",
                                   "desc":  "8/30の公式通行可能時間は15:33〜21:33。砂の道が現れる様子から散策・撮影まで楽しみ、16:50にバス停へ。",
                                   "lat":  34.4776107,
-                                  "lon":  134.1886468
+                                  "lon":  134.1886468,
+                                  "mapQuery":  "エンジェルロード"
                               },
                               {
                                   "time":  "17:00 - 17:09",
@@ -269,7 +285,9 @@
                                   "lat":  34.4890145,
                                   "lon":  134.1720787,
                                   "official":  "https://www.shodoshima-olive-bus.com/dia/",
-                                  "officialLabel":  "BUS TIMETABLE →"
+                                  "officialLabel":  "BUS TIMETABLE →",
+                                  "mapQuery":  "エンジェルロード前 バス停",
+                                  "mapLabel":  "BUS STOP →"
                               },
                               {
                                   "time":  "17:30 - 18:30",
@@ -280,7 +298,8 @@
                                   "lon":  134.0499868,
                                   "mapQuery":  "土庄港フェリーターミナル",
                                   "official":  "https://www.shikokuferry.com/route2",
-                                  "officialLabel":  "TIMETABLE →"
+                                  "officialLabel":  "TIMETABLE →",
+                                  "mapLabel":  "BOARDING MAP →"
                               },
                               {
                                   "jalan":  "https://www.jalan.net/yad324130/",
@@ -291,7 +310,8 @@
                                   "desc":  "高松港から先にホテルへ。無料駐車場に停めてチェックインし、荷物を置いてからポケモンセンターへ向かう。",
                                   "badge":  "HOTEL",
                                   "title":  "高松国際ホテル",
-                                  "lat":  34.3331208
+                                  "lat":  34.3331208,
+                                  "mapLabel":  "HOTEL MAP →"
                               },
                               {
                                   "id":  "pokemon-center-card",
@@ -302,7 +322,8 @@
                                   "desc":  "四国初のポケモンセンターにてストア内散策・限定グッズ閲覧（閉店20:00）。",
                                   "badge":  "SHOPPING",
                                   "title":  "ポケモンセンターカガワ",
-                                  "lat":  34.3407
+                                  "lat":  34.3407,
+                                  "mapLabel":  "STORE MAP →"
                               },
                               {
                                   "time":  "20:00 - 21:00",
@@ -323,7 +344,8 @@
                                   "desc":  "高松国際ホテルを8:20頃出発。9:00開店に合わせ、かまたま発祥店舗で釜たまうどん。滞在は30分で、四国水族館へ余裕を持って移動。",
                                   "lat":  34.225728,
                                   "lon":  133.928281,
-                                  "tabelog":  "https://tabelog.com/kagawa/A3702/A370202/37000080/"
+                                  "tabelog":  "https://tabelog.com/kagawa/A3702/A370202/37000080/",
+                                  "mapQuery":  "山越うどん"
                               },
                               {
                                   "time":  "10:15 - 15:20",
@@ -332,7 +354,8 @@
                                   "desc":  "水族館を主役にたっぷり鑑賞。11:00・13:00・15:00のイルカ、11:45のカワウソ、13:45のペンギンフィーディングまで楽しんでから出発。",
                                   "lat":  34.3123308,
                                   "lon":  133.8077902,
-                                  "official":  "https://shikoku-aquarium.jp/"
+                                  "official":  "https://shikoku-aquarium.jp/",
+                                  "mapQuery":  "四国水族館"
                               },
                               {
                                   "time":  "OPTIONAL",
@@ -366,7 +389,14 @@
                                   "desc":  "父母ヶ浜から高速道路経由でダイワロイネットホテル松山へ。19:10までに駐車・チェックインし、19:20頃に五志喜へ向かう。",
                                   "badge":  "DRIVE",
                                   "title":  "愛媛県松山市へ移動 ＆ ホテル",
-                                  "lat":  33.8415157
+                                  "lat":  33.8415157,
+                                  "mapLabel":  "HOTEL MAP →",
+                                  "links":  [
+                                                {
+                                                    "label":  "ROUTE →",
+                                                    "url":  "https://www.google.com/maps/dir/?api=1\u0026origin=父母ヶ浜\u0026destination=ダイワロイネットホテル松山\u0026travelmode=driving"
+                                                }
+                                            ]
                               },
                               {
                                   "time":  "OPTIONAL",
@@ -384,7 +414,8 @@
                                   "desc":  "創業390年。伝統の愛媛鯛めし、郷土料理および地酒の夕食。",
                                   "lat":  33.8380795,
                                   "lon":  132.7687091,
-                                  "tabelog":  "https://tabelog.com/ehime/A3801/A380101/38000375/"
+                                  "tabelog":  "https://tabelog.com/ehime/A3801/A380101/38000375/",
+                                  "mapQuery":  "五志喜 本店 松山"
                               },
                               {
                                   "time":  "21:20 - 22:20",
@@ -394,7 +425,8 @@
                                   "image":  "dogo_onsen.png",
                                   "lat":  33.8520617,
                                   "lon":  132.7864036,
-                                  "official":  "https://dogo.jp/onsen/honkan"
+                                  "official":  "https://dogo.jp/onsen/honkan",
+                                  "mapQuery":  "道後温泉本館"
                               }
                           ],
                  "day3":  [
@@ -406,7 +438,8 @@
                                   "image":  "shimonada.png",
                                   "lat":  33.6554175,
                                   "lon":  132.5894116,
-                                  "official":  "https://www.jr-shikoku.co.jp/01_trainbus/kakueki/shimonada/index.html"
+                                  "official":  "https://www.jr-shikoku.co.jp/01_trainbus/kakueki/shimonada/index.html",
+                                  "mapQuery":  "下灘駅"
                               },
                               {
                                   "time":  "10:20 - 10:35",
@@ -449,7 +482,8 @@
                                   "image":  "shimanami.png",
                                   "lat":  34.1201239,
                                   "lon":  133.0341105,
-                                  "official":  "https://www.city.imabari.ehime.jp/kanko//spot/?a=182"
+                                  "official":  "https://www.city.imabari.ehime.jp/kanko//spot/?a=182",
+                                  "mapQuery":  "亀老山展望公園"
                               },
                               {
                                   "time":  "16:25 - 17:10",
@@ -457,7 +491,14 @@
                                   "badge":  "BREAK",
                                   "desc":  "亀老山から約30分移動し、SA滞在は15分。トイレ休憩とバリィさんグッズの確認を済ませ、17:10に松山空港へ出発。",
                                   "lat":  34.100462,
-                                  "lon":  132.978676
+                                  "lon":  132.978676,
+                                  "map":  false,
+                                  "links":  [
+                                                {
+                                                    "label":  "ROUTE →",
+                                                    "url":  "https://www.google.com/maps/dir/?api=1\u0026origin=亀老山展望公園\u0026destination=来島海峡サービスエリア\u0026travelmode=driving"
+                                                }
+                                            ]
                               },
                               {
                                   "time":  "17:10 - 18:25",
@@ -465,7 +506,14 @@
                                   "badge":  "DRIVE",
                                   "desc":  "SAから松山方面へ約1時間15分。途中の給油を含め、18:25レンタカー店到着を目標。",
                                   "lat":  34.100462,
-                                  "lon":  132.978676
+                                  "lon":  132.978676,
+                                  "map":  false,
+                                  "links":  [
+                                                {
+                                                    "label":  "ROUTE →",
+                                                    "url":  "https://www.google.com/maps/dir/?api=1\u0026origin=来島海峡サービスエリア\u0026destination=トヨタレンタカー松山空港店\u0026travelmode=driving"
+                                                }
+                                            ]
                               },
                               {
                                   "time":  "18:25 - 18:40",
@@ -475,7 +523,8 @@
                                   "lat":  33.8273145,
                                   "lon":  132.7013265,
                                   "mapQuery":  "トヨタレンタカー松山空港店",
-                                  "official":  "https://rent.toyota.co.jp/shop/detail.aspx?eCode=006\u0026rCode=67301"
+                                  "official":  "https://rent.toyota.co.jp/shop/detail.aspx?eCode=006\u0026rCode=67301",
+                                  "mapLabel":  "SHOP MAP →"
                               },
                               {
                                   "time":  "18:40 - 19:00",
@@ -507,7 +556,8 @@
                                                     "label":  "CHEF\u0027S",
                                                     "url":  "https://www.matsuyama-airport.co.jp/spend/kitchen.html"
                                                 }
-                                            ]
+                                            ],
+                                  "map":  false
                               },
                               {
                                   "time":  "19:45 - 21:20",
@@ -522,7 +572,8 @@
                                              },
                                   "mapQuery":  "羽田空港",
                                   "official":  "https://www.ana.co.jp/ja/jp/",
-                                  "officialLabel":  "ANA"
+                                  "officialLabel":  "ANA",
+                                  "mapLabel":  "AIRPORT MAP →"
                               }
                           ]
              },

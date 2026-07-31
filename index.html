@@ -1147,8 +1147,9 @@
                     const mapQuery = String(card.mapQuery || card.title || '');
                     
                     let linksHtml = '';
-                    if (Number.isFinite(Number(card.lat)) && Number.isFinite(Number(card.lon))) {
-                        linksHtml += `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}" target="_blank" rel="noopener noreferrer" class="j-btn primary">MAP →</a>`;
+                    if (card.map !== false && Number.isFinite(Number(card.lat)) && Number.isFinite(Number(card.lon))) {
+                        const mapLabel = card.mapLabel || 'MAP →';
+                        linksHtml += `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}" target="_blank" rel="noopener noreferrer" class="j-btn primary">${escapeHtml(mapLabel)}</a>`;
                     }
                     const tabelogUrl = safeExternalUrl(card.tabelog);
                     if (tabelogUrl) {
