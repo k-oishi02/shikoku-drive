@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shikoku-drive-pwa-v32';
+const CACHE_NAME = 'shikoku-drive-pwa-v33';
 const APP_SHELL = [
   './',
   './index.html',
@@ -57,6 +57,13 @@ self.addEventListener('message', event => {
   }
 });
 
+function cacheKeyFor(request) {
+  const url = new URL(request.url);
+  url.search = '';
+  url.hash = '';
+  return url.toString();
+}
+
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const requestUrl = new URL(event.request.url);
@@ -64,6 +71,7 @@ self.addEventListener('fetch', event => {
   // Let external maps, tiles, fonts and app links use the browser's normal network path.
   // Caching opaque third-party responses here would grow the cache without a safe limit.
   if (requestUrl.origin !== self.location.origin) return;
+  const cacheKey = cacheKeyFor(event.request);
 
   const isWebAsset = requestUrl.pathname.endsWith('.html') ||
                      requestUrl.pathname.endsWith('.js') ||
@@ -79,11 +87,11 @@ self.addEventListener('fetch', event => {
         .then(response => {
           if (response && response.ok) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+            caches.open(CACHE_NAME).then(cache => cache.put(cacheKey, copy));
           }
           return response;
         })
-        .catch(() => caches.match(event.request).then(cached => {
+        .catch(() => caches.match(cacheKey).then(cached => {
           if (cached || event.request.mode !== 'navigate') return cached;
           return caches.match('./index.html');
         }))
@@ -92,11 +100,11 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(event.request).then(cached => {
+    caches.match(cacheKey).then(cached => {
       return cached || fetch(event.request).then(response => {
         if (response && (response.ok || response.type === 'opaque')) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          caches.open(CACHE_NAME).then(cache => cache.put(cacheKey, copy));
         }
         return response;
       });

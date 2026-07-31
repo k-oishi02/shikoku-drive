@@ -31,6 +31,16 @@
         }
     }
 
+    function escapeMarkup(value) {
+        return String(value ?? '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
     function expenseStorageKey(tripId, ledgerToken) {
         const safeTripId = /^[A-Za-z0-9_-]+$/.test(String(tripId || '')) ? String(tripId) : 'default';
         const safeLedger = /^[A-Za-z0-9_-]{43}$/.test(String(ledgerToken || '')) ? String(ledgerToken) : 'local';
@@ -330,7 +340,7 @@
         decisions.forEach(item => {
             const row = document.createElement('div');
             row.className = `optional-advice-row ${item.canAdd ? 'go' : 'no'}`;
-            row.innerHTML = `<strong>${item.canAdd ? '入れてOK' : '今回は入れない'}</strong><span>${item.title}</span>`;
+            row.innerHTML = `<strong>${item.canAdd ? '入れてOK' : '今回は入れない'}</strong><span>${escapeMarkup(item.title)}</span>`;
             advice.appendChild(row);
         });
         const detour = document.createElement('div');
@@ -338,7 +348,7 @@
         if (lateMinutes > 0) {
             detour.innerHTML = '<strong>寄り道判断</strong><span>いまは寄り道を見送り、次の固定予定を優先。</span>';
         } else if (bestDetour) {
-            detour.innerHTML = `<strong>寄り道候補</strong><span>${bestDetour.text}</span>`;
+            detour.innerHTML = `<strong>寄り道候補</strong><span>${escapeMarkup(bestDetour.text)}</span>`;
         } else {
             detour.innerHTML = '<strong>寄り道判断</strong><span>10分以上早着したら、動線上の短い寄り道を提案します。</span>';
         }

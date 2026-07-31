@@ -51,6 +51,7 @@ if (data) {
     let cardCount = 0;
     for (const [dayKey, cards] of Object.entries(data.days || {})) {
         assert(Array.isArray(cards) && cards.length > 0, `${dayKey}: カード配列`);
+        let previousEndMinute = -1;
         for (const [index, card] of (cards || []).entries()) {
             cardCount += 1;
             const label = `${dayKey}[${index}] ${card.title || '(無題)'}`;
@@ -58,6 +59,17 @@ if (data) {
             assert(typeof card.title === 'string' && card.title.trim(), `${label}: タイトル`);
             assert(typeof card.badge === 'string' && card.badge.trim(), `${label}: バッジ`);
             assert(typeof card.desc === 'string' && card.desc.trim(), `${label}: 説明`);
+            if (card.time !== 'OPTIONAL') {
+                const timeMatch = card.time.match(/^(\d{2}):(\d{2}) - (\d{2}):(\d{2})$/);
+                assert(Boolean(timeMatch), `${label}: 確定時刻形式`);
+                if (timeMatch) {
+                    const startMinute = Number(timeMatch[1]) * 60 + Number(timeMatch[2]);
+                    const endMinute = Number(timeMatch[3]) * 60 + Number(timeMatch[4]);
+                    assert(endMinute > startMinute, `${label}: 終了は開始より後`);
+                    assert(startMinute >= previousEndMinute, `${label}: 前予定と重複しない`);
+                    previousEndMinute = endMinute;
+                }
+            }
             if (card.id) {
                 assert(!ids.has(card.id), `${label}: ID重複なし (${card.id})`);
                 ids.add(card.id);
@@ -181,6 +193,7 @@ assert(indexHtml.includes('src/enhancements.css') && indexHtml.includes('src/enh
 const indexAssetRefs = [...indexHtml.matchAll(/(?:src|href)="([^"]+)"/g)].map(match => match[1]);
 for (const legacyAsset of ['enhancements.js', 'firebase-sync.js', 'enhancements.css']) assert(!indexAssetRefs.includes(legacyAsset) && !indexAssetRefs.includes(`./${legacyAsset}`), `index.html: 旧ルート直下 ${legacyAsset} を参照しない`);
 assert(indexHtml.includes('function switchTab(panelId, btnEl)'), 'index.html: switchTab実装');
+assert(indexHtml.includes('leaflet@1.9.4/dist/leaflet.css') && indexHtml.includes('leaflet@1.9.4/dist/leaflet.js') && indexHtml.includes('sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo='), 'index.html: Leaflet CSS/JSとSRIを読込');
 assert(indexHtml.includes("'tab-checklist', 'tab-paypay'") && indexHtml.includes('if (daySwipeInitialized) return;'), 'index.html: スワイプにCHECKLIST/PAYPAYと二重初期化guard');
 assert(indexHtml.includes('initPwaUpdateManager()') && indexHtml.includes("waiting.postMessage({ action: 'SKIP_WAITING' })"), 'index.html: PWA更新/SKIP_WAITING');
 assert(indexHtml.includes("daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunset'") && indexHtml.includes('apiData.daily.weather_code?.[index] ?? apiData.daily.weathercode?.[index]') && indexHtml.includes("sunset: sunsetValue ? String(sunsetValue).slice(11, 16) : '—'"), 'index.html: weather codeとsunsetを処理');
@@ -188,6 +201,7 @@ assert(indexHtml.includes('if (activeWeatherKey === locKey) renderWeather(wData)
 
 assert(enhancements.includes('function expenseStorageKey(tripId, ledgerToken)') && enhancements.includes('expenses-${safeTripId}-${safeLedger}-v2'), 'enhancements.js: ルーム別expense cacheキー');
 assert(enhancements.includes("card.dataset.expenseShortcut === 'true'") && enhancements.includes('window.initEnhancements = initEnhancements'), 'enhancements.js: 明示ショートカットと初期化公開');
+assert(enhancements.includes('function escapeMarkup(value)') && enhancements.includes('escapeMarkup(item.title)') && enhancements.includes('escapeMarkup(bestDetour.text)'), 'enhancements.js: アドバイザー文字列をHTMLエスケープ');
 assert(firebaseSync.includes('const currentRunId = ++syncRunId;') && firebaseSync.includes('currentRunId !== syncRunId'), 'firebase-sync.js: 二重初期化・競合guard');
 assert(firebaseSync.includes('EXPENSE_KEY = `expenses-${tripId}-${ledgerToken}-v2`;') && firebaseSync.includes('signInAnonymously(auth)') && firebaseSync.includes('persistentMultipleTabManager'), 'firebase-sync.js: ルーム別cache・匿名認証・複数タブ永続化');
 assert(firebaseSync.includes('window._initSyncEngine = initSyncEngine'), 'firebase-sync.js: 同期エンジン公開');
@@ -201,8 +215,9 @@ else {
 }
 assert(/const CACHE_NAME = 'shikoku-drive-pwa-v\d+'/.test(sw), 'sw.js: キャッシュ版を明示');
 assert(sw.includes("event.data.action === 'SKIP_WAITING'") && sw.includes('if (requestUrl.origin !== self.location.origin) return;'), 'sw.js: 更新メッセージと外部origin除外');
-assert(sw.includes('fetch(event.request)') && sw.includes('cache.put(event.request, copy)'), 'sw.js: Web assetはネットワーク優先');
+assert(sw.includes('fetch(event.request)') && sw.includes('cache.put(cacheKey, copy)'), 'sw.js: Web assetはネットワーク優先');
 assert(sw.includes("event.request.mode !== 'navigate'") && sw.includes("return caches.match('./index.html');") && !sw.includes("caches.match(event.request) || caches.match('./index.html')"), 'sw.js: indexフォールバックはnavigate限定でPromise真値バグなし');
+assert(sw.includes("url.search = '';") && sw.includes("url.hash = '';") && sw.includes('const cacheKey = cacheKeyFor(event.request);') && !sw.includes('cache.put(event.request, copy)'), 'sw.js: 招待トークンをキャッシュキーへ保存しない');
 
 if (data) {
     const shortcuts = Object.values(data.days || {}).flat().filter(card => card.expenseShortcut === true);
