@@ -2,28 +2,15 @@
 <html lang="ja">
 <head>
     <script>
-        // DESTROY PWA CACHE UNCONDITIONALLY
+        // Keep the app shell available for offline use.
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(async registrations => {
-                let hadRegistrations = false;
-                for (let r of registrations) {
-                    r.unregister();
-                    hadRegistrations = true;
-                }
-                if (hadRegistrations) {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(k => caches.delete(k)));
-                    console.log("PWA Cache destroyed permanently. Reloading...");
-                    window.location.reload();
-                }
-            });
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(error => console.warn('Service worker registration failed', error));
+            }, { once: true });
         }
     </script>
 
     <meta charset="UTF-8">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#242424">
     <title>TRAVEL GUIDE</title>
@@ -32,9 +19,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Montserrat:wght@400;700;900&amp;family=Shippori+Gothic:wght@700;800&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-    <link rel="manifest" href="manifest.webmanifest?v=1785315014">
-    <link rel="apple-touch-icon" href="images/header_shikoku.png?v=1785315014">
-    <link rel="stylesheet" href="src/enhancements.css?v=1785329071">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="images/header_shikoku.png">
+    <link rel="stylesheet" href="src/enhancements.css">
 
     <style>
 :root {
@@ -816,6 +803,25 @@
         let TRIP_ROUTES = {};
         let countdownInterval = null;
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function safeExternalUrl(value) {
+            try {
+                const url = new URL(String(value || ''), window.location.href);
+                return /^https?:$/.test(url.protocol) ? url.href : '';
+            } catch (error) {
+                return '';
+            }
+        }
+
         // Extract base64 icons from raw-icon DOM elements immediately
         window.addEventListener('DOMContentLoaded', () => {
             BASE64_ICONS = {
@@ -976,9 +982,9 @@
             }
 
             container.innerHTML = filtered.map(t => `
-                <a href="?trip=${t.id}" class="portal-card">
-                    <div class="portal-card-title">${t.title}</div>
-                    <div class="portal-card-meta">${t.subtitle ? t.subtitle + ' — ' : ''}${t.date}</div>
+                <a href="?trip=${escapeHtml(encodeURIComponent(String(t.id || '')))}" class="portal-card">
+                    <div class="portal-card-title">${escapeHtml(t.title)}</div>
+                    <div class="portal-card-meta">${escapeHtml(t.subtitle ? t.subtitle + ' — ' : '')}${escapeHtml(t.date)}</div>
                     <div class="portal-card-arrow">${t.isPast ? 'MEMORIES →' : 'OPEN →'}</div>
                 </a>
             `).join('');
@@ -1038,15 +1044,19 @@
 
 
         function loadShioriData(tripId) {
+            window.currentTripId = tripId;
             fetch(`data/${tripId}.json`)
                 .then(res => res.json())
                 .then(data => {
                     currentTripData = data;
+                    window.currentTripDate = data.startDate;
+                    window.currentTripEndDate = data.endDate;
                     buildShioriUI(data);
                     
                     // Trigger map and general setup hooks
                     initOverviewMap();
-                    filterOverviewMap('day1', document.querySelector('[data-map-filter="day1"]'));
+                    const firstDayKey = Object.keys(data.days || {})[0] || 'day1';
+                    filterOverviewMap(firstDayKey, document.querySelector(`[data-map-filter="${firstDayKey}"]`));
                     moveFatherBeachCard();
                     moveDay1HotelCard();
                     moveTowelMuseumBeforeLunch();
@@ -1057,10 +1067,16 @@
                     }
                     countdownInterval = window.setInterval(runCountdown, 1000);
                     runCountdown();
+                    refreshWeather();
+                    if (weatherRefreshInterval) window.clearInterval(weatherRefreshInterval);
+                    weatherRefreshInterval = window.setInterval(refreshWeather, WEATHER_REFRESH_MS);
 
                     // Trigger Firestore sync initialization if available
                     if (window._initSyncEngine && typeof window._initSyncEngine === 'function') {
                         window._initSyncEngine(tripId);
+                    }
+                    if (window.initEnhancements && typeof window.initEnhancements === 'function') {
+                        window.initEnhancements();
                     }
                 })
                 .catch(err => {
@@ -1087,6 +1103,10 @@
                 });
             }
             wNav.innerHTML = wHtml;
+            if (data.weatherLocations && Object.keys(data.weatherLocations).length) {
+                const firstWeatherKey = Object.keys(data.weatherLocations)[0];
+                updateWeather(firstWeatherKey, wNav.querySelector('.w-tab'));
+            }
 
             // 3. Tab headers (nav-bar)
             const navBar = document.getElementById('nav-bar');
@@ -1118,36 +1138,56 @@
                 const dayNum = idx + 1;
                 const activeClass = idx === 0 ? 'active' : '';
                 const hidden = idx === 0 ? 'false' : 'true';
-                const label = data.dayLabels[key];
+                const label = data.dayLabels?.[key] || `DAY ${String(idx + 1).padStart(2, '0')}`;
 
                 let cardsHtml = '';
                 data.days[key].forEach(card => {
-                    const imgHtml = card.image ? `<img class="j-card-img" src="images/${card.image}" alt="${card.title}" loading="lazy">` : '';
+                    const imagePath = card.image ? `images/${escapeHtml(card.image)}` : '';
+                    const imgHtml = imagePath ? `<img class="j-card-img" src="${imagePath}" alt="${escapeHtml(card.title)}" loading="lazy">` : '';
+                    const mapQuery = String(card.mapQuery || card.title || '');
                     
                     let linksHtml = '';
-                    if (card.lat && card.lon) {
-                        linksHtml += `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.title)}" target="_blank" rel="noopener noreferrer" class="j-btn primary">MAP →</a>`;
+                    if (Number.isFinite(Number(card.lat)) && Number.isFinite(Number(card.lon))) {
+                        linksHtml += `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}" target="_blank" rel="noopener noreferrer" class="j-btn primary">MAP →</a>`;
                     }
-                    if (card.tabelog) {
-                        linksHtml += `<a href="${card.tabelog}" target="_blank" rel="noopener noreferrer" class="j-btn app-accent"><img src="${BASE64_ICONS.tabelog}" class="j-app-icon" alt="Tabelog"><span>食べログ</span></a>`;
+                    const tabelogUrl = safeExternalUrl(card.tabelog);
+                    if (tabelogUrl) {
+                        linksHtml += `<a href="${escapeHtml(tabelogUrl)}" target="_blank" rel="noopener noreferrer" class="j-btn app-accent"><img src="${BASE64_ICONS.tabelog}" class="j-app-icon" alt="Tabelog"><span>食べログ</span></a>`;
                     }
-                    if (card.jalan) {
-                        linksHtml += `<a href="${card.jalan}" target="_blank" rel="noopener noreferrer" class="j-btn"><img src="${BASE64_ICONS.jalan}" class="j-app-icon" alt="Jalan"><span>JALAN</span></a>`;
+                    const jalanUrl = safeExternalUrl(card.jalan);
+                    if (jalanUrl) {
+                        linksHtml += `<a href="${escapeHtml(jalanUrl)}" target="_blank" rel="noopener noreferrer" class="j-btn"><img src="${BASE64_ICONS.jalan}" class="j-app-icon" alt="Jalan"><span>JALAN</span></a>`;
+                    }
+                    const officialUrl = safeExternalUrl(card.official);
+                    if (officialUrl) {
+                        linksHtml += `<a href="${escapeHtml(officialUrl)}" target="_blank" rel="noopener noreferrer" class="j-btn">${escapeHtml(card.officialLabel || 'OFFICIAL HP')}</a>`;
+                    }
+                    if (Array.isArray(card.links)) {
+                        card.links.forEach(link => {
+                            const linkUrl = safeExternalUrl(link?.url);
+                            if (linkUrl && link?.label) {
+                                linksHtml += `<a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="j-btn">${escapeHtml(link.label)}</a>`;
+                            }
+                        });
                     }
                     if (card.wallet) {
-                        linksHtml += `
-                            <a href="${card.wallet.apple}" data-app-url="shoebox://" onclick="openAppWithFallback(event, this)" target="_blank" rel="noopener noreferrer" class="j-btn app-accent" aria-label="Apple Walletを開く"><img src="${BASE64_ICONS.apple}" class="j-app-icon" alt="Apple Wallet"><span>Apple</span></a>
-                            <a href="${card.wallet.google}" target="_blank" rel="noopener noreferrer" class="j-btn app-accent"><img src="${BASE64_ICONS.google}" class="j-app-icon" alt="Google Wallet"><span>Google</span></a>
-                        `;
+                        const appleWalletUrl = safeExternalUrl(card.wallet.apple);
+                        const googleWalletUrl = safeExternalUrl(card.wallet.google);
+                        if (appleWalletUrl) {
+                            linksHtml += `<a href="${escapeHtml(appleWalletUrl)}" data-app-url="shoebox://" onclick="openAppWithFallback(event, this)" target="_blank" rel="noopener noreferrer" class="j-btn app-accent" aria-label="Apple Walletを開く"><img src="${BASE64_ICONS.apple}" class="j-app-icon" alt="Apple Wallet"><span>Apple</span></a>`;
+                        }
+                        if (googleWalletUrl) {
+                            linksHtml += `<a href="${escapeHtml(googleWalletUrl)}" target="_blank" rel="noopener noreferrer" class="j-btn app-accent"><img src="${BASE64_ICONS.google}" class="j-app-icon" alt="Google Wallet"><span>Google</span></a>`;
+                        }
                     }
                     const btnRowHtml = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
-                    const idAttr = card.id ? `id="${card.id}"` : '';
+                    const idAttr = card.id ? `id="${escapeHtml(card.id)}"` : '';
 
                     cardsHtml += `
                         <div class="j-card" ${idAttr}>
-                            <span class="j-card-time">${card.time}</span>
-                            <div class="j-card-ttl"><span class="j-tag-badge">${card.badge}</span>${card.title}</div>
-                            <div class="j-card-desc">${card.desc}</div>
+                            <span class="j-card-time">${escapeHtml(card.time)}</span>
+                            <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span>${escapeHtml(card.title)}</div>
+                            <div class="j-card-desc">${escapeHtml(card.desc)}</div>
                             ${imgHtml}
                             ${btnRowHtml}
                         </div>
@@ -1207,7 +1247,7 @@
             dayKeys.forEach(dayKey => {
                 TRIP_ROUTES[dayKey] = {
                     color: dayKey === 'day1' ? '#59d9b0' : dayKey === 'day2' ? '#ffbf47' : '#73a7ff',
-                    ferryLegs: data.ferryLegs[dayKey] || [],
+                    ferryLegs: data.ferryLegs?.[dayKey] || [],
                     stops: []
                 };
                 data.days[dayKey].forEach(card => {
@@ -1230,6 +1270,7 @@
 
         const WEATHER_REFRESH_MS = 30 * 60 * 1000;
         let weatherCache = {};
+        let weatherRefreshInterval = null;
 
         function updateWeather(locKey, btnEl) {
             if (!currentTripData || !currentTripData.weatherLocations) return;
@@ -1257,36 +1298,58 @@
             if (cache && (Date.now() - cache.timestamp < WEATHER_REFRESH_MS)) {
                 renderWeather(cache.data);
             } else {
-                fetchWeather(locKey, loc.lat, loc.lon);
+                fetchWeather(locKey, loc.lat, loc.lon, loc.tripDate);
             }
         }
 
-        function fetchWeather(locKey, lat, lon) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo`;
+        function fetchWeather(locKey, lat, lon, targetDate) {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=16`;
             fetch(url)
                 .then(r => r.json())
                 .then(data => {
-                    const wData = parseWeatherData(data);
+                    const wData = parseWeatherData(data, targetDate);
                     weatherCache[locKey] = { timestamp: Date.now(), data: wData };
                     renderWeather(wData);
                 })
                 .catch(() => {
-                    const wUpdated = document.getElementById('w-updated');
-                    if (wUpdated) wUpdated.textContent = 'オフライン（取得失敗）';
+                    renderWeather({
+                        temp: '—',
+                        range: '予報を取得できません',
+                        pop: '—',
+                        cond: 'オフライン',
+                        icon: '⚠️',
+                        sunset: '—',
+                        updated: 'オフライン（出発前に再取得）'
+                    });
                 });
         }
 
-        function parseWeatherData(apiData) {
-            const tempMax = apiData.daily.temperature_2m_max[0];
-            const tempMin = apiData.daily.temperature_2m_min[0];
-            const weatherCode = apiData.daily.weathercode[0];
-            const pop = apiData.daily.precipitation_probability_max[0];
+        function parseWeatherData(apiData, targetDate) {
+            const dates = Array.isArray(apiData?.daily?.time) ? apiData.daily.time : [];
+            const requestedIndex = targetDate ? dates.indexOf(targetDate) : 0;
+            if (requestedIndex < 0 || !apiData?.daily || !Number.isFinite(apiData.daily.temperature_2m_max?.[requestedIndex])) {
+                return {
+                    unavailable: true,
+                    temp: '—',
+                    range: '旅行日の予報はまだ未提供',
+                    pop: '—',
+                    cond: '出発前に再取得',
+                    icon: '⏳',
+                    sunset: '—',
+                    updated: '予報対象外（出発前に自動更新）'
+                };
+            }
+            const index = requestedIndex;
+            const tempMax = apiData.daily.temperature_2m_max[index];
+            const tempMin = apiData.daily.temperature_2m_min[index];
+            const weatherCode = apiData.daily.weathercode[index];
+            const pop = apiData.daily.precipitation_probability_max[index];
             const { cond, icon } = getWeatherCondition(weatherCode);
 
             return {
                 temp: `${Math.round(tempMax)}°C`,
                 range: `${Math.round(tempMin)}°C / ${Math.round(tempMax)}°C`,
-                pop: `${pop}%`,
+                pop: `${Math.round(pop ?? 0)}%`,
                 cond,
                 icon,
                 sunset: '18:40頃',
@@ -1329,13 +1392,16 @@
                 const keys = Object.keys(currentTripData.weatherLocations);
                 const locKey = keys.find(k => currentTripData.weatherLocations[k].label.endsWith(label)) || 'kagawa';
                 const loc = currentTripData.weatherLocations[locKey];
-                fetchWeather(locKey, loc.lat, loc.lon);
+                fetchWeather(locKey, loc.lat, loc.lon, loc.tripDate);
             }
         }
 
         // ============ SWIPE NAVIGATION HOOKS ============
+        let daySwipeInitialized = false;
         function setupDaySwipe() {
-            const dayPanelIds = Object.keys(currentTripData.days).sort().map(k => `tab-${k}`);
+            if (daySwipeInitialized) return;
+            daySwipeInitialized = true;
+
             let startX = 0, startY = 0, startTime = 0;
 
             document.addEventListener('touchstart', (event) => {
@@ -1346,6 +1412,7 @@
 
             document.addEventListener('touchend', (event) => {
                 const activePanel = document.querySelector('.j-tab-panel.active');
+                const dayPanelIds = Object.keys(currentTripData?.days || {}).sort().map(k => `tab-${k}`);
                 const currentIndex = dayPanelIds.indexOf(activePanel?.id);
                 const endX = event.changedTouches[0].clientX;
                 const endY = event.changedTouches[0].clientY;
@@ -1464,20 +1531,24 @@
 
         function moveDay1HotelCard() {
             const hotelCard = document.getElementById('day1-hotel-card');
-            const pokemonCard = document.getElementById('pokemon-ferry-card');
+            const pokemonCard = document.getElementById('pokemon-center-card');
             if (hotelCard && pokemonCard) pokemonCard.parentNode.insertBefore(hotelCard, pokemonCard);
         }
 
         function moveTowelMuseumBeforeLunch() {
             const towelCard = document.getElementById('towel-museum-card');
-            const lunchCard = document.getElementById('imabari-lunch-card');
+            const lunchCard = document.getElementById('day3-lunch-card');
             if (towelCard && lunchCard) lunchCard.parentNode.insertBefore(towelCard, lunchCard);
         }
 
         function runCountdown() {
             if (!currentTripData) return;
-            const tripStart = new Date(`${currentTripData.startDate}T06:55:00+09:00`).getTime();
-            const tripEnd = new Date(`${currentTripData.endDate}T21:20:00+09:00`).getTime();
+            const allCards = Object.values(currentTripData.days || {}).flat();
+            const timedCards = allCards.filter(card => /\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}/.test(card.time));
+            const firstTime = timedCards[0]?.time.match(/(\d{1,2}:\d{2})/)[1] || '00:00';
+            const lastTime = timedCards.at(-1)?.time.match(/[-–—]\s*(\d{1,2}:\d{2})/)[1] || '23:59';
+            const tripStart = new Date(`${currentTripData.startDate}T${firstTime}:00+09:00`).getTime();
+            const tripEnd = new Date(`${currentTripData.endDate}T${lastTime}:00+09:00`).getTime();
             const now = new Date().getTime();
             const elem = document.getElementById('trip-countdown');
             if (!elem) return;
@@ -1502,7 +1573,10 @@
         let newWorkerWaiting = null;
 
         function initPwaUpdateManager() {
-            // PWA offline caching has been completely disabled by user request.
+            if (!('serviceWorker' in navigator)) return;
+            navigator.serviceWorker.register('./sw.js').then(registration => {
+                registration.update().catch(() => {});
+            }).catch(error => console.warn('Service worker registration failed', error));
         }
 
         function triggerPwaUpdate() {
@@ -1525,7 +1599,12 @@
     </script>
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
-    <script src="src/enhancements.js?v=1785329071"></script>
-    <script type="module" src="src/firebase-sync.js?v=1785329071"></script>
+    <script src="src/enhancements.js"></script>
+    <script type="module" src="src/firebase-sync.js"></script>
 </body>
 </html>
+
+
+
+
+

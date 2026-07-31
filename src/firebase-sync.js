@@ -1,4 +1,4 @@
-import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
+﻿import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
 import {
     getAuth,
     signInAnonymously
@@ -66,7 +66,8 @@ function ensureRoomParameters(tripId) {
     const url = new URL(window.location.href);
     let roomId = url.searchParams.get('ledger');
     let invite = url.searchParams.get('invite');
-    if (!roomId || !invite) {
+    const validToken = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || ''));
+    if (!validToken(roomId) || !validToken(invite)) {
         roomId = randomToken();
         invite = randomToken();
         url.searchParams.set('ledger', roomId);
@@ -221,13 +222,13 @@ export async function initSyncEngine(tripId) {
         
         let db;
         try {
-            db = getFirestore(app);
-        } catch (e) {
             db = initializeFirestore(app, {
                 localCache: persistentLocalCache({
                     tabManager: persistentMultipleTabManager()
                 })
             });
+        } catch (e) {
+            db = getFirestore(app);
         }
         await signInAnonymously(auth);
         const uid = auth.currentUser?.uid;
@@ -235,7 +236,7 @@ export async function initSyncEngine(tripId) {
 
         // Register participant nickname in Firestore
         const nickname = localStorage.getItem('user_nickname') || '名無し';
-        const deviceId = getOrCreateDeviceId();
+        const deviceId = uid;
         const participantRef = doc(db, 'trips', tripId, 'participants', deviceId);
         await setDoc(participantRef, {
             nickname: nickname,
@@ -297,13 +298,11 @@ export async function initSyncEngine(tripId) {
         const expensesCollection = collection(roomRef, 'expenses');
         syncContext = { db, roomRef, expensesCollection, uid };
 
-        if (created) {
-            const cached = readCachedExpenses();
-            await Promise.all(cached.map(expense => {
-                const clean = cleanExpense(expense);
-                return setDoc(doc(expensesCollection, clean.id), clean);
-            }));
-        }
+        const cached = readCachedExpenses();
+        await Promise.all(cached.map(expense => {
+            const clean = cleanExpense(expense);
+            return setDoc(doc(expensesCollection, clean.id), clean);
+        }));
 
         unsubscribeRoom = onSnapshot(roomRef, snapshot => {
             const members = snapshot.data()?.members || {};
@@ -349,13 +348,13 @@ export async function getDbInstance() {
         
         let db;
         try {
-            db = getFirestore(app);
-        } catch (e) {
             db = initializeFirestore(app, {
                 localCache: persistentLocalCache({
                     tabManager: persistentMultipleTabManager()
                 })
             });
+        } catch (e) {
+            db = getFirestore(app);
         }
         
         const auth = getAuth(app);
@@ -392,4 +391,9 @@ export async function listenToTripParticipants(tripId, callback) {
     });
 }
 
+window._initSyncEngine = initSyncEngine;
 window.listenToTripParticipants = listenToTripParticipants;
+
+
+
+

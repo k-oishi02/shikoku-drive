@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /rooms/{roomId} {
       allow create: if request.auth != null
-        && roomId.size() == 43
+        && roomId.size() >= 44 && roomId.size() <= 80
         && request.resource.data.keys().hasOnly([
           'createdBy', 'members', 'inviteHash', 'joined', 'createdAt'
         ])
@@ -67,7 +67,14 @@ service cloud.firestore {
     }
 
     match /trips/{tripId}/participants/{deviceId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && deviceId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['nickname', 'lastActive'])
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() <= 40;
+      allow delete: if request.auth != null && deviceId == request.auth.uid;
     }
   }
 }
+

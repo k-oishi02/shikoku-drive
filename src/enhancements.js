@@ -54,6 +54,7 @@
             /フェリー|四国水族館|五志喜|ポケモンセンター|松山空港店|Orange BAR/.test(title);
     }
 
+
     function getEntries(panelId) {
         const day = TRIP_DAYS[panelId];
         const panel = document.getElementById(panelId);
@@ -110,11 +111,13 @@
     function nearestTripPanel(now) {
         const todayPanel = dayPanelForDate(now);
         if (todayPanel) return todayPanel;
-        const start = new Date('2026-08-30T00:00:00+09:00');
-        const end = new Date('2026-09-01T23:59:59+09:00');
-        if (now < start) return 'tab-day1';
-        if (now > end) return 'tab-day3';
-        return 'tab-day2';
+        const panels = Object.keys(TRIP_DAYS).sort((a, b) => TRIP_DAYS[a].date.localeCompare(TRIP_DAYS[b].date));
+        if (!panels.length) return null;
+        const first = new Date(`${TRIP_DAYS[panels[0]].date}T00:00:00+09:00`);
+        const last = new Date(`${TRIP_DAYS[panels[panels.length - 1]].date}T23:59:59+09:00`);
+        if (now < first) return panels[0];
+        if (now > last) return panels[panels.length - 1];
+        return panels.find(panelId => new Date(`${TRIP_DAYS[panelId].date}T00:00:00+09:00`) <= now && now <= new Date(`${TRIP_DAYS[panelId].date}T23:59:59+09:00`)) || panels[0];
     }
 
     function renderNowMode() {
@@ -127,8 +130,9 @@
         if (!dayEl || !titleEl || !timeEl || !countdownEl || !routeEl || !departureEl) return;
 
         const now = new Date();
-        const tripStart = new Date('2026-08-30T06:55:00+09:00');
-        const tripEnd = new Date('2026-09-01T21:20:00+09:00');
+        const timeline = Object.keys(TRIP_DAYS).flatMap(panelId => getEntries(panelId)).sort((a, b) => a.start - b.start);
+        const tripStart = timeline[0]?.start || new Date(`${Object.values(TRIP_DAYS)[0]?.date || '2026-08-30'}T00:00:00+09:00`);
+        const tripEnd = timeline.at(-1)?.end || new Date(`${Object.values(TRIP_DAYS).at(-1)?.date || '2026-09-01'}T23:59:59+09:00`);
         let panelId = dayPanelForDate(now);
         let entry = null;
         let state = 'NEXT';
@@ -608,16 +612,14 @@
 
     function setupExpenseShortcuts() {
         const shareableBadges = new Set([
-            'GOURMET', 'DINNER', 'FOOD LIST', 'FERRY',
-            'AQUARIUM', 'MUSEUM', 'SPA'
+            'GOURMET', 'DINNER', 'AQUARIUM', 'MUSEUM', 'SPA'
         ]);
         document.querySelectorAll('#tab-day1 .j-card, #tab-day2 .j-card, #tab-day3 .j-card').forEach(card => {
             const badge = card.querySelector('.j-tag-badge')?.textContent.trim().toUpperCase() || '';
             const titleClone = card.querySelector('.j-card-ttl')?.cloneNode(true);
             titleClone?.querySelector('.j-tag-badge')?.remove();
             const rawTitle = titleClone?.textContent.replace(/\s+/g, ' ').trim() || '旅費';
-            const isLikelyShared = shareableBadges.has(badge) ||
-                (badge === 'POKÉMON' && /フェリー/.test(rawTitle));
+            const isLikelyShared = shareableBadges.has(badge);
             if (!isLikelyShared || card.querySelector('.expense-shortcut')) return;
             const button = document.createElement('button');
             button.type = 'button';
@@ -672,7 +674,7 @@
     function initTripDays() {
         // Construct TRIP_DAYS dynamically from panels present
         TRIP_DAYS = {};
-        document.querySelectorAll('.j-tab-lnk[aria-controls^="tab-day"]').forEach((lnk, idx) => {
+        document.querySelectorAll('.j-tab-btn[aria-controls^="tab-day"]').forEach((lnk, idx) => {
             const panelId = lnk.getAttribute('aria-controls');
             const dayKey = panelId.replace('tab-', '');
             const dateStr = new Date(new Date(window.currentTripDate || '2026-08-30').getTime() + idx * 86400000).toISOString().split('T')[0];
@@ -692,9 +694,8 @@
         CHECKLIST_KEY = `checklist-${window.currentTripId}-v1`;
         EXPENSE_KEY = `expenses-${window.currentTripId}-v1`;
 
-        const datesVal = document.querySelector('.j-info-val')?.textContent || '';
-        if (datesVal) {
-            window.currentTripDate = datesVal.split(' ')[0].replace(/\//g, '-');
+        if (!window.currentTripDate) {
+            window.currentTripDate = new Date().toISOString().slice(0, 10);
         }
         
         // Dynamically fetch and preserve trip members list at runtime
@@ -773,3 +774,5 @@
         }
     }
 })();
+
+

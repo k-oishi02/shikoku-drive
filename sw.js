@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shikoku-drive-pwa-v25';
+const CACHE_NAME = 'shikoku-drive-pwa-v28';
 const APP_SHELL = [
   './',
   './index.html',
@@ -84,3 +84,4 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+

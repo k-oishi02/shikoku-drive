@@ -1,432 +1,568 @@
-{
-  "tripId": "shikoku2026",
-  "title": "TRAVEL GUIDE",
-  "subtitle": "",
-  "catchphrase": "感動の力で、二人の思い出の明日を変える。",
-  "startDate": "2026-08-30",
-  "endDate": "2026-09-01",
-  "dayLabels": {
-    "day1": "8/30 SUN — 香川・小豆島エリア",
-    "day2": "8/31 MON — 小豆島・松山エリア",
-    "day3": "9/01 TUE — 下灘・しまなみエリア"
-  },
-  "ferryLegs": {
-    "day1": [
-      4,
-      13
-    ],
-    "day2": [],
-    "day3": []
-  },
-  "members": [
-    {
-      "id": "aoi",
-      "name": "メンバー1"
-    },
-    {
-      "id": "kotaro",
-      "name": "メンバー2"
-    }
-  ],
-  "weatherLocations": {
-    "kagawa": {
-      "label": "香川県 高松市",
-      "lat": 34.3428,
-      "lon": 134.0466,
-      "tripDate": "2026-08-30",
-      "link": "https://weathernews.jp/onebox/tenki/kagawa/"
-    },
-    "shodoshima": {
-      "label": "小豆島（土庄町）",
-      "lat": 34.4876,
-      "lon": 134.3128,
-      "tripDate": "2026-08-30",
-      "link": "https://weathernews.jp/onebox/tenki/kagawa/"
-    },
-    "matsuyama": {
-      "label": "愛媛県 松山市・下灘",
-      "lat": 33.8392,
-      "lon": 132.7657,
-      "tripDate": "2026-09-01",
-      "link": "https://weathernews.jp/onebox/tenki/ehime/"
-    }
-  },
-  "checklist": [
-    {
-      "category": "DOCUMENTS",
-      "items": [
-        {
-          "name": "ANA航空券（Wallet）",
-          "desc": ""
-        },
-        {
-          "name": "運転免許証",
-          "desc": ""
-        },
-        {
-          "name": "うどん店用の現金",
-          "desc": ""
-        },
-        {
-          "name": "保険証・常備薬",
-          "desc": ""
-        },
-        {
-          "name": "ETCカード",
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "category": "CAMERA &amp; POWER",
-      "items": [
-        {
-          "name": "FUJIFILM X-S10・レンズ",
-          "desc": ""
-        },
-        {
-          "name": "予備バッテリー・SDカード",
-          "desc": ""
-        },
-        {
-          "name": "車載USB充電器",
-          "desc": ""
-        },
-        {
-          "name": "車載スマホホルダー",
-          "desc": ""
-        },
-        {
-          "name": "モバイルバッテリー・ケーブル",
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "category": "BEACH",
-      "items": [
-        {
-          "name": "サンダル・足拭きタオル",
-          "desc": ""
-        },
-        {
-          "name": "日焼け止め・帽子",
-          "desc": ""
-        }
-      ]
-    }
-  ],
-  "days": {
-    "day1": [
-      {
-        "time": "06:55 - 08:10",
-        "title": "羽田空港 → 高松空港",
-        "badge": "FLIGHT",
-        "desc": "ANA 531便にて早朝フライト。下のリンクはANA公式WEBです（アプリでは予約・搭乗情報を確認できます）。",
-        "lat": 34.2151743,
-        "lon": 134.0194008,
-        "wallet": {
-          "apple": "https://support.apple.com/ja-jp/108375",
-          "google": "https://wallet.app.google/"
-        }
-      },
-      {
-        "time": "08:30 - 09:00",
-        "title": "トヨタレンタカー高松空港店",
-        "badge": "RENTAL CAR",
-        "desc": "相棒ヤリス（ブロロローム）の手続き・車両確認を含めて30分確保してから出発。",
-        "lat": 34.2151743,
-        "lon": 134.0194008
-      },
-      {
-        "time": "09:15 - 09:35",
-        "title": "ヤドン公園 (ひだまり公園あやがわ)",
-        "badge": "PARK",
-        "desc": "巨大ヤドン遊具やポケふたの散策・記念撮影。",
-        "image": "yadon_park.png",
-        "lat": 34.2471397,
-        "lon": 133.9329243
-      },
-      {
-        "time": "OPTIONAL",
-        "title": "1軒目候補：手打十段 うどんバカ一代",
-        "badge": "GOURMET",
-        "desc": "10:40発のヤドン船を最優先にするため、今回は立ち寄り候補へ変更。香川うどんは翌朝の山越うどんでゆっくり楽しむ。",
-        "image": "udon_baka.png",
-        "lat": 34.3375,
-        "lon": 134.0603,
-        "tabelog": "https://tabelog.com/kagawa/A3701/A370101/37000242/"
-      },
-      {
-        "time": "10:40 - 11:40",
-        "title": "ヤドンのフェリー1号船　高松港 → 土庄港",
-        "badge": "POKÉMON",
-        "desc": "蒼のヤドン・ミッション。8/30の公式配船でヤドン船となる10:40便。ヤドン公園から高松港へ直行し、10:15頃までに乗船手続き。",
-        "lat": 34.3519321,
-        "lon": 134.0499868
-      },
-      {
-        "time": "12:00 - 12:18",
-        "title": "土庄港 → 池田港",
-        "badge": "BUS",
-        "desc": "フェリー11:40着後、12:00発の坂手線に乗車し、池田港ターミナル前へ12:18着。タクシーは使わない。",
-        "lat": 34.4890145,
-        "lon": 134.1720787
-      },
-      {
-        "time": "12:18 - 12:35",
-        "title": "池田港 → そうめん作兵衛",
-        "badge": "HELLO CYCLING",
-        "desc": "池田港付近で電動アシスト自転車を解錠して作兵衛へ。ポートの空車状況はアプリで直前確認。",
-        "lat": 34.4811988,
-        "lon": 134.2453428
-      },
-      {
-        "time": "12:35 - 13:05",
-        "title": "そうめん作兵衛 (小豆島)",
-        "badge": "GOURMET",
-        "desc": "伝統手延べそうめんと天ぷらを30分で。食後すぐに自転車でオリーブ公園へ向かう。",
-        "image": "sakubee_somen.png",
-        "lat": 34.4811988,
-        "lon": 134.2453428,
-        "tabelog": "https://tabelog.com/kagawa/A3705/A370501/37009141/"
-      },
-      {
-        "time": "13:05 - 13:45",
-        "title": "池田 → オリーブ公園",
-        "badge": "HELLO CYCLING",
-        "desc": "作兵衛からオリーブ公園へ移動し、返却まで40分確保。帰りはバス利用に切り替える。"
-      },
-      {
-        "time": "13:45 - 14:50",
-        "title": "道の駅 小豆島オリーブ公園",
-        "badge": "VIEWPOINT",
-        "desc": "魔法のほうき撮影、園内散策、おみやげを約1時間。14:50に切り上げ、15:00発のバスへ。",
-        "image": "shodoshima.png",
-        "lat": 34.4728411,
-        "lon": 134.2736368
-      },
-      {
-        "time": "15:00 - 15:24",
-        "title": "オリーブ公園口 → エンジェルロード前",
-        "badge": "BUS",
-        "desc": "15:00発の坂手線で国際ホテル（エンジェルロード前）へ15:24着。公園からバス停へは余裕を持って移動。",
-        "lat": 34.4776107,
-        "lon": 134.1886468
-      },
-      {
-        "time": "15:24 - 16:50",
-        "title": "エンジェルロード",
-        "badge": "VIEWPOINT",
-        "desc": "8/30の公式通行可能時間は15:33〜21:33。砂の道が現れる様子から散策・撮影まで楽しみ、16:50にバス停へ。",
-        "lat": 34.4776107,
-        "lon": 134.1886468
-      },
-      {
-        "time": "17:00 - 17:09",
-        "title": "エンジェルロード前 → 土庄港",
-        "badge": "BUS",
-        "desc": "17:00発の田ノ浦映画村線で土庄港へ17:09着。17:30発フェリーまで21分確保。",
-        "lat": 34.4890145,
-        "lon": 134.1720787
-      },
-      {
-        "time": "17:30 - 18:30",
-        "title": "土庄港 → 高松港",
-        "badge": "FERRY",
-        "desc": "帰りはポケモンセンターの閉店時刻を優先して17:30便。ヤドン船の復路は18:40発のため、今回は往路だけヤドン船を楽しむ。",
-        "id": "pokemon-center-card",
-        "lat": 34.3519321,
-        "lon": 134.0499868
-      },
-      {
-        "time": "20:00 - 21:00",
-        "title": "骨付鳥 一鶴 (いっかく)",
-        "badge": "DINNER",
-        "desc": "香川名物！スパイシーでジューシーな骨付鳥（親どり・ひなどり）の絶品夕食！",
-        "id": "day1-hotel-card",
-        "lat": 34.3415,
-        "lon": 134.0489,
-        "tabelog": "https://tabelog.com/kagawa/A3701/A370101/37000546/",
-        "jalan": "https://www.jalan.net/yad324130/"
-      }
-    ],
-    "day2": [
-      {
-        "time": "09:00 - 09:30",
-        "title": "2軒目：山越うどん",
-        "badge": "GOURMET",
-        "desc": "高松国際ホテルを8:20頃出発。9:00開店に合わせ、かまたま発祥店舗で釜たまうどん。滞在は30分で、四国水族館へ余裕を持って移動。",
-        "lat": 34.225728,
-        "lon": 133.928281,
-        "tabelog": "https://tabelog.com/kagawa/A3702/A370202/37000080/"
-      },
-      {
-        "time": "10:15 - 15:20",
-        "title": "四国水族館",
-        "badge": "AQUARIUM",
-        "desc": "水族館を主役にたっぷり鑑賞。11:00・13:00・15:00のイルカ、11:45のカワウソ、13:45のペンギンフィーディングまで楽しんでから出発。",
-        "lat": 34.3123308,
-        "lon": 133.8077902
-      },
-      {
-        "time": "OPTIONAL",
-        "title": "3軒目候補：長田 in 香の香",
-        "badge": "GOURMET",
-        "desc": "水族館の滞在を優先するため、今回は立ち寄り候補に変更。特製イリコ出汁の釜あげうどんは、時間に余裕がある場合に。",
-        "id": "father-beach-card",
-        "image": "chichibugahama.png",
-        "lat": 34.234,
-        "lon": 133.786,
-        "tabelog": "https://tabelog.com/kagawa/A3703/A370302/37000015/",
-        "jalan": "https://www.jalan.net/yad389020/"
-      },
-      {
-        "time": "OPTIONAL",
-        "title": "石鎚山SA（休憩・景色）",
-        "badge": "OPTIONAL",
-        "desc": "松山道の長い移動に疲れた場合のみ10分休憩。五志喜19:30予約を守るため、17:50時点で到着予測を確認して判断。",
-        "lat": 33.9,
-        "lon": 133.12
-      },
-      {
-        "time": "19:30 - 21:00",
-        "title": "五志喜 本店 (19:30予約)",
-        "badge": "DINNER",
-        "desc": "創業390年。伝統の愛媛鯛めし、郷土料理および地酒の夕食。",
-        "lat": 33.8380795,
-        "lon": 132.7687091,
-        "tabelog": "https://tabelog.com/ehime/A3801/A380101/38000375/"
-      },
-      {
-        "time": "21:20 - 22:20",
-        "title": "道後温泉本館 夜景撮影 ＆ 入浴",
-        "badge": "SPA",
-        "desc": "夕食後はライトアップされた本館・道後温泉駅・坊っちゃんカラクリ時計を撮影。土産店は閉店が多い時間なので買い物枠ではなく、夜景と神の湯階下（札止22:30）を優先。",
-        "image": "dogo_onsen.png",
-        "lat": 33.8520617,
-        "lon": 132.7864036
-      }
-    ],
-    "day3": [
-      {
-        "time": "09:20 - 10:10",
-        "title": "下灘駅 (伊予市)",
-        "badge": "VIEWPOINT",
-        "desc": "海に近い木造プラットホームベンチからの景観鑑賞および記念撮影。",
-        "image": "shimonada.png",
-        "lat": 33.6554175,
-        "lon": 132.5894116
-      },
-      {
-        "time": "10:20 - 10:35",
-        "title": "道の駅 ふたみ",
-        "badge": "STATION",
-        "desc": "トイレ休憩と愛媛名物じゃこ天のテイクアウトに絞って15分。10:35に出発し、以降の行程に余裕を確保。",
-        "id": "day3-lunch-card",
-        "lat": 33.6853313,
-        "lon": 132.6341958
-      },
-      {
-        "time": "15:40 - 16:25",
-        "title": "亀老山展望公園 (しまなみ海道)",
-        "badge": "VIEWPOINT",
-        "desc": "隈研吾氏設計の建築展望台より来島海峡大橋の360度大パノラマ観覧。",
-        "image": "shimanami.png",
-        "lat": 34.1201239,
-        "lon": 133.0341105
-      },
-      {
-        "time": "16:25 - 17:10",
-        "title": "亀老山 → 来島海峡SA",
-        "badge": "BREAK",
-        "desc": "亀老山から約30分移動し、SA滞在は15分。トイレ休憩とバリィさんグッズの確認を済ませ、17:10に松山空港へ出発。",
-        "lat": 34.100462,
-        "lon": 132.978676
-      },
-      {
-        "time": "17:10 - 18:25",
-        "title": "来島海峡SA → 松山空港レンタカー店",
-        "badge": "DRIVE",
-        "desc": "SAから松山方面へ約1時間15分。途中の給油を含め、18:25レンタカー店到着を目標。",
-        "lat": 34.100462,
-        "lon": 132.978676
-      },
-      {
-        "time": "18:25 - 18:40",
-        "title": "トヨタレンタカー松山空港店",
-        "badge": "RENTAL CAR",
-        "desc": "レンタカーを返却後、空港まで無料送迎。店舗から空港は車で約2分の近距離。",
-        "lat": 33.8273145,
-        "lon": 132.7013265
-      },
-      {
-        "time": "18:40 - 19:00",
-        "title": "松山空港 Orange BAR",
-        "badge": "GOURMET",
-        "desc": "1階の「みかんジュース蛇口」で愛媛らしい一杯。19:00には切り上げ、保安検査へ。",
-        "lat": 33.8273145,
-        "lon": 132.7013265
-      },
-      {
-        "time": "OPTIONAL",
-        "title": "松山空港 食べ逃し回収リスト",
-        "badge": "FOOD LIST",
-        "desc": "最優先：かどや「宇和島鯛めし／さつま」（2F・L.O.19:00）                         次点：CHEF'S KITCHEN「愛媛真鯛ひつま飯／せんざんき」（2F・L.O.19:30）                         軽食：Tabijio「伯方の塩ソフト／塩おでん」（1F・19:00まで）                         海鮮：すし処「瀬戸内の握り」（2F・L.O.19:15）                                          時間注意：現在の18:40空港入りではポンジュース＋保安検査を優先。食事するなら亀老山出発を30〜45分前倒し。",
-        "lat": 33.8273145,
-        "lon": 132.7013265
-      },
-      {
-        "time": "19:45 - 21:20",
-        "title": "松山空港 → 羽田空港",
-        "badge": "FLIGHT",
-        "desc": "ANA 598便にて羽田空港着（21:20予定）。搭乗券をWalletへ追加済みなら、搭乗時にQRコードを表示できます。",
-        "lat": 33.8273145,
-        "lon": 132.7013265,
-        "wallet": {
-          "apple": "https://support.apple.com/ja-jp/108375",
-          "google": "https://wallet.app.google/"
-        }
-      }
-    ]
-  },
-  "detourSuggestions": {
-    "tab-day1": [
-      {
-        "name": "手打十段 うどんバカ一代",
-        "time": "30-40分",
-        "desc": "釜バターうどんが有名な行列店。早朝から営業しています。"
-      }
-    ],
-    "tab-day2": [
-      {
-        "name": "長田 in 香の香",
-        "time": "30-40分",
-        "desc": "釜あげうどんの最高峰。出汁の香りが絶品です。"
-      }
-    ],
-    "tab-day3": [
-      {
-        "name": "タオル美術館 ICHIHIRO",
-        "time": "60分",
-        "desc": "タオルの製造工程見学や美しい庭園、キャラクターとのコラボ展示。"
-      }
-    ]
-  },
-  "optionalRules": {
-    "tab-day1": [
-      {
-        "match": "うどんバカ一代",
-        "required": 45,
-        "baseline": 0
-      }
-    ],
-    "tab-day2": [
-      {
-        "match": "長田 in 香の香",
-        "required": 45,
-        "baseline": 0
-      }
-    ]
-  }
+﻿{
+    "tripId":  "shikoku2026",
+    "title":  "TRAVEL GUIDE",
+    "subtitle":  "",
+    "catchphrase":  "感動の力で、二人の思い出の明日を変える。",
+    "startDate":  "2026-08-30",
+    "endDate":  "2026-09-01",
+    "dayLabels":  {
+                      "day1":  "8/30 SUN — 香川・小豆島エリア",
+                      "day2":  "8/31 MON — 小豆島・松山エリア",
+                      "day3":  "9/01 TUE — 下灘・しまなみエリア"
+                  },
+    "ferryLegs":  {
+                      "day1":  [
+                                   4,
+                                   13
+                               ],
+                      "day2":  [
+
+                               ],
+                      "day3":  [
+
+                               ]
+                  },
+    "members":  [
+                    {
+                        "id":  "aoi",
+                        "name":  "メンバー1"
+                    },
+                    {
+                        "id":  "kotaro",
+                        "name":  "メンバー2"
+                    }
+                ],
+    "weatherLocations":  {
+                             "kagawa":  {
+                                            "label":  "香川県 高松市",
+                                            "lat":  34.3428,
+                                            "lon":  134.0466,
+                                            "tripDate":  "2026-08-30",
+                                            "link":  "https://weathernews.jp/onebox/tenki/kagawa/"
+                                        },
+                             "shodoshima":  {
+                                                "label":  "小豆島（土庄町）",
+                                                "lat":  34.4876,
+                                                "lon":  134.3128,
+                                                "tripDate":  "2026-08-30",
+                                                "link":  "https://weathernews.jp/onebox/tenki/kagawa/"
+                                            },
+                             "matsuyama":  {
+                                               "label":  "愛媛県 松山市・下灘",
+                                               "lat":  33.8392,
+                                               "lon":  132.7657,
+                                               "tripDate":  "2026-09-01",
+                                               "link":  "https://weathernews.jp/onebox/tenki/ehime/"
+                                           }
+                         },
+    "checklist":  [
+                      {
+                          "category":  "DOCUMENTS",
+                          "items":  [
+                                        {
+                                            "name":  "ANA航空券（Wallet）",
+                                            "desc":  ""
+                                        },
+                                        {
+                                            "name":  "運転免許証",
+                                            "desc":  ""
+                                        },
+                                        {
+                                            "name":  "うどん店用の現金",
+                                            "desc":  ""
+                                        },
+                                        {
+                                            "name":  "保険証・常備薬",
+                                            "desc":  ""
+                                        },
+                                        {
+                                            "name":  "ETCカード",
+                                            "desc":  ""
+                                        }
+                                    ]
+                      },
+                      {
+                          "category":  "CAMERA \u0026amp; POWER",
+                          "items":  [
+                                        {
+                                            "name":  "FUJIFILM X-S10・レンズ",
+                                            "desc":  ""
+                                        },
+                                        {
+                                            "name":  "予備バッテリー・SDカード",
+                                            "desc":  ""
+                                        },
+                                        {
+                                            "name":  "車載USB充電器",
+                                            "desc":  ""
+                                        },
+                                        {
+                                            "name":  "車載スマホホルダー",
+                                            "desc":  ""
+                                        },
+                                        {
+                                            "name":  "モバイルバッテリー・ケーブル",
+                                            "desc":  ""
+                                        }
+                                    ]
+                      },
+                      {
+                          "category":  "BEACH",
+                          "items":  [
+                                        {
+                                            "name":  "サンダル・足拭きタオル",
+                                            "desc":  ""
+                                        },
+                                        {
+                                            "name":  "日焼け止め・帽子",
+                                            "desc":  ""
+                                        }
+                                    ]
+                      }
+                  ],
+    "days":  {
+                 "day1":  [
+                              {
+                                  "time":  "06:55 - 08:10",
+                                  "title":  "羽田空港 → 高松空港",
+                                  "badge":  "FLIGHT",
+                                  "desc":  "ANA 531便にて早朝フライト。下のリンクはANA公式WEBです（アプリでは予約・搭乗情報を確認できます）。",
+                                  "lat":  34.2151743,
+                                  "lon":  134.0194008,
+                                  "wallet":  {
+                                                 "apple":  "https://support.apple.com/ja-jp/108375",
+                                                 "google":  "https://wallet.app.google/"
+                                             },
+                                  "mapQuery":  "高松空港",
+                                  "official":  "https://www.ana.co.jp/ja/jp/",
+                                  "officialLabel":  "ANA"
+                              },
+                              {
+                                  "time":  "08:30 - 09:00",
+                                  "title":  "トヨタレンタカー高松空港店",
+                                  "badge":  "RENTAL CAR",
+                                  "desc":  "相棒ヤリス（ブロロローム）の手続き・車両確認を含めて30分確保してから出発。",
+                                  "lat":  34.2151743,
+                                  "lon":  134.0194008,
+                                  "mapQuery":  "トヨタレンタカー高松空港店",
+                                  "official":  "https://rent.toyota.co.jp/"
+                              },
+                              {
+                                  "time":  "09:15 - 09:35",
+                                  "title":  "ヤドン公園 (ひだまり公園あやがわ)",
+                                  "badge":  "PARK",
+                                  "desc":  "巨大ヤドン遊具やポケふたの散策・記念撮影。",
+                                  "image":  "yadon_park.png",
+                                  "lat":  34.2471397,
+                                  "lon":  133.9329243,
+                                  "official":  "https://www.town.ayagawa.lg.jp/docs/2023032300021/"
+                              },
+                              {
+                                  "time":  "OPTIONAL",
+                                  "title":  "1軒目候補：手打十段 うどんバカ一代",
+                                  "badge":  "GOURMET",
+                                  "desc":  "10:40発のヤドン船を最優先にするため、今回は立ち寄り候補へ変更。香川うどんは翌朝の山越うどんでゆっくり楽しむ。",
+                                  "image":  "udon_baka.png",
+                                  "lat":  34.3375,
+                                  "lon":  134.0603,
+                                  "tabelog":  "https://tabelog.com/kagawa/A3701/A370101/37000242/"
+                              },
+                              {
+                                  "time":  "10:40 - 11:40",
+                                  "title":  "ヤドンのフェリー1号船　高松港 → 土庄港",
+                                  "badge":  "POKÉMON",
+                                  "desc":  "蒼のヤドン・ミッション。8/30の公式配船でヤドン船となる10:40便。ヤドン公園から高松港へ直行し、10:15頃までに乗船手続き。",
+                                  "lat":  34.3519321,
+                                  "lon":  134.0499868,
+                                  "mapQuery":  "高松港フェリー乗り場",
+                                  "official":  "https://www.shikokuferry.com/yadon",
+                                  "officialLabel":  "YADON FERRY →"
+                              },
+                              {
+                                  "time":  "12:00 - 12:18",
+                                  "title":  "土庄港 → 池田港",
+                                  "badge":  "BUS",
+                                  "desc":  "フェリー11:40着後、12:00発の坂手線に乗車し、池田港ターミナル前へ12:18着。タクシーは使わない。",
+                                  "lat":  34.4890145,
+                                  "lon":  134.1720787,
+                                  "mapQuery":  "土庄港",
+                                  "official":  "https://www.shodoshima-olive-bus.com/",
+                                  "officialLabel":  "BUS TIMETABLE →"
+                              },
+                              {
+                                  "time":  "12:18 - 12:35",
+                                  "title":  "池田港 → そうめん作兵衛",
+                                  "badge":  "HELLO CYCLING",
+                                  "desc":  "池田港付近で電動アシスト自転車を解錠して作兵衛へ。ポートの空車状況はアプリで直前確認。",
+                                  "lat":  34.4811988,
+                                  "lon":  134.2453428,
+                                  "links":  [
+                                                {
+                                                    "label":  "PORT →",
+                                                    "url":  "https://www.hellocycling.jp/app/port/detail/1602"
+                                                },
+                                                {
+                                                    "label":  "ROUTE →",
+                                                    "url":  "https://www.google.com/maps/dir/?api=1\u0026origin=池田港\u0026destination=作兵衛小豆島\u0026travelmode=bicycling"
+                                                }
+                                            ]
+                              },
+                              {
+                                  "time":  "12:35 - 13:05",
+                                  "title":  "そうめん作兵衛 (小豆島)",
+                                  "badge":  "GOURMET",
+                                  "desc":  "伝統手延べそうめんと天ぷらを30分で。食後すぐに自転車でオリーブ公園へ向かう。",
+                                  "image":  "sakubee_somen.png",
+                                  "lat":  34.4811988,
+                                  "lon":  134.2453428,
+                                  "tabelog":  "https://tabelog.com/kagawa/A3705/A370501/37009141/"
+                              },
+                              {
+                                  "time":  "13:05 - 13:45",
+                                  "title":  "池田 → オリーブ公園",
+                                  "badge":  "HELLO CYCLING",
+                                  "desc":  "作兵衛からオリーブ公園へ移動し、返却まで40分確保。帰りはバス利用に切り替える。",
+                                  "links":  [
+                                                {
+                                                    "label":  "IKEDA →",
+                                                    "url":  "https://www.hellocycling.jp/app/port/detail/1602"
+                                                },
+                                                {
+                                                    "label":  "OLIVE PARK →",
+                                                    "url":  "https://www.hellocycling.jp/app/port/detail/225"
+                                                }
+                                            ]
+                              },
+                              {
+                                  "time":  "13:45 - 14:50",
+                                  "title":  "道の駅 小豆島オリーブ公園",
+                                  "badge":  "VIEWPOINT",
+                                  "desc":  "魔法のほうき撮影、園内散策、おみやげを約1時間。14:50に切り上げ、15:00発のバスへ。",
+                                  "image":  "shodoshima.png",
+                                  "lat":  34.4728411,
+                                  "lon":  134.2736368,
+                                  "official":  "https://olive-pk.jp/"
+                              },
+                              {
+                                  "time":  "15:00 - 15:24",
+                                  "title":  "オリーブ公園口 → エンジェルロード前",
+                                  "badge":  "BUS",
+                                  "desc":  "15:00発の坂手線で国際ホテル（エンジェルロード前）へ15:24着。公園からバス停へは余裕を持って移動。",
+                                  "lat":  34.4776107,
+                                  "lon":  134.1886468,
+                                  "official":  "https://www.shodoshima-olive-bus.com/dia/",
+                                  "officialLabel":  "BUS TIMETABLE →"
+                              },
+                              {
+                                  "time":  "15:24 - 16:50",
+                                  "title":  "エンジェルロード",
+                                  "badge":  "VIEWPOINT",
+                                  "desc":  "8/30の公式通行可能時間は15:33〜21:33。砂の道が現れる様子から散策・撮影まで楽しみ、16:50にバス停へ。",
+                                  "lat":  34.4776107,
+                                  "lon":  134.1886468
+                              },
+                              {
+                                  "time":  "17:00 - 17:09",
+                                  "title":  "エンジェルロード前 → 土庄港",
+                                  "badge":  "BUS",
+                                  "desc":  "17:00発の田ノ浦映画村線で土庄港へ17:09着。17:30発フェリーまで21分確保。",
+                                  "lat":  34.4890145,
+                                  "lon":  134.1720787,
+                                  "official":  "https://www.shodoshima-olive-bus.com/dia/",
+                                  "officialLabel":  "BUS TIMETABLE →"
+                              },
+                              {
+                                  "time":  "17:30 - 18:30",
+                                  "title":  "土庄港 → 高松港",
+                                  "badge":  "FERRY",
+                                  "desc":  "帰りはポケモンセンターの閉店時刻を優先して17:30便。ヤドン船の復路は18:40発のため、今回は往路だけヤドン船を楽しむ。",
+                                  "lat":  34.3519321,
+                                  "lon":  134.0499868,
+                                  "mapQuery":  "土庄港フェリーターミナル",
+                                  "official":  "https://www.shikokuferry.com/route2",
+                                  "officialLabel":  "TIMETABLE →"
+                              },
+                              {
+                                  "jalan":  "https://www.jalan.net/yad324130/",
+                                  "id":  "day1-hotel-card",
+                                  "mapQuery":  "高松国際ホテル",
+                                  "lon":  134.0708409,
+                                  "time":  "18:45 - 19:05",
+                                  "desc":  "高松港から先にホテルへ。無料駐車場に停めてチェックインし、荷物を置いてからポケモンセンターへ向かう。",
+                                  "badge":  "HOTEL",
+                                  "title":  "高松国際ホテル",
+                                  "lat":  34.3331208
+                              },
+                              {
+                                  "id":  "pokemon-center-card",
+                                  "mapQuery":  "丸亀町グリーン東館",
+                                  "lon":  134.0486,
+                                  "official":  "https://shop.pokemon.co.jp/ja/",
+                                  "time":  "19:15 - 19:40",
+                                  "desc":  "四国初のポケモンセンターにてストア内散策・限定グッズ閲覧（閉店20:00）。",
+                                  "badge":  "SHOPPING",
+                                  "title":  "ポケモンセンターカガワ",
+                                  "lat":  34.3407
+                              },
+                              {
+                                  "time":  "20:00 - 21:00",
+                                  "title":  "骨付鳥 一鶴 (いっかく)",
+                                  "badge":  "DINNER",
+                                  "desc":  "香川名物！スパイシーでジューシーな骨付鳥（親どり・ひなどり）の絶品夕食！",
+                                  "lat":  34.3415,
+                                  "lon":  134.0489,
+                                  "tabelog":  "https://tabelog.com/kagawa/A3701/A370101/37000546/",
+                                  "mapQuery":  "骨付鳥一鶴高松"
+                              }
+                          ],
+                 "day2":  [
+                              {
+                                  "time":  "09:00 - 09:30",
+                                  "title":  "2軒目：山越うどん",
+                                  "badge":  "GOURMET",
+                                  "desc":  "高松国際ホテルを8:20頃出発。9:00開店に合わせ、かまたま発祥店舗で釜たまうどん。滞在は30分で、四国水族館へ余裕を持って移動。",
+                                  "lat":  34.225728,
+                                  "lon":  133.928281,
+                                  "tabelog":  "https://tabelog.com/kagawa/A3702/A370202/37000080/"
+                              },
+                              {
+                                  "time":  "10:15 - 15:20",
+                                  "title":  "四国水族館",
+                                  "badge":  "AQUARIUM",
+                                  "desc":  "水族館を主役にたっぷり鑑賞。11:00・13:00・15:00のイルカ、11:45のカワウソ、13:45のペンギンフィーディングまで楽しんでから出発。",
+                                  "lat":  34.3123308,
+                                  "lon":  133.8077902,
+                                  "official":  "https://shikoku-aquarium.jp/"
+                              },
+                              {
+                                  "time":  "OPTIONAL",
+                                  "title":  "3軒目候補：長田 in 香の香",
+                                  "badge":  "GOURMET",
+                                  "desc":  "水族館の滞在を優先するため、今回は立ち寄り候補に変更。特製イリコ出汁の釜あげうどんは、時間に余裕がある場合に。",
+                                  "lat":  34.234,
+                                  "lon":  133.786,
+                                  "tabelog":  "https://tabelog.com/kagawa/A3703/A370302/37000015/",
+                                  "mapQuery":  "長田in香の香"
+                              },
+                              {
+                                  "image":  "chichibugahama.png",
+                                  "id":  "father-beach-card",
+                                  "mapQuery":  "父母ヶ浜",
+                                  "lon":  133.646831,
+                                  "officialLabel":  "BEST TIME",
+                                  "official":  "https://www.mitoyo-kanko.com/chichibugahama/",
+                                  "time":  "16:30 - 17:00",
+                                  "desc":  "水族館を15:20に出発し、8/31の公式撮影推奨時間16:30〜19:00の開始直後を狙う。日没混雑を避けながら鏡面写真を30分撮影。",
+                                  "badge":  "VIEWPOINT",
+                                  "title":  "父母ヶ浜 (ちちぶがはま)",
+                                  "lat":  34.1883098
+                              },
+                              {
+                                  "jalan":  "https://www.jalan.net/yad389020/",
+                                  "id":  "matsuyama-drive-card",
+                                  "mapQuery":  "ダイワロイネットホテル松山",
+                                  "lon":  132.7715136,
+                                  "time":  "17:00 - 19:10",
+                                  "desc":  "父母ヶ浜から高速道路経由でダイワロイネットホテル松山へ。19:10までに駐車・チェックインし、19:20頃に五志喜へ向かう。",
+                                  "badge":  "DRIVE",
+                                  "title":  "愛媛県松山市へ移動 ＆ ホテル",
+                                  "lat":  33.8415157
+                              },
+                              {
+                                  "time":  "OPTIONAL",
+                                  "title":  "石鎚山SA（休憩・景色）",
+                                  "badge":  "OPTIONAL",
+                                  "desc":  "松山道の長い移動に疲れた場合のみ10分休憩。五志喜19:30予約を守るため、17:50時点で到着予測を確認して判断。",
+                                  "lat":  33.9,
+                                  "lon":  133.12,
+                                  "mapQuery":  "石鎚山サービスエリア"
+                              },
+                              {
+                                  "time":  "19:30 - 21:00",
+                                  "title":  "五志喜 本店 (19:30予約)",
+                                  "badge":  "DINNER",
+                                  "desc":  "創業390年。伝統の愛媛鯛めし、郷土料理および地酒の夕食。",
+                                  "lat":  33.8380795,
+                                  "lon":  132.7687091,
+                                  "tabelog":  "https://tabelog.com/ehime/A3801/A380101/38000375/"
+                              },
+                              {
+                                  "time":  "21:20 - 22:20",
+                                  "title":  "道後温泉本館 夜景撮影 ＆ 入浴",
+                                  "badge":  "SPA",
+                                  "desc":  "夕食後はライトアップされた本館・道後温泉駅・坊っちゃんカラクリ時計を撮影。土産店は閉店が多い時間なので買い物枠ではなく、夜景と神の湯階下（札止22:30）を優先。",
+                                  "image":  "dogo_onsen.png",
+                                  "lat":  33.8520617,
+                                  "lon":  132.7864036,
+                                  "official":  "https://dogo.jp/onsen/honkan"
+                              }
+                          ],
+                 "day3":  [
+                              {
+                                  "time":  "09:20 - 10:10",
+                                  "title":  "下灘駅 (伊予市)",
+                                  "badge":  "VIEWPOINT",
+                                  "desc":  "海に近い木造プラットホームベンチからの景観鑑賞および記念撮影。",
+                                  "image":  "shimonada.png",
+                                  "lat":  33.6554175,
+                                  "lon":  132.5894116,
+                                  "official":  "https://www.jr-shikoku.co.jp/01_trainbus/kakueki/shimonada/index.html"
+                              },
+                              {
+                                  "time":  "10:20 - 10:35",
+                                  "title":  "道の駅 ふたみ",
+                                  "badge":  "STATION",
+                                  "desc":  "トイレ休憩と愛媛名物じゃこ天のテイクアウトに絞って15分。10:35に出発し、以降の行程に余裕を確保。",
+                                  "lat":  33.6853313,
+                                  "lon":  132.6341958,
+                                  "mapQuery":  "道の駅ふたみ",
+                                  "official":  "https://www.futamiseaside.com/information"
+                              },
+                              {
+                                  "id":  "towel-museum-card",
+                                  "mapQuery":  "タオル美術館ICHIHIRO",
+                                  "lon":  133.0330906,
+                                  "official":  "https://www.towelmuseum.com/",
+                                  "time":  "12:10 - 13:15",
+                                  "desc":  "タオルアート展示の観覧および高品質今治タオルの閲覧。",
+                                  "badge":  "MUSEUM",
+                                  "title":  "タオル美術館 ICHIHIRO",
+                                  "lat":  33.9696759
+                              },
+                              {
+                                  "id":  "day3-lunch-card",
+                                  "mapQuery":  "白龍 今治市郷本町1-1-15",
+                                  "lon":  132.9961179,
+                                  "officialLabel":  "OFFICIAL GUIDE",
+                                  "official":  "https://www.oideya.gr.jp/gourmet-c/hakuryu/",
+                                  "time":  "13:40 - 14:30",
+                                  "desc":  "火曜営業の白龍で今治名物・焼豚玉子飯。タオル美術館から亀老山へ向かう経路上にあり、寄り道は約3分。",
+                                  "badge":  "GOURMET",
+                                  "title":  "今治名物「焼豚玉子飯」（白龍）",
+                                  "lat":  34.0481515
+                              },
+                              {
+                                  "time":  "15:40 - 16:25",
+                                  "title":  "亀老山展望公園 (しまなみ海道)",
+                                  "badge":  "VIEWPOINT",
+                                  "desc":  "隈研吾氏設計の建築展望台より来島海峡大橋の360度大パノラマ観覧。",
+                                  "image":  "shimanami.png",
+                                  "lat":  34.1201239,
+                                  "lon":  133.0341105,
+                                  "official":  "https://www.city.imabari.ehime.jp/kanko//spot/?a=182"
+                              },
+                              {
+                                  "time":  "16:25 - 17:10",
+                                  "title":  "亀老山 → 来島海峡SA",
+                                  "badge":  "BREAK",
+                                  "desc":  "亀老山から約30分移動し、SA滞在は15分。トイレ休憩とバリィさんグッズの確認を済ませ、17:10に松山空港へ出発。",
+                                  "lat":  34.100462,
+                                  "lon":  132.978676
+                              },
+                              {
+                                  "time":  "17:10 - 18:25",
+                                  "title":  "来島海峡SA → 松山空港レンタカー店",
+                                  "badge":  "DRIVE",
+                                  "desc":  "SAから松山方面へ約1時間15分。途中の給油を含め、18:25レンタカー店到着を目標。",
+                                  "lat":  34.100462,
+                                  "lon":  132.978676
+                              },
+                              {
+                                  "time":  "18:25 - 18:40",
+                                  "title":  "トヨタレンタカー松山空港店",
+                                  "badge":  "RENTAL CAR",
+                                  "desc":  "レンタカーを返却後、空港まで無料送迎。店舗から空港は車で約2分の近距離。",
+                                  "lat":  33.8273145,
+                                  "lon":  132.7013265,
+                                  "mapQuery":  "トヨタレンタカー松山空港店",
+                                  "official":  "https://rent.toyota.co.jp/shop/detail.aspx?eCode=006\u0026rCode=67301"
+                              },
+                              {
+                                  "time":  "18:40 - 19:00",
+                                  "title":  "松山空港 Orange BAR",
+                                  "badge":  "GOURMET",
+                                  "desc":  "1階の「みかんジュース蛇口」で愛媛らしい一杯。19:00には切り上げ、保安検査へ。",
+                                  "lat":  33.8273145,
+                                  "lon":  132.7013265,
+                                  "mapQuery":  "Orange BAR 松山空港",
+                                  "official":  "https://www.matsuyama-airport.co.jp/spend/orangebar.html"
+                              },
+                              {
+                                  "time":  "OPTIONAL",
+                                  "title":  "松山空港 食べ逃し回収リスト",
+                                  "badge":  "FOOD LIST",
+                                  "desc":  "最優先：かどや「宇和島鯛めし／さつま」（2F・L.O.19:00）                         次点：CHEF\u0027S KITCHEN「愛媛真鯛ひつま飯／せんざんき」（2F・L.O.19:30）                         軽食：Tabijio「伯方の塩ソフト／塩おでん」（1F・19:00まで）                         海鮮：すし処「瀬戸内の握り」（2F・L.O.19:15）                                          時間注意：現在の18:40空港入りではポンジュース＋保安検査を優先。食事するなら亀老山出発を30〜45分前倒し。",
+                                  "lat":  33.8273145,
+                                  "lon":  132.7013265,
+                                  "links":  [
+                                                {
+                                                    "label":  "AIRPORT FOOD",
+                                                    "url":  "https://www.matsuyama-airport.co.jp/spend/index.html"
+                                                },
+                                                {
+                                                    "label":  "かどや",
+                                                    "url":  "https://www.matsuyama-airport.co.jp/spend/kadoya.html"
+                                                },
+                                                {
+                                                    "label":  "CHEF\u0027S",
+                                                    "url":  "https://www.matsuyama-airport.co.jp/spend/kitchen.html"
+                                                }
+                                            ]
+                              },
+                              {
+                                  "time":  "19:45 - 21:20",
+                                  "title":  "松山空港 → 羽田空港",
+                                  "badge":  "FLIGHT",
+                                  "desc":  "ANA 598便にて羽田空港着（21:20予定）。搭乗券をWalletへ追加済みなら、搭乗時にQRコードを表示できます。",
+                                  "lat":  33.8273145,
+                                  "lon":  132.7013265,
+                                  "wallet":  {
+                                                 "apple":  "https://support.apple.com/ja-jp/108375",
+                                                 "google":  "https://wallet.app.google/"
+                                             },
+                                  "mapQuery":  "羽田空港",
+                                  "official":  "https://www.ana.co.jp/ja/jp/",
+                                  "officialLabel":  "ANA"
+                              }
+                          ]
+             },
+    "detourSuggestions":  {
+                              "tab-day1":  [
+                                               {
+                                                   "name":  "手打十段 うどんバカ一代",
+                                                   "time":  "30-40分",
+                                                   "desc":  "釜バターうどんが有名な行列店。早朝から営業しています。"
+                                               }
+                                           ],
+                              "tab-day2":  [
+                                               {
+                                                   "name":  "長田 in 香の香",
+                                                   "time":  "30-40分",
+                                                   "desc":  "釜あげうどんの最高峰。出汁の香りが絶品です。"
+                                               }
+                                           ],
+                              "tab-day3":  [
+                                               {
+                                                   "name":  "タオル美術館 ICHIHIRO",
+                                                   "time":  "60分",
+                                                   "desc":  "タオルの製造工程見学や美しい庭園、キャラクターとのコラボ展示。"
+                                               }
+                                           ]
+                          },
+    "optionalRules":  {
+                          "tab-day1":  [
+                                           {
+                                               "match":  "うどんバカ一代",
+                                               "required":  45,
+                                               "baseline":  0
+                                           }
+                                       ],
+                          "tab-day2":  [
+                                           {
+                                               "match":  "長田 in 香の香",
+                                               "required":  45,
+                                               "baseline":  0
+                                           }
+                                       ]
+                      }
 }
