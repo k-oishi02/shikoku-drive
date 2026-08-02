@@ -6,6 +6,8 @@
     let EXPENSE_KEY = 'expenses-default-v1';
     const DEVICE_OWNER_KEY = 'shikoku-drive-device-owner-v1';
     let activeProgressMinutes = 0;
+    let progressAnchorMinute = null;
+    let progressAnchorPanel = '';
     let lastEnhancedPanel = null;
     let lastEnhancedTripId = '';
     let enhancementRunId = 0;
@@ -72,14 +74,16 @@
     }
 
     function isFixedCard(card) {
+        if (card.dataset.fixed === 'true') return true;
+        // Compatibility for already-published trips created before fixed flags existed.
         const badge = card.querySelector('.j-tag-badge')?.textContent.trim().toUpperCase() || '';
         const title = card.querySelector('.j-card-ttl')?.textContent.trim() || '';
         return ['FLIGHT', 'BUS', 'FERRY'].includes(badge) ||
             /フェリー|四国水族館|五志喜|ポケモンセンター|松山空港店|Orange BAR/.test(title);
     }
 
-
     function isRigidCard(card) {
+        if (card.dataset.rigid === 'true') return true;
         const badge = card.querySelector('.j-tag-badge')?.textContent.trim().toUpperCase() || '';
         return ['FLIGHT', 'BUS', 'FERRY', 'DRIVE', 'HELLO CYCLING', 'RENTAL CAR'].includes(badge);
     }
@@ -165,22 +169,26 @@
 
         const now = new Date();
         const timeline = Object.keys(TRIP_DAYS).flatMap(panelId => getEntries(panelId)).sort((a, b) => a.start - b.start);
-        const tripStart = timeline[0]?.start || new Date(`${Object.values(TRIP_DAYS)[0]?.date || '2026-08-30'}T00:00:00+09:00`);
-        const tripEnd = timeline.at(-1)?.end || new Date(`${Object.values(TRIP_DAYS).at(-1)?.date || '2026-09-01'}T23:59:59+09:00`);
+        const fallbackDate = window.currentTripDate || getTokyoDateKey(now);
+        const tripStart = timeline[0]?.start || new Date(`${Object.values(TRIP_DAYS)[0]?.date || fallbackDate}T00:00:00+09:00`);
+        const tripEnd = timeline.at(-1)?.end || new Date(`${Object.values(TRIP_DAYS).at(-1)?.date || fallbackDate}T23:59:59+09:00`);
         let panelId = dayPanelForDate(now);
         let entry = null;
-        let state = 'NEXT';
+        let departureTarget = null;
+        let routeEntry = null;
 
         if (now < tripStart) {
-            panelId = 'tab-day1';
+            panelId = Object.keys(TRIP_DAYS).sort((a, b) => TRIP_DAYS[a].date.localeCompare(TRIP_DAYS[b].date))[0];
             entry = getEntries(panelId)[0];
-            dayEl.textContent = 'DAY 01 · 旅行前';
+            dayEl.textContent = `${TRIP_DAYS[panelId]?.label || 'DAY 01'} · 旅行前`;
             countdownEl.textContent = `出発まで ${formatDuration(tripStart - now)}`;
-            departureEl.disabled = true;
-            departureEl.textContent = '旅行日に有効';
+            if (dayPanelForDate(now) === panelId && entry) {
+                departureTarget = { panelId, minute: entry.startMinute, title: entry.title };
+                routeEntry = entry;
+            }
         } else if (now > tripEnd) {
             dayEl.textContent = 'TRIP COMPLETE';
-            titleEl.textContent = '四国ドライブ、おつかれさまでした！';
+            titleEl.textContent = '旅行、おつかれさまでした！';
             timeEl.textContent = 'MEMORIES SAVED';
             countdownEl.textContent = '';
             routeEl.hidden = true;
@@ -189,36 +197,57 @@
             return;
         } else if (panelId) {
             const entries = getEntries(panelId);
-            const current = entries.find(item => now >= item.start && now < item.end);
-            entry = current || entries.find(item => item.start > now) || entries[entries.length - 1];
-            state = current ? 'NOW' : 'NEXT';
-            dayEl.textContent = `${TRIP_DAYS[panelId].label} · ${state}`;
+            const currentIndex = entries.findIndex(item => now >= item.start && now < item.end);
+            const current = currentIndex >= 0 ? entries[currentIndex] : null;
+            const next = current ? entries[currentIndex + 1] : entries.find(item => item.start > now);
+            entry = current || next || entries.at(-1);
+            dayEl.textContent = `${TRIP_DAYS[panelId].label} · ${current ? 'NOW' : 'NEXT'}`;
             countdownEl.textContent = current
                 ? `終了まで ${formatDuration(entry.end - now)}`
                 : `出発まで ${formatDuration(entry.start - now)}`;
-            departureEl.dataset.targetMinute = String(current ? entry.endMinute : entry.startMinute);
-            departureEl.dataset.panelId = panelId;
-            departureEl.dataset.targetTitle = entry.title;
-            departureEl.disabled = false;
-            departureEl.textContent = 'DEPARTURE NOW';
+            if (current && next) {
+                departureTarget = { panelId, minute: current.endMinute, title: next.title };
+                routeEntry = next;
+            } else if (!current && next) {
+                departureTarget = { panelId, minute: next.startMinute, title: next.title };
+                routeEntry = next;
+            }
         } else {
             const future = Object.keys(TRIP_DAYS)
                 .flatMap(id => getEntries(id).map(item => ({ panelId: id, item })))
                 .find(candidate => candidate.item.start > now);
-            panelId = future?.panelId || 'tab-day3';
+            panelId = future?.panelId || Object.keys(TRIP_DAYS).at(-1);
             entry = future?.item || getEntries(panelId).at(-1);
-            dayEl.textContent = `${TRIP_DAYS[panelId].label} · NEXT`;
-            countdownEl.textContent = `出発まで ${formatDuration(entry.start - now)}`;
+            dayEl.textContent = `${TRIP_DAYS[panelId]?.label || 'DAY'} · NEXT`;
+            countdownEl.textContent = entry ? `出発まで ${formatDuration(entry.start - now)}` : '';
+            if (entry) {
+                departureTarget = { panelId, minute: entry.startMinute, title: entry.title };
+                routeEntry = entry;
+            }
         }
 
-        if (!entry) return;
+        if (!entry) {
+            routeEl.hidden = true;
+            departureEl.disabled = true;
+            return;
+        }
         titleEl.textContent = entry.title;
         timeEl.textContent = `${minuteLabel(entry.startMinute)} — ${minuteLabel(entry.endMinute)}`;
-        if (entry.route) {
-            routeEl.href = entry.route;
+        if (routeEntry?.route || entry.route) {
+            routeEl.href = routeEntry?.route || entry.route;
             routeEl.hidden = false;
         } else {
             routeEl.hidden = true;
+        }
+        if (departureTarget) {
+            departureEl.dataset.targetMinute = String(departureTarget.minute);
+            departureEl.dataset.panelId = departureTarget.panelId;
+            departureEl.dataset.targetTitle = departureTarget.title;
+            departureEl.disabled = false;
+            departureEl.textContent = '次の予定へ出発';
+        } else {
+            departureEl.disabled = true;
+            departureEl.textContent = '本日の予定完了';
         }
     }
 
@@ -248,6 +277,8 @@
         if (minutes) minutes.value = String(Math.abs(difference));
         const tabButton = document.querySelector(`[aria-controls="${panelId}"]`);
         if (typeof window.switchTab === 'function') window.switchTab(panelId, tabButton);
+        progressAnchorPanel = panelId;
+        progressAnchorMinute = targetMinute;
         window.applyProgressAdvisor(difference);
         window.toggleScheduleAdvisor(true);
 
@@ -259,10 +290,10 @@
                 : difference > 0
                     ? `予定より${difference}分遅く`
                     : '予定どおりに';
-            message.textContent = `${button.dataset.targetTitle || '現在地'}を${timing}出発。以降の予定を再調整しました。`;
+            message.textContent = `次の予定「${button.dataset.targetTitle || '目的地'}」へ${timing}出発。これ以降だけを再調整しました。`;
         }
         button.textContent = 'RECORDED ✓';
-        window.setTimeout(() => { button.textContent = 'DEPARTURE NOW'; }, 1800);
+        window.setTimeout(renderNowMode, 1800);
         advice?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
 
@@ -300,7 +331,7 @@
         return (OPTIONAL_RULES[panelId] || []).find(rule => rule.match.test(title));
     }
 
-    function renderOptionalAdvice(panelId, signedMinutes) {
+    function renderOptionalAdvice(panelId, signedMinutes, anchorMinute = -1) {
         const panel = document.getElementById(panelId);
         const advice = document.getElementById('optional-advice');
         if (!panel || !advice) return { canAdd: 0, cannotAdd: 0 };
@@ -309,9 +340,18 @@
         const lateMinutes = Math.max(0, signedMinutes);
         const decisions = [];
 
-        panel.querySelectorAll('.j-card').forEach(card => {
+        const allCards = Array.from(panel.querySelectorAll('.j-card'));
+        allCards.forEach((card, cardIndex) => {
             const timeText = card.querySelector('.j-card-time')?.childNodes[0]?.textContent.trim();
             if (timeText !== 'OPTIONAL') return;
+            const nextTimed = allCards.slice(cardIndex + 1)
+                .map(candidate => parseCardTime(candidate.querySelector('.j-card-time')?.textContent))
+                .find(Boolean);
+            const previousTimed = allCards.slice(0, cardIndex).reverse()
+                .map(candidate => parseCardTime(candidate.querySelector('.j-card-time')?.textContent))
+                .find(Boolean);
+            const referenceMinute = nextTimed?.startMinute ?? previousTimed?.endMinute ?? Number.MAX_SAFE_INTEGER;
+            if (referenceMinute <= anchorMinute) return;
             const title = card.querySelector('.j-card-ttl')?.textContent.replace(/\s+/g, ' ').trim() || 'Optional';
             const rule = optionalRuleFor(panelId, title);
             if (!rule) return;
@@ -363,22 +403,34 @@
         const entries = getEntries(panelId);
         const advice = document.getElementById('progress-advice');
         const dayLabel = TRIP_DAYS[panelId]?.label || 'DAY';
+        const isToday = TRIP_DAYS[panelId]?.date === getTokyoDateKey(new Date());
+        const anchorMinute = progressAnchorPanel === panelId && Number.isFinite(progressAnchorMinute)
+            ? progressAnchorMinute
+            : isToday ? tokyoMinuteOfDay(new Date()) : -1;
         let shortened = 0;
         let squeezedMinutes = 0;
         let impossible = 0;
         let previousAdjustedEnd = null;
+        let segmentShift = activeProgressMinutes;
 
         entries.forEach((entry, index) => {
             const badge = document.createElement('span');
             badge.className = 'delay-preview';
+            if (entry.endMinute <= anchorMinute) {
+                badge.classList.add('completed');
+                badge.textContent = 'DONE';
+                entry.timeEl.appendChild(badge);
+                return;
+            }
             if (entry.fixed) {
                 badge.classList.add('fixed');
                 badge.textContent = `FIXED ${minuteLabel(entry.startMinute)}`;
                 previousAdjustedEnd = entry.endMinute;
+                segmentShift = 0;
             } else {
                 const duration = Math.max(0, entry.endMinute - entry.startMinute);
                 const nextFixed = entries.slice(index + 1).find(candidate => candidate.fixed);
-                let shiftedStart = entry.startMinute + activeProgressMinutes;
+                let shiftedStart = entry.startMinute + segmentShift;
                 if (Number.isFinite(previousAdjustedEnd)) shiftedStart = Math.max(shiftedStart, previousAdjustedEnd);
                 let shiftedEnd = shiftedStart + duration;
                 let conflict = 0;
@@ -409,7 +461,7 @@
             }
             entry.timeEl.appendChild(badge);
         });
-        const optional = renderOptionalAdvice(panelId, activeProgressMinutes);
+        const optional = renderOptionalAdvice(panelId, activeProgressMinutes, anchorMinute);
         if (advice) {
             const title = advice.querySelector('strong');
             const message = advice.querySelector('span');
@@ -418,14 +470,14 @@
                 message.textContent = `${dayLabel}は予定どおり。Optionalは下の判定を確認してください。`;
             } else if (activeProgressMinutes < 0) {
                 title.textContent = `${Math.abs(activeProgressMinutes)} MIN EARLY`;
-                message.textContent = `${dayLabel}の今後を前倒し。Optionalは${optional.canAdd}件が追加可能です。`;
+                message.textContent = `${dayLabel}の現在地以降を前倒し。Optionalは${optional.canAdd}件が追加可能です。`;
             } else {
                 title.textContent = `${activeProgressMinutes} MIN LATE`;
                 message.textContent = impossible
-                    ? `この遅れでは固定予定までの移動時間が不足します。Optionalを外し、Flexible予定の短縮・省略か早い出発が必要です。`
+                    ? `現在地以降では固定予定までの移動時間が不足します。Optionalを外し、Flexible予定の短縮・省略が必要です。`
                     : shortened
-                        ? `固定時刻を守るため${shortened}件を計${squeezedMinutes}分短縮。Optionalは入れません。`
-                        : '固定時刻は維持。寄り道とOptionalを見送って追いつきます。';
+                        ? `現在地以降の${shortened}件を計${squeezedMinutes}分短縮し、固定時刻を守ります。`
+                        : '現在地以降だけを調整しました。固定予定より後は元の時刻へ戻ります。';
             }
         }
     };
@@ -435,6 +487,8 @@
         const minutes = document.getElementById('progress-minutes');
         if (direction) direction.value = '-1';
         if (minutes) minutes.value = '0';
+        progressAnchorMinute = null;
+        progressAnchorPanel = '';
         window.applyProgressAdvisor(0);
     };
 
@@ -446,6 +500,10 @@
                 event.preventDefault();
                 const direction = Number(document.getElementById('progress-direction')?.value) || -1;
                 const minutes = Math.max(0, Number(document.getElementById('progress-minutes')?.value) || 0);
+                progressAnchorPanel = selectedDayPanel();
+                progressAnchorMinute = TRIP_DAYS[progressAnchorPanel]?.date === getTokyoDateKey(new Date())
+                    ? tokyoMinuteOfDay(new Date())
+                    : -1;
                 window.applyProgressAdvisor(direction * minutes);
             });
         }
@@ -577,7 +635,12 @@
     window.recalculateExpenses = renderExpenses;
 
     function removeExpense(id) {
-        const expenses = safeLoad(EXPENSE_KEY, []).filter(expense => expense.id !== id);
+        const current = safeLoad(EXPENSE_KEY, []);
+        const target = current.find(expense => expense.id === id);
+        if (!target) return;
+        const label = target.note || target.category || 'この支出';
+        if (!window.confirm(`${label}（${formatYen(target.amount)}）を共有台帳から削除しますか？`)) return;
+        const expenses = current.filter(expense => expense.id !== id);
         safeSave(EXPENSE_KEY, expenses);
         renderExpenses();
         notifyExpenseAction({ type: 'remove', id });
@@ -743,7 +806,7 @@
         document.querySelectorAll('.j-tab-btn[aria-controls^="tab-day"]').forEach((lnk, idx) => {
             const panelId = lnk.getAttribute('aria-controls');
             const dayKey = panelId.replace('tab-', '');
-            const dateStr = new Date(new Date(window.currentTripDate || '2026-08-30').getTime() + idx * 86400000).toISOString().split('T')[0];
+            const dateStr = new Date(new Date(window.currentTripDate || getTokyoDateKey(new Date())).getTime() + idx * 86400000).toISOString().split('T')[0];
             TRIP_DAYS[panelId] = {
                 key: dayKey,
                 label: lnk.textContent,
@@ -770,68 +833,45 @@
             window.currentTripDate = new Date().toISOString().slice(0, 10);
         }
 
-        // Dynamically fetch and preserve trip members list at runtime
-        fetch(`data/${window.currentTripId}.json`)
-            .then(res => res.json())
-            .then(tripData => {
-                if (currentRunId !== enhancementRunId) return;
-                window.currentTripMembers = tripData.members || [
-                    { id: 'aoi', name: 'メンバー1' },
-                    { id: 'kotaro', name: 'メンバー2' }
-                ];
-
-                // Parse optional rules from JSON if present, converting match strings into RegExps
-                OPTIONAL_RULES = {};
-                if (tripData.optionalRules) {
-                    Object.keys(tripData.optionalRules).forEach(dayKey => {
-                        OPTIONAL_RULES[dayKey] = tripData.optionalRules[dayKey].map(rule => ({
+        // Use the exact config already rendered by the participant app. Re-fetching
+        // the bundled JSON here would make NOW/Optional disagree with published data.
+        const tripData = window.currentTripData || {};
+        if (currentRunId !== enhancementRunId) return;
+        window.currentTripMembers = Array.isArray(tripData.members) && tripData.members.length
+            ? tripData.members
+            : [{ id: 'aoi', name: 'メンバー1' }, { id: 'kotaro', name: 'メンバー2' }];
+        OPTIONAL_RULES = {};
+        if (tripData.optionalRules && typeof tripData.optionalRules === 'object') {
+            Object.keys(tripData.optionalRules).forEach(dayKey => {
+                OPTIONAL_RULES[dayKey] = (tripData.optionalRules[dayKey] || []).flatMap(rule => {
+                    try {
+                        return [{
                             match: new RegExp(rule.match),
                             required: Number(rule.required),
                             baseline: Number(rule.baseline)
-                        }));
-                    });
-                }
-
-                // Parse detour suggestions from JSON if present
-                DETOUR_SUGGESTIONS = tripData.detourSuggestions || {};
-
-                // Parse map center options
-                window.tripMapCenter = tripData.mapCenter || null;
-                window.tripMapZoom = tripData.mapZoom || 9;
-
-                initTripDays();
-                setupChecklist();
-                setupExpenses();
-                setupExpenseShortcuts();
-                setupOfflineSupport();
-                setupProgressAdvisor();
-                openLinkedTab();
-                window.applyProgressAdvisor(0);
-                if (window.nowModeInterval) {
-                    window.clearInterval(window.nowModeInterval);
-                }
-                renderNowMode();
-                window.nowModeInterval = window.setInterval(renderNowMode, 1000);
-            }).catch(() => {
-                if (currentRunId !== enhancementRunId) return;
-                window.currentTripMembers = [
-                    { id: 'aoi', name: 'メンバー1' },
-                    { id: 'kotaro', name: 'メンバー2' }
-                ];
-                initTripDays();
-                setupChecklist();
-                setupExpenses();
-                setupExpenseShortcuts();
-                setupOfflineSupport();
-                setupProgressAdvisor();
-                openLinkedTab();
-                window.applyProgressAdvisor(0);
-                if (window.nowModeInterval) {
-                    window.clearInterval(window.nowModeInterval);
-                }
-                renderNowMode();
-                window.nowModeInterval = window.setInterval(renderNowMode, 1000);
+                        }];
+                    } catch (error) {
+                        return [];
+                    }
+                });
             });
+        }
+        DETOUR_SUGGESTIONS = tripData.detourSuggestions || {};
+        window.tripMapCenter = tripData.mapCenter || null;
+        window.tripMapZoom = tripData.mapZoom || 9;
+        initTripDays();
+        setupChecklist();
+        setupExpenses();
+        setupExpenseShortcuts();
+        setupOfflineSupport();
+        setupProgressAdvisor();
+        openLinkedTab();
+        progressAnchorMinute = null;
+        progressAnchorPanel = '';
+        window.applyProgressAdvisor(0);
+        if (window.nowModeInterval) window.clearInterval(window.nowModeInterval);
+        renderNowMode();
+        window.nowModeInterval = window.setInterval(renderNowMode, 1000);
     }
 
     window.initEnhancements = initEnhancements;
@@ -848,5 +888,3 @@
         }
     }
 })();
-
-

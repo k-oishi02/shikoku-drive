@@ -2,79 +2,104 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
+    }
+
+    function roomDocument(roomId) {
+      return get(/databases/$(database)/documents/rooms/$(roomId));
+    }
+
+    function isRoomMember(roomId) {
+      return signedIn()
+        && roomDocument(roomId).data.members is map
+        && roomDocument(roomId).data.members.keys().hasAny([request.auth.uid])
+        && (!('status' in roomDocument(roomId).data)
+          || roomDocument(roomId).data.status == 'active');
+    }
+
+    function validRoomJoin() {
+      let before = resource.data;
+      let after = request.resource.data;
+      return signedIn()
+        && before.members is map
+        && after.members is map
+        && !before.members.keys().hasAny([request.auth.uid])
+        && after.members.keys().hasAny([request.auth.uid])
+        && after.members.size() == before.members.size() + 1
+        && after.members.diff(before.members).affectedKeys().hasOnly([request.auth.uid])
+        && after.members.size() <= 2
+        && (!('capacity' in before) || after.members.size() <= before.capacity)
+        && (!('status' in before) || before.status == 'active')
+        && after.joinProof == before.inviteHash
+        && after.diff(before).affectedKeys().hasOnly([
+          'members', 'joined', 'joinProof', 'updatedAt'
+        ]);
+    }
+
+    match /admins/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /adminTrips/{tripId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /publishedTrips/{tripId} {
+      allow get: if isAdmin() || resource.data.published == true;
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    match /adminDistributions/{distributionId} {
+      allow read, write: if isAdmin();
+    }
+
     match /rooms/{roomId} {
-      allow create: if request.auth != null
-        && roomId.size() >= 44 && roomId.size() <= 80
-        && request.resource.data.keys().hasOnly([
-          'createdBy', 'members', 'inviteHash', 'joined', 'createdAt'
-        ])
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.members.size() == 1
-        && request.resource.data.members[request.auth.uid] == true
-        && request.resource.data.inviteHash is string
-        && request.resource.data.inviteHash.size() == 64
-        && request.resource.data.joined == false;
-
-      allow get: if request.auth != null
-        && resource.data.members[request.auth.uid] == true;
-      allow list, delete: if false;
-
-      allow update: if request.auth != null
-        && resource.data.joined == false
-        && request.resource.data.joined == true
-        && request.resource.data.joinProof == resource.data.inviteHash
-        && request.resource.data.createdBy == resource.data.createdBy
-        && request.resource.data.inviteHash == resource.data.inviteHash
-        && request.resource.data.members.size() == 2
-        && request.resource.data.members[request.auth.uid] == true
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'members', 'joined', 'joinProof'
-        ])
-        && request.resource.data.members.diff(resource.data.members)
-          .addedKeys().hasOnly([request.auth.uid])
-        && request.resource.data.members.diff(resource.data.members)
-          .removedKeys().size() == 0;
+      allow get: if isAdmin()
+        || (signedIn()
+          && resource.data.members is map
+          && resource.data.members.keys().hasAny([request.auth.uid])
+          && (!('status' in resource.data) || resource.data.status == 'active'));
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || validRoomJoin();
+      allow delete: if isAdmin();
 
       match /expenses/{expenseId} {
-        function isRoomMember() {
-          return request.auth != null
-            && get(/databases/$(database)/documents/rooms/$(roomId))
-              .data.members[request.auth.uid] == true;
-        }
+        allow read, create, update, delete: if isAdmin() || isRoomMember(roomId);
+      }
 
-        function validExpense() {
-          return request.resource.data.keys().hasOnly([
-                'id', 'amount', 'payer', 'category', 'note', 'comment', 'createdAt'
-            ])
-            && request.resource.data.id == expenseId
-            && request.resource.data.amount is int
-            && request.resource.data.amount > 0
-            && request.resource.data.amount < 10000000
-            && request.resource.data.payer in ['aoi', 'kotaro']
-            && request.resource.data.category is string
-            && request.resource.data.category.size() <= 20
-              && request.resource.data.note is string
-              && request.resource.data.note.size() <= 40
-              && request.resource.data.comment is string
-              && request.resource.data.comment.size() <= 80
-              && request.resource.data.createdAt is string;
-        }
-
-        allow read: if isRoomMember();
-        allow create, update: if isRoomMember() && validExpense();
-        allow delete: if isRoomMember();
+      match /participants/{uid} {
+        allow read: if isAdmin() || isRoomMember(roomId);
+        allow create: if isRoomMember(roomId)
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasAll(['nickname', 'lastActive'])
+          && request.resource.data.keys().hasOnly([
+            'nickname', 'lastActive', 'joinedAt', 'updatedAt'
+          ]);
+        allow update: if isRoomMember(roomId)
+          && request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'nickname', 'lastActive', 'joinedAt', 'updatedAt'
+          ]);
+        allow delete: if isAdmin() || (isRoomMember(roomId) && request.auth.uid == uid);
       }
     }
 
-    match /trips/{tripId}/participants/{deviceId} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth != null
-        && deviceId == request.auth.uid
-        && request.resource.data.keys().hasOnly(['nickname', 'lastActive'])
-        && request.resource.data.nickname is string
-        && request.resource.data.nickname.size() <= 40;
-      allow delete: if request.auth != null && deviceId == request.auth.uid;
+    // Temporary write compatibility for clients cached before room-scoped presence.
+    // Peer reads are intentionally disabled to prevent participant data leaking
+    // between different invite rooms of the same trip.
+    match /trips/{tripId}/participants/{uid} {
+      allow read: if isAdmin();
+      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
     }
   }
 }
-

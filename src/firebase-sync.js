@@ -67,19 +67,16 @@ function getOrCreateDeviceId() {
 
 function ensureRoomParameters(tripId) {
     const url = new URL(window.location.href);
-    let roomId = url.searchParams.get('ledger');
-    let invite = url.searchParams.get('invite');
+    const roomId = url.searchParams.get('ledger');
+    const invite = url.searchParams.get('invite');
     const validToken = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || ''));
+    const roomCode = document.getElementById('sync-room-code');
     if (!validToken(roomId) || !validToken(invite)) {
-        roomId = randomToken();
-        invite = randomToken();
-        url.searchParams.set('ledger', roomId);
-        url.searchParams.set('invite', invite);
-        url.searchParams.delete('v');
-        history.replaceState(null, '', url);
+        inviteUrl = '';
+        if (roomCode) roomCode.textContent = 'VIEW ONLY';
+        return null;
     }
     inviteUrl = url.toString();
-    const roomCode = document.getElementById('sync-room-code');
     if (roomCode) roomCode.textContent = `ROOM: ${roomId.slice(-6).toUpperCase()}`;
     return { roomId: `${tripId}_${roomId}`, invite, ledgerToken: roomId };
 }
@@ -88,18 +85,55 @@ function setSyncUi(mode, title, message) {
     const badge = document.getElementById('sync-badge');
     const titleEl = document.getElementById('sync-title');
     const status = document.getElementById('sync-status');
+    const actions = document.getElementById('share-room-actions');
+    const note = document.getElementById('sync-note');
+    const members = document.getElementById('hero-participants');
     if (badge) {
         badge.classList.toggle('live', mode === 'live');
         badge.classList.toggle('error', mode === 'error');
-        badge.textContent = mode === 'live' ? 'LIVE SYNC' : mode === 'error' ? 'ACTION NEEDED' : 'CONNECTING';
+        badge.classList.toggle('local', mode === 'local');
+        badge.textContent = mode === 'live' ? 'LIVE SYNC' : mode === 'error' ? 'ACTION NEEDED' : mode === 'local' ? 'VIEW ONLY' : 'CONNECTING';
     }
     if (titleEl) titleEl.textContent = title;
     if (status) status.textContent = message;
+    if (actions) actions.hidden = mode !== 'live';
+    if (note) note.hidden = mode !== 'live';
+    if (members && mode !== 'live') {
+        members.textContent = mode === 'error'
+            ? 'MEMBERS: 同期なし'
+            : mode === 'local'
+                ? 'MEMBERS: この端末のみ'
+                : 'MEMBERS: 接続中…';
+    }
 }
 
-function setShareEnabled(enabled) {
+function setShareEnabled(enabled, label = '招待リンクをコピー') {
     const button = document.getElementById('share-link-button');
-    if (button) button.disabled = !enabled;
+    if (!button) return;
+    button.disabled = !enabled;
+    button.textContent = label;
+}
+
+function renderLiveSyncState() {
+    if (!syncContext?.roomReady || !syncContext?.participantsReady) return;
+    const count = Number(syncContext.memberCount || 0);
+    const roleLabel = syncContext.role === 'owner' ? '作成者' : '参加者';
+    setSyncUi('live', `${roleLabel}として接続済み`, `${count}/2台が登録済み。追加・削除は自動同期されます。`);
+    const roomFull = count >= 2;
+    setShareEnabled(!roomFull, roomFull ? '2台接続済み' : '招待リンクをコピー');
+    const note = document.getElementById('sync-note');
+    if (note) {
+        note.textContent = roomFull
+            ? '2台の同期が有効です。入力内容は双方へ自動反映されます。'
+            : '招待リンクを相手の端末で開くと、二人の入力がリアルタイム同期されます。';
+    }
+}
+
+function setIdentityControlLocked(locked) {
+    const deviceOwner = document.getElementById('device-owner');
+    if (!deviceOwner) return;
+    deviceOwner.disabled = locked;
+    deviceOwner.title = locked ? '招待ルームの参加順から自動設定されています' : '';
 }
 
 function readCachedExpenses() {
@@ -158,9 +192,15 @@ function emitRemoteExpenses(expenses) {
 
 async function persistAction(action, queueWhenUnavailable = true) {
     const actionTripId = String(action?.tripId || window.currentTripId || '');
-    if (!syncContext || syncContext.tripId !== actionTripId) {
-        if (queueWhenUnavailable && actionTripId === String(window.currentTripId || '')) {
-            pendingActions.push({ ...action, tripId: actionTripId });
+    const actionLedgerToken = String(action?.ledgerToken || '');
+    const sameRoom = syncContext
+        && syncContext.tripId === actionTripId
+        && syncContext.ledgerToken === actionLedgerToken;
+    if (!sameRoom) {
+        if (queueWhenUnavailable
+            && actionTripId === String(window.currentTripId || '')
+            && /^[A-Za-z0-9_-]{43}$/.test(actionLedgerToken)) {
+            pendingActions.push({ ...action, tripId: actionTripId, ledgerToken: actionLedgerToken });
         }
         return false;
     }
@@ -181,11 +221,11 @@ async function persistAction(action, queueWhenUnavailable = true) {
     return true;
 }
 
-async function flushPendingActions(tripId) {
+async function flushPendingActions(tripId, ledgerToken) {
     const queued = pendingActions.splice(0, pendingActions.length);
     const retry = [];
     for (const action of queued) {
-        if (action.tripId !== tripId) {
+        if (action.tripId !== tripId || action.ledgerToken !== ledgerToken) {
             retry.push(action);
             continue;
         }
@@ -211,7 +251,13 @@ window.copyLedgerInviteLink = async function () {
 };
 
 window.addEventListener('shikoku-expense-action', event => {
-    const action = { ...(event.detail || {}), tripId: String(window.currentTripId || '') };
+    if (!syncContext && !inviteUrl) return;
+    const ledgerToken = new URLSearchParams(window.location.search).get('ledger') || '';
+    const action = {
+        ...(event.detail || {}),
+        tripId: String(window.currentTripId || ''),
+        ledgerToken
+    };
     persistAction(action).catch(() => {
         setSyncUi('error', '同期に失敗しました', '通信状態を確認してください。入力内容はこの端末に残っています。');
     });
@@ -220,35 +266,22 @@ window.addEventListener('shikoku-expense-action', event => {
 async function createOrJoinRoom(db, uid, roomId, invite) {
     const roomRef = doc(db, 'rooms', roomId);
     const inviteHash = await sha256(invite);
-    let role = 'member';
-    let created = false;
-
     try {
-        await setDoc(roomRef, {
-            createdBy: uid,
-            members: { [uid]: true },
-            inviteHash,
-            joined: false,
-            createdAt: serverTimestamp()
-        });
-        created = true;
-        role = 'owner';
-    } catch (createError) {
-        try {
-            const currentRoom = await getDoc(roomRef);
-            if (!currentRoom.exists()) throw createError;
-            role = currentRoom.data().createdBy === uid ? 'owner' : 'member';
-        } catch (readError) {
-            await updateDoc(roomRef, {
-                [`members.${uid}`]: true,
-                joined: true,
-                joinProof: inviteHash
-            });
-            role = 'member';
+        const currentRoom = await getDoc(roomRef);
+        if (currentRoom.exists()) {
+            const members = currentRoom.data().members || {};
+            if (members[uid]) return { roomRef, role: 'member' };
         }
+    } catch (readError) {
+        // Non-members cannot read a room before proving the invite token.
     }
-
-    return { roomRef, role, created };
+    await updateDoc(roomRef, {
+        [`members.${uid}`]: true,
+        joined: true,
+        joinProof: inviteHash,
+        updatedAt: serverTimestamp()
+    });
+    return { roomRef, role: 'member' };
 }
 
 export async function initSyncEngine(tripId) {
@@ -260,7 +293,17 @@ export async function initSyncEngine(tripId) {
     if (unsubscribeParticipants) { unsubscribeParticipants(); unsubscribeParticipants = null; }
     if (participantHeartbeat) { window.clearInterval(participantHeartbeat); participantHeartbeat = null; }
 try {
-        const { roomId, invite, ledgerToken } = ensureRoomParameters(tripId);
+        const roomParameters = ensureRoomParameters(tripId);
+        if (!roomParameters) {
+            setIdentityControlLocked(false);
+            EXPENSE_KEY = `expenses-${tripId}-local-v2`;
+            window.setExpenseStorageScope?.(tripId, null);
+            setSyncUi('local', '閲覧モード', '共有台帳へ参加するには、管理者から届いた招待リンクで開いてください。');
+            return;
+        }
+        const { roomId, invite, ledgerToken } = roomParameters;
+        setSyncUi('connecting', '共有ルームへ接続中…', '参加権限とルーム状態を確認しています。');
+        setIdentityControlLocked(true);
         EXPENSE_KEY = `expenses-${tripId}-${ledgerToken}-v2`;
         window.setExpenseStorageScope?.(tripId, ledgerToken);
         let app;
@@ -289,15 +332,29 @@ try {
         const { roomRef, role } = await createOrJoinRoom(db, uid, roomId, invite);
         if (currentRunId !== syncRunId) return;
         const expensesCollection = collection(roomRef, 'expenses');
-        syncContext = { db, roomRef, expensesCollection, uid, tripId, ledgerToken, deviceOwnerInitialized: false };
+        syncContext = {
+            db,
+            roomRef,
+            expensesCollection,
+            uid,
+            tripId,
+            ledgerToken,
+            role,
+            roomReady: false,
+            participantsReady: false,
+            memberCount: 0,
+            deviceOwnerInitialized: false
+        };
 
         // Register participant nickname in Firestore
         const nickname = String(localStorage.getItem('user_nickname') || '名無し').trim().slice(0, 40) || '名無し';
         const deviceId = uid;
-        const participantRef = doc(db, 'trips', tripId, 'participants', deviceId);
+        const participantRef = doc(roomRef, 'participants', deviceId);
+        const existingParticipant = await getDoc(participantRef);
         await setDoc(participantRef, {
             nickname: nickname,
-            lastActive: serverTimestamp()
+            lastActive: serverTimestamp(),
+            ...(existingParticipant.exists() ? {} : { joinedAt: serverTimestamp() })
         }, { merge: true });
         if (currentRunId !== syncRunId) return;
         participantHeartbeat = window.setInterval(() => {
@@ -308,41 +365,51 @@ try {
         }, 60 * 1000);
 
         // Listen to participant updates for header display and PayPay select options
-        unsubscribeParticipants = onSnapshot(collection(db, 'trips', tripId, 'participants'), (snapshot) => {
+        unsubscribeParticipants = onSnapshot(collection(roomRef, 'participants'), (snapshot) => {
             if (currentRunId !== syncRunId || !syncContext) return;
-            const participants = activeParticipantEntries(snapshot);
-            const names = [...new Set(participants.map(item => item.nickname))];
-
-            const otherName = participants.find(item => item.uid !== uid)?.nickname;
-            window.memberNames = role === 'owner'
-                ? { aoi: nickname, kotaro: otherName || 'メンバー2' }
-                : { aoi: otherName || 'メンバー1', kotaro: nickname };
-
+            const allParticipants = snapshot.docs
+                .map(item => {
+                    const data = item.data();
+                    return {
+                        uid: item.id,
+                        nickname: String(data?.nickname || '名無し').trim().slice(0, 40) || '名無し',
+                        activeAt: data?.lastActive?.toMillis?.() || 0,
+                        joinedAt: data?.joinedAt?.toMillis?.() || Number.MAX_SAFE_INTEGER
+                    };
+                })
+                .sort((a, b) => a.joinedAt - b.joinedAt || a.uid.localeCompare(b.uid));
+            const cutoff = Date.now() - PARTICIPANT_ACTIVE_MS;
+            const names = [...new Set(allParticipants
+                .filter(item => item.activeAt >= cutoff)
+                .map(item => item.nickname))];
+            const ownIndex = Math.max(0, allParticipants.findIndex(item => item.uid === uid));
+            window.memberNames = {
+                aoi: allParticipants[0]?.nickname || 'メンバー1',
+                kotaro: allParticipants[1]?.nickname || 'メンバー2'
+            };
             window.currentTripMembers = [
                 { id: 'aoi', name: window.memberNames.aoi },
                 { id: 'kotaro', name: window.memberNames.kotaro }
             ];
 
-            // Update UI elements
             const pElem = document.getElementById('hero-participants');
-            if (pElem) {
-                pElem.textContent = `MEMBERS: ${names.join(', ')}`;
-            }
+            const displayNames = names.length > 0 ? names : [nickname];
+            if (pElem) pElem.textContent = `MEMBERS: ${displayNames.join(', ')}`;
+            syncContext.participantsReady = true;
+            renderLiveSyncState();
 
             const deviceOwner = document.getElementById('device-owner');
             const expensePayer = document.getElementById('expense-payer');
             if (deviceOwner && expensePayer) {
                 const savedOwner = deviceOwner.value;
                 const savedPayer = expensePayer.value;
-                const deviceOwnerId = role === 'owner' ? 'aoi' : 'kotaro';
-
+                const deviceOwnerId = ownIndex === 1 ? 'kotaro' : 'aoi';
                 const optionData = [
                     { id: 'aoi', name: window.memberNames.aoi },
                     { id: 'kotaro', name: window.memberNames.kotaro }
                 ];
                 deviceOwner.replaceChildren(...optionData.map(member => new Option(member.name, member.id)));
                 expensePayer.replaceChildren(...optionData.map(member => new Option(member.name, member.id)));
-
                 if (!syncContext.deviceOwnerInitialized) {
                     deviceOwner.value = deviceOwnerId;
                     expensePayer.value = deviceOwnerId;
@@ -354,9 +421,12 @@ try {
                 }
             }
 
-            if (window.recalculateExpenses) {
-                window.recalculateExpenses();
-            }
+            if (window.recalculateExpenses) window.recalculateExpenses();
+        }, (error) => {
+            if (currentRunId !== syncRunId || !syncContext) return;
+            console.error('Participant sync failed', error);
+            setSyncUi('error', '参加者情報を同期できません', '管理者へ連絡し、Firestoreルールと招待リンクを確認してください。');
+            setShareEnabled(false);
         });
 
 
@@ -369,13 +439,13 @@ try {
         if (currentRunId !== syncRunId) return;
 
         unsubscribeRoom = onSnapshot(roomRef, snapshot => {
-            if (currentRunId !== syncRunId) return;
+            if (currentRunId !== syncRunId || !syncContext) return;
             const members = snapshot.data()?.members || {};
-            const count = Object.keys(members).length;
-            const roleLabel = role === 'owner' ? '作成者' : '参加者';
-            setSyncUi('live', `${roleLabel}として接続済み`, `${count}/2台が登録済み。追加・削除は自動同期されます。`);
+            syncContext.memberCount = Object.keys(members).length;
+            syncContext.roomReady = true;
+            renderLiveSyncState();
         }, () => {
-            setSyncUi('error', '共有ルームを確認できません', 'Firestoreのセキュリティルールを確認してください。');
+            setSyncUi('error', '招待ルームが停止されました', '管理者から新しい招待リンクを受け取ってください。');
         });
 
         unsubscribeExpenses = onSnapshot(expensesCollection, snapshot => {
@@ -385,24 +455,37 @@ try {
                 .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
             emitRemoteExpenses(expenses);
         }, () => {
-            setSyncUi('error', '台帳を同期できません', 'Firestoreのセキュリティルールを確認してください。');
+            setSyncUi('error', '台帳を同期できません', '通信状態、または招待リンクの有効期限を確認してください。端末内の入力は残っています。');
         });
 
         if (currentRunId !== syncRunId) return;
         setShareEnabled(true);
-        await flushPendingActions(tripId);
+        await flushPendingActions(tripId, ledgerToken);
     } catch (error) {
         if (currentRunId !== syncRunId) return;
         const code = String(error?.code || '');
         if (code.includes('auth/operation-not-allowed')) {
-            setSyncUi('error', '匿名認証が無効です', 'Firebase Authenticationで「匿名」を有効にしてください。');
-        } else if (code.includes('permission-denied')) {
-            setSyncUi('error', 'Firestoreルールが未設定です', '指定のセキュリティルールをFirebase Consoleへ貼り付けてください。');
+            setSyncUi('error', '共有機能を利用できません', '管理者へ連絡してください。端末内では引き続き記録できます。');
+        } else if (code.includes('permission-denied') || code.includes('not-found')) {
+            setSyncUi('error', '招待リンクが無効です', '配布が停止されたか、リンクが古い可能性があります。管理者から新しいリンクを受け取ってください。');
         } else {
-            setSyncUi('error', '共有同期を開始できません', 'Firebase設定・Firestore・通信状態を確認してください。');
+            setSyncUi('error', '共有同期を開始できません', '通信状態を確認してください。端末内の入力は残っています。');
         }
+        setIdentityControlLocked(false);
         setShareEnabled(false);
     }
+}
+
+export function stopSyncEngine() {
+    syncRunId += 1;
+    syncContext = null;
+    inviteUrl = '';
+    pendingActions.splice(0, pendingActions.length);
+    setShareEnabled(false);
+    if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
+    if (unsubscribeExpenses) { unsubscribeExpenses(); unsubscribeExpenses = null; }
+    if (unsubscribeParticipants) { unsubscribeParticipants(); unsubscribeParticipants = null; }
+    if (participantHeartbeat) { window.clearInterval(participantHeartbeat); participantHeartbeat = null; }
 }
 
 export async function getDbInstance() {
@@ -453,8 +536,5 @@ export async function listenToTripParticipants(tripId, callback) {
 }
 
 window._initSyncEngine = initSyncEngine;
+window._stopSyncEngine = stopSyncEngine;
 window.listenToTripParticipants = listenToTripParticipants;
-
-
-
-

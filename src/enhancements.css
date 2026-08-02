@@ -1,3 +1,5 @@
+[hidden] { display: none !important; }
+
 .now-card {
     position: relative;
     margin: 0 0 24px;
@@ -364,6 +366,11 @@
     color: #a1a1a1;
 }
 
+.delay-preview.completed {
+    border-color: #434343;
+    color: #777;
+}
+
 .delay-preview.conflict {
     border-color: #ff7e79;
     color: #ff7e79;
@@ -514,6 +521,11 @@
     color: #59d9b0;
 }
 
+.sync-badge.local {
+    border-color: #777;
+    color: #aaa;
+}
+
 .sync-badge.error {
     border-color: #ff7e79;
     color: #ff7e79;
@@ -550,7 +562,7 @@
     border-color: #444;
     background: #2a2a2a;
     color: #777;
-    cursor: wait;
+    cursor: not-allowed;
 }
 
 .sync-room-code {

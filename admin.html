@@ -3,300 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>しおり - ADMIN CONSOLE</title>
-    <!-- Outfit & Noto Sans JP -->
+    <meta name="theme-color" content="#111111">
+    <title>SHIORI STUDIO — 管理者</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #111111;
-            --accent-color: #59d9b0;
-            --border-line: #2d2d2d;
-            --text-sub: #888888;
-            --font-mont: 'Outfit', sans-serif;
-            --font-gothic: 'Noto Sans JP', sans-serif;
-        }
-        body {
-            background-color: var(--bg-color);
-            color: #ffffff;
-            margin: 0;
-            padding: 40px 24px;
-            font-family: var(--font-gothic);
-        }
-        .admin-inner {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        .admin-badge {
-            font-family: var(--font-mont);
-            font-size: 0.65rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            color: var(--accent-color);
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 8px;
-        }
-        .admin-title {
-            font-family: var(--font-mont);
-            font-size: 1.8rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            color: #ffffff;
-            margin-bottom: 8px;
-        }
-        .admin-sub {
-            font-family: var(--font-gothic);
-            font-size: 0.92rem;
-            color: var(--text-sub);
-            font-weight: 700;
-            margin-bottom: 32px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border-line);
-        }
-        .admin-trip-card {
-            background: #1a1a1a;
-            border: 1px solid var(--border-line);
-            padding: 20px;
-            margin-bottom: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .admin-trip-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-        }
-        .admin-trip-title {
-            font-family: var(--font-gothic);
-            font-size: 1.05rem;
-            font-weight: 800;
-            color: #ffffff;
-        }
-        .admin-trip-id-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: var(--font-mont);
-            font-size: 0.72rem;
-            color: var(--text-sub);
-        }
-        .admin-trip-id {
-            background: #242424;
-            padding: 2px 8px;
-            border: 1px solid #333;
-            color: #fff;
-        }
-        .admin-copy-btn {
-            background: #ffffff;
-            color: #000000;
-            border: none;
-            padding: 2px 8px;
-            cursor: pointer;
-            font-weight: 900;
-            font-family: var(--font-mont);
-            font-size: 0.65rem;
-            transition: background 0.2s;
-        }
-        .admin-copy-btn:hover {
-            background: #e0e0e0;
-        }
-        .admin-participants-box {
-            background: #141414;
-            padding: 12px;
-            border: 1px solid #222;
-        }
-        .admin-participants-title {
-            font-family: var(--font-gothic);
-            font-size: 0.78rem;
-            font-weight: 800;
-            color: #888888;
-            margin-bottom: 6px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .admin-participants-list {
-            font-family: var(--font-gothic);
-            font-size: 0.88rem;
-            color: #ffffff;
-            font-weight: 700;
-        }
-        .admin-indicator {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background: #59d9b0;
-            border-radius: 50%;
-            margin-right: 6px;
-            box-shadow: 0 0 8px #59d9b0;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/admin.css">
 </head>
 <body>
-    <div class="admin-inner">
-        <span class="admin-badge">ADMINISTRATION AREA</span>
-        <h1 class="admin-title">ADMIN CONSOLE</h1>
-        <p class="admin-sub">全体の旅程管理と参加者のリアルタイム監視を行います</p>
+    <section id="admin-auth" class="auth-shell" aria-labelledby="auth-title">
+        <div class="auth-card">
+            <p class="eyebrow">SHIORI MANAGEMENT SYSTEM</p>
+            <h1 id="auth-title">ADMIN<br>STUDIO</h1>
+            <p class="auth-copy">旅程を作り、公開し、同行者へ安全に配布する管理者専用ページです。</p>
+            <div id="auth-state" class="auth-state" role="status">管理者アカウントを確認しています…</div>
+            <button id="admin-sign-in" class="button primary wide" type="button" hidden>GOOGLEでログイン</button>
+            <div id="admin-access-help" class="access-help" hidden>
+                <strong>管理者登録が必要です</strong>
+                <p>下のUIDをFirebaseの <code>admins</code> コレクションへドキュメントIDとして登録してください。</p>
+                <div class="copy-field">
+                    <code id="admin-uid">—</code>
+                    <button id="copy-admin-uid" class="button compact" type="button">COPY UID</button>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        <div id="admin-trips-container">
-            <div style="color:var(--text-sub); font-size:0.88rem; padding:12px 0;">読み込み中...</div>
+    <div id="admin-app" class="app-shell" hidden>
+        <header class="topbar">
+            <a class="brand" href="admin.html" aria-label="管理者トップ">
+                <span class="brand-mark">S</span>
+                <span><b>SHIORI</b><small>ADMIN STUDIO</small></span>
+            </a>
+            <div class="topbar-actions">
+                <a class="button ghost compact" href="./" target="_blank" rel="noopener noreferrer">参加者ページ ↗</a>
+                <span id="admin-account" class="account-chip">—</span>
+                <button id="admin-sign-out" class="button compact" type="button">ログアウト</button>
+            </div>
+        </header>
+
+        <div class="admin-layout">
+            <aside class="sidebar" aria-label="管理メニュー">
+                <p class="sidebar-label">WORKSPACE</p>
+                <button class="nav-item active" type="button" data-admin-view="overview"><span>01</span>概要</button>
+                <button class="nav-item" type="button" data-admin-view="editor"><span>02</span>しおり編集</button>
+                <button class="nav-item" type="button" data-admin-view="distribution"><span>03</span>配布先管理</button>
+                <div class="sidebar-note">
+                    <b>公開について</b>
+                    <p>「下書き保存」では参加者ページは変わりません。「公開」を押した時だけ更新されます。</p>
+                </div>
+            </aside>
+
+            <main class="workspace">
+                <section id="view-overview" class="admin-view" data-view="overview">
+                    <div class="view-heading">
+                        <div><p class="eyebrow">CONTROL CENTER</p><h2>旅行を管理</h2></div>
+                        <button id="overview-new-trip" class="button primary" type="button">＋ 新しい旅行</button>
+                    </div>
+                    <div class="metric-grid" aria-label="管理状況">
+                        <article><span>TRIPS</span><strong id="metric-trips">0</strong><small>登録された旅行</small></article>
+                        <article><span>PUBLISHED</span><strong id="metric-published">0</strong><small>公開中</small></article>
+                        <article><span>INVITES</span><strong id="metric-invites">0</strong><small>有効な配布先</small></article>
+                    </div>
+                    <div class="section-heading"><h3>TRIP LIBRARY</h3><span id="overview-updated">—</span></div>
+                    <div id="admin-trip-list" class="trip-grid" aria-live="polite"></div>
+                </section>
+
+                <section id="view-editor" class="admin-view" data-view="editor" hidden>
+                    <div class="view-heading editor-heading">
+                        <div><p class="eyebrow">ITINERARY BUILDER</p><h2>しおり・旅程を編集</h2></div>
+                        <div class="button-group">
+                            <label class="button ghost" for="import-trip-file">JSON読込</label>
+                            <input id="import-trip-file" type="file" accept="application/json,.json" hidden>
+                            <button id="download-trip" class="button ghost" type="button">JSON書出</button>
+                            <button id="save-draft" class="button" type="button">下書き保存</button>
+                            <button id="publish-trip" class="button primary" type="button">参加者へ公開</button>
+                        </div>
+                    </div>
+
+                    <div id="editor-errors" class="error-panel" role="alert" hidden></div>
+                    <div class="editor-grid">
+                        <section class="panel basics-panel">
+                            <div class="panel-title"><span>01</span><h3>旅行の基本情報</h3></div>
+                            <div class="form-grid">
+                                <label>しおりID<input id="trip-id" autocomplete="off" placeholder="shikoku2026"></label>
+                                <label>タイトル<input id="trip-title" autocomplete="off"></label>
+                                <label>サブタイトル<input id="trip-subtitle" autocomplete="off"></label>
+                                <label>キャッチコピー<input id="trip-catchphrase" autocomplete="off"></label>
+                                <label>開始日<input id="trip-start-date" type="date"></label>
+                                <label>終了日<input id="trip-end-date" type="date"></label>
+                            </div>
+                        </section>
+
+                        <section class="panel itinerary-panel">
+                            <div class="panel-title responsive-title">
+                                <div><span>02</span><h3>日程とカード</h3></div>
+                                <div class="day-actions">
+                                    <select id="editor-day-select" aria-label="編集する日"></select>
+                                    <button id="add-day" class="button compact" type="button">＋ DAY</button>
+                                    <button id="add-card" class="button primary compact" type="button">＋ カード</button>
+                                </div>
+                            </div>
+                            <label class="day-label-field">日付ラベル<input id="editor-day-label" autocomplete="off" placeholder="8/30 (SUN) KAGAWA"></label>
+                            <div id="editor-card-list" class="editor-card-list"></div>
+                        </section>
+                    </div>
+                </section>
+
+                <section id="view-distribution" class="admin-view" data-view="distribution" hidden>
+                    <div class="view-heading">
+                        <div><p class="eyebrow">DELIVERY CONTROL</p><h2>配布先・参加者を管理</h2></div>
+                    </div>
+                    <section class="panel distribution-create">
+                        <div class="panel-title"><span>01</span><h3>新しい配布先</h3></div>
+                        <div class="distribution-form">
+                            <label>旅行<select id="distribution-trip"></select></label>
+                            <label>配布先名<input id="distribution-label" maxlength="40" placeholder="蒼・こうたろう用"></label>
+                            <button id="create-distribution" class="button primary" type="button">招待リンクを発行</button>
+                        </div>
+                        <p class="field-help">招待リンクごとに独立した参加者・割り勘ルームを作成します。定員は2名です。</p>
+                    </section>
+                    <div class="section-heading"><h3>ACTIVE DISTRIBUTIONS</h3><span id="distribution-count">0件</span></div>
+                    <div id="distribution-list" class="distribution-list" aria-live="polite"></div>
+                </section>
+            </main>
         </div>
     </div>
 
-    <!-- Script imports -->
-    <script type="module">
-        import { listenToTripParticipants } from './src/firebase-sync.js';
+    <dialog id="card-dialog" class="card-dialog">
+        <form id="card-form" method="dialog">
+            <div class="dialog-heading">
+                <div><p class="eyebrow">SCHEDULE CARD</p><h2 id="card-dialog-title">カードを編集</h2></div>
+                <button id="close-card-dialog" class="icon-button" type="button" aria-label="閉じる">×</button>
+            </div>
+            <input id="card-index" type="hidden">
+            <div class="form-grid card-form-grid">
+                <label>時刻<input id="card-time" placeholder="09:00 - 10:00 / OPTIONAL"></label>
+                <label>バッジ<input id="card-badge" placeholder="GOURMET"></label>
+                <label class="span-2">タイトル<input id="card-title" required></label>
+                <label class="span-2">説明<textarea id="card-desc" rows="4" required></textarea></label>
+                <label>緯度<input id="card-lat" inputmode="decimal"></label>
+                <label>経度<input id="card-lon" inputmode="decimal"></label>
+                <label class="span-2">Google Map検索語<input id="card-map-query"></label>
+                <label>公式URL<input id="card-official" type="url"></label>
+                <label>公式ボタン名<input id="card-official-label"></label>
+                <label>食べログURL<input id="card-tabelog" type="url"></label>
+                <label>じゃらんURL<input id="card-jalan" type="url"></label>
+                <label>画像ファイル名<input id="card-image" placeholder="example.png"></label>
+                <div class="check-field span-2">
+                    <label><input id="card-map-enabled" type="checkbox" checked> MAPボタンを表示</label>
+                    <label><input id="card-expense" type="checkbox"> 割り勘ボタンを表示</label>
+                    <label><input id="card-fixed" type="checkbox"> 開始時刻を固定</label>
+                    <label><input id="card-rigid" type="checkbox"> 所要時間を短縮不可</label>
+                </div>
+            </div>
+            <div class="dialog-actions">
+                <div>
+                    <button id="delete-card" class="button danger" type="button">削除</button>
+                    <button id="move-card-up" class="button compact" type="button">↑ 上へ</button>
+                    <button id="move-card-down" class="button compact" type="button">↓ 下へ</button>
+                </div>
+                <button id="save-card" class="button primary" type="submit">カードを保存</button>
+            </div>
+        </form>
+    </dialog>
 
-        let adminUnsubscribes = [];
-
-        function loadAdminDashboard() {
-            const container = document.getElementById('admin-trips-container');
-
-            // Clean old unsubscribes
-            adminUnsubscribes.forEach(unsub => {
-                if (typeof unsub === 'function') unsub();
-            });
-            adminUnsubscribes = [];
-
-            fetch('data/trips.json')
-                .then(res => res.json())
-                .then(trips => {
-                    const promises = trips.filter(t => /^[A-Za-z0-9_-]+$/.test(String(t.id || ''))).map(t => {
-                        return fetch(`data/${t.id}.json`)
-                            .then(res => {
-                                if (!res.ok) throw new Error("Not Found");
-                                return res.json();
-                            })
-                            .then(data => ({ id: t.id, title: data.title, date: `${data.startDate} - ${data.endDate}` }))
-                            .catch(() => ({ id: t.id, title: `ID: ${t.id}`, date: '--' }));
-                    });
-
-                    return Promise.all(promises);
-                })
-                .then(tripsData => {
-                    container.innerHTML = '';
-
-                    tripsData.forEach(t => {
-                        const card = document.createElement('div');
-                        card.className = 'admin-trip-card';
-
-                        card.innerHTML = `
-                            <div class="admin-trip-header">
-                                <div>
-                                    <div class="admin-trip-title">${escapeHtml(t.title)}</div>
-                                    <div style="font-size:0.75rem; color:var(--text-sub); margin-top:2px;">${escapeHtml(t.date)}</div>
-                                </div>
-                                <div class="admin-trip-id-row">
-                                    <span>ID:</span>
-                                    <span class="admin-trip-id">${escapeHtml(t.id)}</span>
-                                    <button class="admin-copy-btn" id="btn-copy-${t.id}">COPY ID</button>
-                                    <button class="admin-copy-btn" id="btn-link-${t.id}" style="background:#59d9b0; color:#000;">COPY INVITE 🔗</button>
-                                </div>
-                            </div>
-                            <div class="admin-participants-box">
-                                <div class="admin-participants-title">
-                                    <span>👥 PARTICIPANTS</span>
-                                    <span id="admin-count-${t.id}">0 ACTIVE</span>
-                                </div>
-                                <div id="admin-list-${t.id}" class="admin-participants-list">
-                                    <span style="color:#666;">監視接続中...</span>
-                                </div>
-                            </div>
-                        `;
-
-                        container.appendChild(card);
-
-                        // Attach COPY event listener
-                        const copyBtn = card.querySelector(`#btn-copy-${t.id}`);
-                        copyBtn.addEventListener('click', () => {
-                            copyTextToClipboard(t.id, copyBtn);
-                        });
-
-                        const linkBtn = card.querySelector(`#btn-link-${t.id}`);
-                        linkBtn.addEventListener('click', () => {
-                            copyTextToClipboard(getOrCreateShareUrl(t.id), linkBtn);
-                        });
-
-                        // Start real-time monitoring for this trip
-                        listenToTripParticipants(t.id, (names) => {
-                            const listEl = document.getElementById(`admin-list-${t.id}`);
-                            const countEl = document.getElementById(`admin-count-${t.id}`);
-
-                            if (listEl && countEl) {
-                                countEl.textContent = `${names.length} ACTIVE`;
-                                if (names.length === 0) {
-                                    listEl.innerHTML = '<span style="color:#666; font-style:italic;">参加メンバーはいません</span>';
-                                } else {
-                                    listEl.innerHTML = names.map(name => `
-                                        <span style="margin-right:12px; display:inline-flex; align-items:center;">
-                                            <span class="admin-indicator"></span>${escapeHtml(name)}
-                                        </span>
-                                    `).join('');
-                                }
-                            }
-                        }).then(unsub => {
-                            if (typeof unsub === 'function') {
-                                adminUnsubscribes.push(unsub);
-                            }
-                        });
-                    });
-                })
-                .catch(err => {
-                    container.innerHTML = '<div style="color:#ff4747; font-size:0.88rem; padding:12px 0;">ダッシュボードの読み込みに失敗しました。</div>';
-                    console.error(err);
-                });
-        }
-
-        function escapeHtml(value) {
-            return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-
-        function randomToken(byteLength = 32) {
-            const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
-            let binary = '';
-            bytes.forEach(byte => { binary += String.fromCharCode(byte); });
-            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-        }
-
-        function getOrCreateShareUrl(tripId) {
-            const storageKey = `admin-share-${tripId}`;
-            let credentials = null;
-            try {
-                credentials = JSON.parse(localStorage.getItem(storageKey) || 'null');
-            } catch (error) {
-                credentials = null;
-            }
-
-            const validToken = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || ''));
-            if (!validToken(credentials?.ledger) || !validToken(credentials?.invite)) {
-                credentials = { ledger: randomToken(), invite: randomToken() };
-                localStorage.setItem(storageKey, JSON.stringify(credentials));
-            }
-
-            const shareUrl = new URL('./', window.location.href);
-            shareUrl.searchParams.set('trip', tripId);
-            shareUrl.searchParams.set('ledger', credentials.ledger);
-            shareUrl.searchParams.set('invite', credentials.invite);
-            return shareUrl.toString();
-        }
-
-        function copyTextToClipboard(text, btnEl) {
-            navigator.clipboard.writeText(text).then(() => {
-                const oldText = btnEl.textContent;
-                btnEl.textContent = 'COPIED!';
-                setTimeout(() => {
-                    btnEl.textContent = oldText;
-                }, 1500);
-            }).catch(() => {
-                prompt("旅程IDをコピーしてください：", text);
-            });
-        }
-
-        // Load on start
-        loadAdminDashboard();
-    </script>
+    <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="src/admin.js"></script>
 </body>
 </html>

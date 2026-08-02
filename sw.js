@@ -1,8 +1,10 @@
-const CACHE_NAME = 'shikoku-drive-pwa-v33';
+const CACHE_NAME = 'shikoku-drive-pwa-v39';
 const APP_SHELL = [
   './',
   './index.html',
   './admin.html',
+  './src/admin.css',
+  './src/admin.js',
   './data/trips.json',
   './data/shikoku2026.json',
   './data/hokkaido2027.json',
@@ -111,4 +113,3 @@ self.addEventListener('fetch', event => {
     })
   );
 });
-

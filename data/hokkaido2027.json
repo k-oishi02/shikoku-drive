@@ -60,7 +60,9 @@
         "badge": "FLIGHT",
         "desc": "新千歳空港(CTS)に到着！JR快速エアポートで札幌駅へ移動。",
         "lat": 42.7875,
-        "lon": 141.6792
+        "lon": 141.6792,
+        "fixed": true,
+        "rigid": true
       },
       {
         "time": "12:30 - 13:30",

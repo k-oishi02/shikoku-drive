@@ -517,7 +517,7 @@
                 <div class="j-hero-ja" id="hero-catchphrase">感動の力で、二人の思い出の明日を変える。</div>
                 <div class="j-hero-meta">
                     <span id="hero-date">DATE: --</span>
-                    <span id="hero-participants">MEMBERS: Loading...</span>
+                    <span id="hero-participants" aria-live="polite">MEMBERS: 接続準備中…</span>
                 </div>
 
                 <!-- Jillion Style Countdown Widget -->
@@ -702,11 +702,11 @@
                             <span id="sync-badge" class="sync-badge">CONNECTING</span>
                         </div>
                         <p id="sync-status" class="sync-status" aria-live="polite">Firebaseに匿名接続しています。</p>
-                        <div class="share-room-actions">
+                        <div id="share-room-actions" class="share-room-actions" hidden>
                             <button id="share-link-button" type="button" onclick="copyLedgerInviteLink()" disabled>招待リンクをコピー</button>
                             <span id="sync-room-code" class="sync-room-code">ROOM: ------</span>
                         </div>
-                        <p class="sync-note">この招待リンクを相手の端末で一度だけ開くと、以後は二人の入力がリアルタイム同期されます。</p>
+                        <p id="sync-note" class="sync-note" hidden>招待リンクを相手の端末で開くと、二人の入力がリアルタイム同期されます。</p>
                     </div>
                     <div class="expense-head">
                         <div>
@@ -800,6 +800,7 @@
         let allRouteBounds = null;
         let TRIP_ROUTES = {};
         let countdownInterval = null;
+        let tripLoadRunId = 0;
 
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -827,6 +828,88 @@
 
         function isValidDataKey(value) {
             return DATA_KEY_PATTERN.test(String(value || ''));
+        }
+
+        const TRIP_ACCESS_KEY = 'participant-trip-access-v1';
+        const PUBLISHED_TRIP_CACHE_PREFIX = 'published-trip-cache-v1:';
+        const INVITE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+
+        function readStoredObject(key) {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(key) || '{}');
+                return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function rememberTripAccessFromUrl(tripId) {
+            if (!isValidDataKey(tripId)) return;
+            const params = new URLSearchParams(window.location.search);
+            const ledger = params.get('ledger');
+            const invite = params.get('invite');
+            if (!INVITE_TOKEN_PATTERN.test(String(ledger || '')) || !INVITE_TOKEN_PATTERN.test(String(invite || ''))) return;
+            const access = readStoredObject(TRIP_ACCESS_KEY);
+            access[tripId] = { ledger, invite };
+            try { localStorage.setItem(TRIP_ACCESS_KEY, JSON.stringify(access)); } catch (error) {}
+        }
+
+        function buildTripHref(tripId) {
+            const params = new URLSearchParams({ trip: String(tripId || '') });
+            const saved = readStoredObject(TRIP_ACCESS_KEY)[tripId];
+            if (INVITE_TOKEN_PATTERN.test(String(saved?.ledger || '')) && INVITE_TOKEN_PATTERN.test(String(saved?.invite || ''))) {
+                params.set('ledger', saved.ledger);
+                params.set('invite', saved.invite);
+            }
+            return `?${params.toString()}`;
+        }
+
+        function tokyoDateKey(date = new Date()) {
+            return new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(date);
+        }
+
+        function validTripConfig(value, tripId) {
+            return value?.tripId === tripId && value?.days && typeof value.days === 'object';
+        }
+
+        async function fetchTripConfig(tripId) {
+            if (!isValidDataKey(tripId)) throw new Error('Invalid trip ID');
+            const documentUrl = `https://firestore.googleapis.com/v1/projects/shikoku-drive/databases/(default)/documents/publishedTrips/${encodeURIComponent(tripId)}`;
+            let cloudUnavailable = false;
+            try {
+                const cloudResponse = await fetch(documentUrl, { cache: 'no-store' });
+                if (cloudResponse.ok) {
+                    const documentData = await cloudResponse.json();
+                    const fields = documentData?.fields || {};
+                    const isPublished = fields.published?.booleanValue === true;
+                    const payloadJson = fields.payloadJson?.stringValue;
+                    if (isPublished && payloadJson) {
+                        const cloudTrip = JSON.parse(payloadJson);
+                        if (validTripConfig(cloudTrip, tripId)) {
+                            try {
+                                localStorage.setItem(`${PUBLISHED_TRIP_CACHE_PREFIX}${tripId}`, JSON.stringify(cloudTrip));
+                            } catch (error) {}
+                            return cloudTrip;
+                        }
+                    }
+                } else {
+                    cloudUnavailable = cloudResponse.status >= 500;
+                }
+            } catch (error) {
+                cloudUnavailable = true;
+                console.info('Published trip is temporarily unavailable.', error);
+            }
+            if (cloudUnavailable) {
+                try {
+                    const cachedTrip = JSON.parse(localStorage.getItem(`${PUBLISHED_TRIP_CACHE_PREFIX}${tripId}`) || 'null');
+                    if (validTripConfig(cachedTrip, tripId)) return cachedTrip;
+                } catch (error) {}
+            }
+            const staticResponse = await fetch(`data/${tripId}.json`, { cache: 'no-store' });
+            if (!staticResponse.ok) throw new Error(`Trip data request failed: ${staticResponse.status}`);
+            return staticResponse.json();
         }
 
         function sortDayKeys(keys) {
@@ -869,6 +952,10 @@
             const paypayIconImg = document.getElementById('paypay-app-icon-img');
             if (paypayIconImg) paypayIconImg.src = BASE64_ICONS.paypay;
 
+            if (!window.appRouterPopstateBound) {
+                window.appRouterPopstateBound = true;
+                window.addEventListener('popstate', initAppRouter);
+            }
             initAppRouter();
             initPwaUpdateManager();
         });
@@ -878,6 +965,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const rawTripIdParam = urlParams.get('trip');
             const tripIdParam = isValidDataKey(rawTripIdParam) ? rawTripIdParam : null;
+            if (tripIdParam) rememberTripAccessFromUrl(tripIdParam);
 
             if (!nickname) {
                 // Show onboarding welcome screen (ask for nickname only)
@@ -900,6 +988,7 @@
                 loadShioriData(tripIdParam);
             } else {
                 // Show Portal (Trip Shelf)
+                pauseTripRuntime();
                 document.getElementById('portal-overlay').classList.add('active');
                 document.getElementById('shiori-content').style.display = 'none';
                 renderPortalDashboard();
@@ -928,7 +1017,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const rawTripIdParam = urlParams.get('trip');
             const tripIdParam = isValidDataKey(rawTripIdParam) ? rawTripIdParam : null;
-            const initialTrips = Array.from(new Set(['shikoku2026', tripIdParam].filter(isValidDataKey)));
+            const initialTrips = [tripIdParam || 'shikoku2026'].filter(isValidDataKey);
             localStorage.setItem('joined_trips', JSON.stringify(initialTrips));
 
             window.location.reload();
@@ -950,15 +1039,11 @@
             if (joined.length === 0) joined = ['shikoku2026'];
             localStorage.setItem('joined_trips', JSON.stringify(joined));
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = tokyoDateKey();
 
             // Fetch details for all joined trips in parallel
             const promises = joined.map(tripId => {
-                return fetch(`data/${tripId}.json`)
-                    .then(res => {
-                        if (!res.ok) throw new Error("Not Found");
-                        return res.json();
-                    })
+                return fetchTripConfig(tripId)
                     .then(data => {
                         const isPast = data.endDate ? (data.endDate < todayStr) : false;
                         return {
@@ -1012,7 +1097,7 @@
             }
 
             container.innerHTML = filtered.map(t => `
-                <a href="?trip=${escapeHtml(encodeURIComponent(String(t.id || '')))}" class="portal-card">
+                <a href="${escapeHtml(buildTripHref(t.id))}" class="portal-card">
                     <div class="portal-card-title">${escapeHtml(t.title)}</div>
                     <div class="portal-card-meta">${escapeHtml(t.subtitle ? t.subtitle + ' — ' : '')}${escapeHtml(t.date)}</div>
                     <div class="portal-card-arrow">${t.isPast ? 'MEMORIES →' : 'OPEN →'}</div>
@@ -1046,11 +1131,7 @@
 
             errorEl.style.display = 'none';
 
-            fetch(`data/${newId}.json`)
-                .then(res => {
-                    if (!res.ok) throw new Error("Not Found");
-                    return res.json();
-                })
+            fetchTripConfig(newId)
                 .then(data => {
                     addJoinedTrip(newId);
                     hideAddTripInput();
@@ -1067,8 +1148,20 @@
                 localStorage.removeItem('user_nickname');
                 localStorage.removeItem('trip_id');
                 localStorage.removeItem('joined_trips');
+                localStorage.removeItem(TRIP_ACCESS_KEY);
                 window.location.reload();
             }
+        }
+
+        function pauseTripRuntime() {
+            if (countdownInterval) { window.clearInterval(countdownInterval); countdownInterval = null; }
+            if (weatherRefreshInterval) { window.clearInterval(weatherRefreshInterval); weatherRefreshInterval = null; }
+            if (window.nowModeInterval) { window.clearInterval(window.nowModeInterval); window.nowModeInterval = null; }
+            tripLoadRunId += 1;
+            window._stopSyncEngine?.();
+            window.currentTripId = '';
+            window.currentTripData = null;
+            currentTripData = null;
         }
 
         function backToPortal() {
@@ -1080,13 +1173,14 @@
 
         function loadShioriData(tripId) {
             if (!isValidDataKey(tripId)) return;
+            const currentLoadId = ++tripLoadRunId;
             window.currentTripId = tripId;
-            fetch(`data/${tripId}.json`)
-                .then(res => {
-                    if (!res.ok) throw new Error(`Trip data request failed: ${res.status}`);
-                    return res.json();
-                }).then(data => {
+            fetchTripConfig(tripId)
+                .then(data => {
+                    if (currentLoadId !== tripLoadRunId || window.currentTripId !== tripId) return;
                     currentTripData = data;
+                    window.currentTripData = data;
+                    window.currentTripTitle = data.subtitle || data.title || '旅行';
                     window.currentTripDate = data.startDate;
                     window.currentTripEndDate = data.endDate;
                     buildShioriUI(data);
@@ -1095,9 +1189,7 @@
                     initOverviewMap();
                     const firstDayKey = sortDayKeys(Object.keys(data.days || {}))[0] || 'day1';
                     filterOverviewMap(firstDayKey, document.querySelector(`[data-map-filter="${firstDayKey}"]`));
-                    moveFatherBeachCard();
-                    moveDay1HotelCard();
-                    moveTowelMuseumBeforeLunch();
+
                     setupDaySwipe();
 
                     if (countdownInterval) {
@@ -1127,7 +1219,7 @@
             // 1. Hero visual
             document.getElementById('hero-title').textContent = data.title;
             document.getElementById('hero-catchphrase').textContent = data.catchphrase;
-            document.getElementById('hero-date').innerHTML = `DATE: ${data.startDate.replace(/-/g, '.').slice(5)} — ${data.endDate.replace(/-/g, '.').slice(5)}`;
+            document.getElementById('hero-date').textContent = `DATE: ${data.startDate.replace(/-/g, '.').slice(5)} — ${data.endDate.replace(/-/g, '.').slice(5)}`;
 
             // 2. Weather tabs
             const wNav = document.getElementById('weather-nav-container');
@@ -1231,7 +1323,7 @@
                     const idAttr = card.id ? `id="${escapeHtml(card.id)}"` : '';
 
                     cardsHtml += `
-                        <div class="j-card" ${idAttr} data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
+                        <div class="j-card" ${idAttr} data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}" data-fixed="${card.fixed === true ? 'true' : ''}" data-rigid="${card.rigid === true ? 'true' : ''}">
                             <span class="j-card-time">${escapeHtml(card.time)}</span>
                             <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span>${escapeHtml(card.title)}</div>
                             <div class="j-card-desc">${escapeHtml(card.desc)}</div>
@@ -1640,23 +1732,6 @@
             btnEl?.blur();
         }
 
-        function moveFatherBeachCard() {
-            const fatherBeachCard = document.getElementById('father-beach-card');
-            const driveCard = document.getElementById('matsuyama-drive-card');
-            if (fatherBeachCard && driveCard) driveCard.parentNode.insertBefore(fatherBeachCard, driveCard);
-        }
-
-        function moveDay1HotelCard() {
-            const hotelCard = document.getElementById('day1-hotel-card');
-            const pokemonCard = document.getElementById('pokemon-center-card');
-            if (hotelCard && pokemonCard) pokemonCard.parentNode.insertBefore(hotelCard, pokemonCard);
-        }
-
-        function moveTowelMuseumBeforeLunch() {
-            const towelCard = document.getElementById('towel-museum-card');
-            const lunchCard = document.getElementById('day3-lunch-card');
-            if (towelCard && lunchCard) lunchCard.parentNode.insertBefore(towelCard, lunchCard);
-        }
 
         function runCountdown() {
             if (!currentTripData) return;
@@ -1767,8 +1842,3 @@
     <script type="module" src="src/firebase-sync.js"></script>
 </body>
 </html>
-
-
-
-
-
