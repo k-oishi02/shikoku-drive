@@ -706,7 +706,7 @@
                             <button id="share-link-button" type="button" onclick="copyLedgerInviteLink()" disabled>招待リンクをコピー</button>
                             <span id="sync-room-code" class="sync-room-code">ROOM: ------</span>
                         </div>
-                        <p id="sync-note" class="sync-note" hidden>招待リンクを相手の端末で開くと、二人の入力がリアルタイム同期されます。</p>
+                        <p id="sync-note" class="sync-note" hidden>管理者の登録リンクを各端末で開くと、参加者全員の入力がリアルタイム同期されます。</p>
                     </div>
                     <div class="expense-head">
                         <div>
@@ -759,11 +759,11 @@
                     </form>
                     <div class="expense-summary" aria-live="polite">
                         <div><span>TOTAL</span><strong id="expense-total">¥0</strong></div>
-                        <div><span>1人分</span><strong id="expense-share">¥0</strong></div>
+                        <div><span>1人分（目安）</span><strong id="expense-share">¥0</strong></div>
                         <div class="expense-settlement"><span>精算</span><strong id="expense-settlement">まだ支出はありません</strong></div>
                     </div>
                     <ul id="expense-list" class="expense-list" aria-label="支出一覧"></ul>
-                    <p class="local-save-note">入力は端末にも一時保存し、共有ルーム接続時はFirebaseで二人の端末へ同期します。</p>
+                    <p class="local-save-note">入力は端末にも一時保存し、共有ルーム接続時はFirebaseで登録済みの参加者全員へ同期します。</p>
                 </div>
 
                 <!-- PAYPAY NATIVE APP + WEB LINK -->
@@ -831,6 +831,7 @@
         }
 
         const TRIP_ACCESS_KEY = 'participant-trip-access-v1';
+        const PENDING_ACCESS_ID_KEY = 'participant-pending-access-id-v1';
         const MANAGED_TRIP_CACHE_PREFIX = 'managed-trip-cache-v2:';
         const LEDGER_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
         const LEGACY_INVITE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
@@ -852,6 +853,21 @@
         function isValidAccessSecret(value) {
             const text = String(value || '');
             return ACCESS_ID_PATTERN.test(text) || LEGACY_INVITE_TOKEN_PATTERN.test(text);
+        }
+
+        function capturePendingAccessId() {
+            const saved = normalizeAccessId(sessionStorage.getItem(PENDING_ACCESS_ID_KEY));
+            const hashText = String(window.location.hash || '').replace(/^#/, '');
+            const hashParams = new URLSearchParams(hashText);
+            const linked = normalizeAccessId(hashParams.get('join'));
+            if (ACCESS_ID_PATTERN.test(linked)) sessionStorage.setItem(PENDING_ACCESS_ID_KEY, linked);
+            if (hashParams.has('join')) {
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.hash = '';
+                history.replaceState(null, '', `${cleanUrl.pathname}${cleanUrl.search}`);
+            }
+            if (ACCESS_ID_PATTERN.test(linked)) return linked;
+            return ACCESS_ID_PATTERN.test(saved) ? saved : '';
         }
 
         function storedTripAccess(tripId) {
@@ -1000,6 +1016,7 @@
 
         function initAppRouter() {
             const nickname = localStorage.getItem('user_nickname');
+            const pendingAccessId = capturePendingAccessId();
             const urlParams = new URLSearchParams(window.location.search);
             const rawTripIdParam = urlParams.get('trip');
             const tripIdParam = isValidDataKey(rawTripIdParam) ? rawTripIdParam : null;
@@ -1014,6 +1031,11 @@
             }
 
             document.getElementById('welcome-overlay').classList.remove('active');
+
+            if (pendingAccessId) {
+                beginAutomaticAccessRegistration(pendingAccessId);
+                return;
+            }
 
             if (tripIdParam && storedTripAccess(tripIdParam)) {
                 addJoinedTrip(tripIdParam);
@@ -1030,6 +1052,8 @@
             }
         }
 
+        let automaticAccessId = '';
+
         function addJoinedTrip(tripId) {
             if (!isValidDataKey(tripId)) return;
             let joined = [];
@@ -1042,6 +1066,51 @@
                 localStorage.setItem('joined_trips', JSON.stringify(joined));
             }
         }
+        function accessRegistrationErrorMessage(error) {
+            return String(error?.code || '').includes('access/full')
+                ? 'この配布先は定員に達しています。管理者へ連絡してください。'
+                : '配布IDが無効か、管理者によって停止されています。';
+        }
+
+        async function redeemAndStoreAccess(accessId) {
+            if (typeof window._redeemAccessId !== 'function') throw new Error('配布ID確認サービスを準備しています。少し待って再度お試しください。');
+            const result = await window._redeemAccessId(accessId);
+            saveTripAccess(result.tripId, {
+                ledger: result.ledgerToken,
+                invite: accessId,
+                grantId: result.grantId
+            });
+            localStorage.setItem(`${MANAGED_TRIP_CACHE_PREFIX}${result.tripId}:${result.grantId}`, JSON.stringify(result.trip));
+            addJoinedTrip(result.tripId);
+            return result;
+        }
+
+        async function beginAutomaticAccessRegistration(accessId) {
+            if (automaticAccessId === accessId) return;
+            automaticAccessId = accessId;
+            pauseTripRuntime();
+            document.getElementById('portal-overlay').classList.add('active');
+            document.getElementById('shiori-content').style.display = 'none';
+            document.getElementById('portal-cards').innerHTML = '<div style="color:var(--text-sub); font-size:0.88rem; padding:12px 0;">登録リンクを確認中…</div>';
+            try {
+                const result = await redeemAndStoreAccess(accessId);
+                sessionStorage.removeItem(PENDING_ACCESS_ID_KEY);
+                automaticAccessId = '';
+                history.replaceState(null, '', buildTripHref(result.tripId));
+                initAppRouter();
+            } catch (error) {
+                sessionStorage.removeItem(PENDING_ACCESS_ID_KEY);
+                automaticAccessId = '';
+                history.replaceState(null, '', './');
+                renderPortalDashboard();
+                showAddTripInput();
+                document.getElementById('new-trip-id').value = accessId;
+                const errorEl = document.getElementById('add-trip-error');
+                errorEl.textContent = accessRegistrationErrorMessage(error);
+                errorEl.style.display = 'block';
+            }
+        }
+
         function handleOnboardingSubmit(e) {
             e.preventDefault();
             const nickname = document.getElementById('welcome-nickname').value.trim();
@@ -1186,22 +1255,12 @@
             submitButton.disabled = true;
             submitButton.textContent = '確認中…';
             try {
-                if (typeof window._redeemAccessId !== 'function') throw new Error('配布ID確認サービスを準備しています。少し待って再度お試しください。');
-                const result = await window._redeemAccessId(accessId);
-                saveTripAccess(result.tripId, {
-                    ledger: result.ledgerToken,
-                    invite: accessId,
-                    grantId: result.grantId
-                });
-                localStorage.setItem(`${MANAGED_TRIP_CACHE_PREFIX}${result.tripId}:${result.grantId}`, JSON.stringify(result.trip));
-                addJoinedTrip(result.tripId);
+                const result = await redeemAndStoreAccess(accessId);
                 hideAddTripInput();
                 history.pushState(null, '', buildTripHref(result.tripId));
                 initAppRouter();
             } catch (error) {
-                errorEl.textContent = String(error?.code || '').includes('access/full')
-                    ? 'この配布IDはすでに2名が登録済みです。'
-                    : '配布IDが無効か、管理者によって停止されています。';
+                errorEl.textContent = accessRegistrationErrorMessage(error);
                 errorEl.style.display = 'block';
             } finally {
                 submitButton.disabled = false;
@@ -1215,6 +1274,7 @@
                 localStorage.removeItem('trip_id');
                 localStorage.removeItem('joined_trips');
                 localStorage.removeItem(TRIP_ACCESS_KEY);
+                sessionStorage.removeItem(PENDING_ACCESS_ID_KEY);
                 Object.keys(localStorage).filter(key => key.startsWith(MANAGED_TRIP_CACHE_PREFIX)).forEach(key => localStorage.removeItem(key));
                 window.location.reload();
             }

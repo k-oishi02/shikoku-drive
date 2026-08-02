@@ -118,10 +118,11 @@
                         <div class="panel-title"><span>01</span><h3>新しい配布先</h3></div>
                         <div class="distribution-form">
                             <label>旅行<select id="distribution-trip"></select></label>
-                            <label>配布先名<input id="distribution-label" maxlength="40" placeholder="蒼・こうたろう用"></label>
+                            <label>配布先名<input id="distribution-label" maxlength="40" placeholder="友人グループ用"></label>
+                            <label class="distribution-capacity-field">定員<input id="distribution-capacity" type="number" min="1" max="50" step="1" value="2" inputmode="numeric"></label>
                             <button id="create-distribution" class="button primary" type="button">配布IDを発行</button>
                         </div>
-                        <p class="field-help">参加者にはアプリURLだけを渡し、ここで発行した配布IDをADDへ入力してもらいます。IDごとに独立した参加者・割り勘ルームを作成します。定員は2名です。</p>
+                        <p class="field-help">定員は1〜50名で設定できます。参加者は登録リンクを開くだけで追加され、配布IDをADDへ手入力する方法も使えます。配布先ごとに独立した参加者・割り勘ルームを作成します。</p>
                     </section>
                     <div class="section-heading"><h3>ACTIVE DISTRIBUTIONS</h3><span id="distribution-count">0件</span></div>
                     <div id="distribution-list" class="distribution-list" aria-live="polite"></div>

@@ -558,14 +558,61 @@
         }).format(Math.round(value || 0));
     }
 
+    function expenseMembers() {
+        const fallback = [{ id: 'aoi', name: 'メンバー1' }, { id: 'kotaro', name: 'メンバー2' }];
+        const source = Array.isArray(window.currentTripMembers) && window.currentTripMembers.length
+            ? window.currentTripMembers
+            : fallback;
+        const seen = new Set();
+        return source.map(member => ({
+            id: String(member?.id || '').slice(0, 128),
+            name: String(member?.name || member?.id || '参加者').slice(0, 40)
+        })).filter(member => member.id && !seen.has(member.id) && seen.add(member.id));
+    }
+
+    function resolveExpensePayerId(payer, members) {
+        const id = String(payer || '');
+        if (members.some(member => member.id === id)) return id;
+        if (id === 'aoi') return members[0]?.id || id;
+        if (id === 'kotaro') return members[1]?.id || members[0]?.id || id;
+        return id || members[0]?.id || 'aoi';
+    }
+
+    function expenseMemberName(id, members = expenseMembers()) {
+        return members.find(member => member.id === id)?.name || window.memberNames?.[id] || id || '参加者';
+    }
+
+    function buildExpenseSettlements(members, paidBy, total) {
+        const creditors = [];
+        const debtors = [];
+        const baseShare = members.length ? Math.floor(total / members.length) : 0;
+        const remainder = members.length ? Math.round(total - (baseShare * members.length)) : 0;
+        members.forEach((member, index) => {
+            const targetShare = baseShare + (index < remainder ? 1 : 0);
+            const balance = Number(paidBy.get(member.id) || 0) - targetShare;
+            if (balance > 0.5) creditors.push({ ...member, amount: balance });
+            if (balance < -0.5) debtors.push({ ...member, amount: -balance });
+        });
+        const transfers = [];
+        let debtorIndex = 0;
+        let creditorIndex = 0;
+        while (debtorIndex < debtors.length && creditorIndex < creditors.length) {
+            const debtor = debtors[debtorIndex];
+            const creditor = creditors[creditorIndex];
+            const amount = Math.min(debtor.amount, creditor.amount);
+            if (amount > 0.5) transfers.push(`${debtor.name} → ${creditor.name} ${formatYen(amount)}`);
+            debtor.amount -= amount;
+            creditor.amount -= amount;
+            if (debtor.amount <= 0.5) debtorIndex += 1;
+            if (creditor.amount <= 0.5) creditorIndex += 1;
+        }
+        return transfers;
+    }
+
     function expenseLabel(expense) {
-        const members = window.currentTripMembers || [
-            { id: 'aoi', name: 'メンバー1' },
-            { id: 'kotaro', name: 'メンバー2' }
-        ];
-        const payerObj = members.find(m => m.id === expense.payer);
-        const payerName = payerObj ? payerObj.name : expense.payer;
-        return `${expense.category} · ${payerName}が支払い`;
+        const members = expenseMembers();
+        const payerId = resolveExpensePayerId(expense.payer, members);
+        return `${expense.category} · ${expenseMemberName(payerId, members)}が支払い`;
     }
 
     function notifyExpenseAction(detail) {
@@ -578,11 +625,16 @@
         if (!list) return;
         list.replaceChildren();
 
-        let aoiPaid = 0;
-        let kotaroPaid = 0;
+        const members = expenseMembers();
+        const paidBy = new Map(members.map(member => [member.id, 0]));
         expenses.forEach(expense => {
-            if (expense.payer === 'aoi') aoiPaid += Number(expense.amount);
-            else kotaroPaid += Number(expense.amount);
+            const payerId = resolveExpensePayerId(expense.payer, members);
+            if (!paidBy.has(payerId)) {
+                const unknownMember = { id: payerId, name: expenseMemberName(payerId, members) };
+                members.push(unknownMember);
+                paidBy.set(payerId, 0);
+            }
+            paidBy.set(payerId, Number(paidBy.get(payerId) || 0) + Number(expense.amount || 0));
 
             const row = document.createElement('li');
             const textBox = document.createElement('div');
@@ -606,31 +658,22 @@
             list.appendChild(row);
         });
 
-        const total = aoiPaid + kotaroPaid;
-        const share = total / 2;
+        const total = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+        const share = members.length ? total / members.length : 0;
         document.getElementById('expense-total').textContent = formatYen(total);
         document.getElementById('expense-share').textContent = formatYen(share);
         const settlement = document.getElementById('expense-settlement');
         if (!total) {
             settlement.textContent = 'まだ支出はありません';
         } else {
-            const aoiCredit = aoiPaid - share;
-            if (Math.abs(aoiCredit) < 0.5) settlement.textContent = '精算済み';
-            else if (aoiCredit > 0) {
-                const kotaroName = window.getMemberName ? window.getMemberName('kotaro') : 'メンバー2';
-                const aoiName = window.getMemberName ? window.getMemberName('aoi') : 'メンバー1';
-                settlement.textContent = `${kotaroName} → ${aoiName} ${formatYen(aoiCredit)}`;
-            } else {
-                const aoiName = window.getMemberName ? window.getMemberName('aoi') : 'メンバー1';
-                const kotaroName = window.getMemberName ? window.getMemberName('kotaro') : 'メンバー2';
-                settlement.textContent = `${aoiName} → ${kotaroName} ${formatYen(-aoiCredit)}`;
-            }
+            const transfers = buildExpenseSettlements(members, paidBy, total);
+            settlement.textContent = transfers.length ? transfers.join(' ／ ') : '精算済み';
         }
     }
     window.getMemberName = function(id) {
-        if (id === 'aoi') return window.memberNames?.aoi || 'メンバー1';
-        if (id === 'kotaro') return window.memberNames?.kotaro || 'メンバー2';
-        return id;
+        const members = expenseMembers();
+        const resolvedId = resolveExpensePayerId(id, members);
+        return expenseMemberName(resolvedId, members);
     };
     window.recalculateExpenses = renderExpenses;
 
@@ -651,23 +694,14 @@
         const deviceOwner = document.getElementById('device-owner');
         const payer = document.getElementById('expense-payer');
         const savedOwner = safeLoad(DEVICE_OWNER_KEY, '');
+        const optionIds = deviceOwner ? [...deviceOwner.options].map(option => option.value) : [];
+        const fallbackOwner = optionIds[0] || expenseMembers()[0]?.id || 'aoi';
         if (deviceOwner) {
-            if (savedOwner) {
-                deviceOwner.value = savedOwner;
-            } else {
-                const myName = localStorage.getItem('user_nickname');
-                if (myName && window.memberNames) {
-                    if (myName === window.memberNames.aoi) {
-                        deviceOwner.value = 'aoi';
-                    } else if (myName === window.memberNames.kotaro) {
-                        deviceOwner.value = 'kotaro';
-                    }
-                } else {
-                    deviceOwner.value = 'kotaro';
-                }
-            }
+            const myName = localStorage.getItem('user_nickname');
+            const ownOption = [...deviceOwner.options].find(option => option.textContent === myName);
+            deviceOwner.value = optionIds.includes(savedOwner) ? savedOwner : (ownOption?.value || fallbackOwner);
         }
-        if (payer) payer.value = deviceOwner?.value || 'kotaro';
+        if (payer) payer.value = deviceOwner?.value || fallbackOwner;
         if (deviceOwner && deviceOwner.dataset.expenseBound !== 'true') {
             deviceOwner.dataset.expenseBound = 'true';
             deviceOwner.addEventListener('change', () => {
@@ -694,7 +728,7 @@
                 expenses.unshift(expense);
                 safeSave(EXPENSE_KEY, expenses);
                 form.reset();
-                if (payer) payer.value = deviceOwner?.value || safeLoad(DEVICE_OWNER_KEY, 'kotaro');
+                if (payer) payer.value = deviceOwner?.value || safeLoad(DEVICE_OWNER_KEY, '');
                 renderExpenses();
                 notifyExpenseAction({ type: 'upsert', expense });
             });
@@ -728,7 +762,7 @@
         const payerField = document.getElementById('expense-payer');
         const deviceOwner = document.getElementById('device-owner');
         const amountField = document.getElementById('expense-amount');
-        if (payerField) payerField.value = deviceOwner?.value || safeLoad(DEVICE_OWNER_KEY, 'kotaro');
+        if (payerField) payerField.value = deviceOwner?.value || safeLoad(DEVICE_OWNER_KEY, '');
         if (categoryField) categoryField.value = category;
         if (noteField) noteField.value = note.slice(0, 40);
         const form = document.getElementById('expense-form');
@@ -765,7 +799,7 @@
     }
 
     window.clearExpenses = function () {
-        if (!window.confirm('二人の共有台帳から支出をすべて削除しますか？')) return;
+        if (!window.confirm('参加者全員の共有台帳から支出をすべて削除しますか？')) return;
         safeSave(EXPENSE_KEY, []);
         renderExpenses();
         notifyExpenseAction({ type: 'clear' });

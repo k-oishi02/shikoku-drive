@@ -137,15 +137,16 @@ function setShareEnabled(enabled, label = '招待リンクをコピー') {
 function renderLiveSyncState() {
     if (!syncContext?.roomReady || !syncContext?.participantsReady) return;
     const count = Number(syncContext.memberCount || 0);
+    const capacity = Math.max(count, Number(syncContext.capacity || 2));
     const roleLabel = syncContext.role === 'owner' ? '作成者' : '参加者';
-    setSyncUi('live', `${roleLabel}として接続済み`, `${count}/2台が登録済み。追加・削除は自動同期されます。`);
-    const roomFull = count >= 2;
-    setShareEnabled(false, roomFull ? '2台接続済み' : '管理者配布IDを使用');
+    setSyncUi('live', `${roleLabel}として接続済み`, `${count}/${capacity}名が登録済み。追加・削除は自動同期されます。`);
+    const roomFull = count >= capacity;
+    setShareEnabled(false, roomFull ? `${capacity}名登録済み` : '管理者の登録リンクを使用');
     const note = document.getElementById('sync-note');
     if (note) {
         note.textContent = roomFull
-            ? '2台の同期が有効です。入力内容は双方へ自動反映されます。'
-            : 'もう一人もアプリのADDへ同じ配布IDを入力すると、リアルタイム同期が始まります。';
+            ? `定員${capacity}名の同期が有効です。入力内容は全員へ自動反映されます。`
+            : `あと${capacity - count}名登録できます。管理者の登録リンク、または同じ配布IDを使用してください。`;
     }
 }
 
@@ -169,7 +170,7 @@ function cleanExpense(expense) {
     return {
         id: String(expense.id || '').slice(0, 120),
         amount: Math.max(0, Math.round(Number(expense.amount) || 0)),
-        payer: expense.payer === 'kotaro' ? 'kotaro' : 'aoi',
+        payer: String(expense.payer || '').slice(0, 128),
         category: String(expense.category || 'その他').slice(0, 20),
         note: String(expense.note || '').slice(0, 40),
         comment: String(expense.comment || '').slice(0, 80),
@@ -416,6 +417,7 @@ try {
             roomReady: false,
             participantsReady: false,
             memberCount: 0,
+            capacity: 2,
             deviceOwnerInitialized: false
         };
 
@@ -455,15 +457,9 @@ try {
             const names = [...new Set(allParticipants
                 .filter(item => item.activeAt >= cutoff)
                 .map(item => item.nickname))];
-            const ownIndex = Math.max(0, allParticipants.findIndex(item => item.uid === uid));
-            window.memberNames = {
-                aoi: allParticipants[0]?.nickname || 'メンバー1',
-                kotaro: allParticipants[1]?.nickname || 'メンバー2'
-            };
-            window.currentTripMembers = [
-                { id: 'aoi', name: window.memberNames.aoi },
-                { id: 'kotaro', name: window.memberNames.kotaro }
-            ];
+            const optionData = allParticipants.map(item => ({ id: item.uid, name: item.nickname }));
+            window.memberNames = Object.fromEntries(optionData.map(member => [member.id, member.name]));
+            window.currentTripMembers = optionData;
 
             const pElem = document.getElementById('hero-participants');
             const displayNames = names.length > 0 ? names : [nickname];
@@ -476,11 +472,7 @@ try {
             if (deviceOwner && expensePayer) {
                 const savedOwner = deviceOwner.value;
                 const savedPayer = expensePayer.value;
-                const deviceOwnerId = ownIndex === 1 ? 'kotaro' : 'aoi';
-                const optionData = [
-                    { id: 'aoi', name: window.memberNames.aoi },
-                    { id: 'kotaro', name: window.memberNames.kotaro }
-                ];
+                const deviceOwnerId = uid;
                 deviceOwner.replaceChildren(...optionData.map(member => new Option(member.name, member.id)));
                 expensePayer.replaceChildren(...optionData.map(member => new Option(member.name, member.id)));
                 if (!syncContext.deviceOwnerInitialized) {
@@ -489,8 +481,9 @@ try {
                     localStorage.setItem('shikoku-drive-device-owner-v1', JSON.stringify(deviceOwnerId));
                     syncContext.deviceOwnerInitialized = true;
                 } else {
-                    deviceOwner.value = savedOwner || deviceOwnerId;
-                    expensePayer.value = savedPayer || deviceOwner.value;
+                    const optionIds = new Set(optionData.map(member => member.id));
+                    deviceOwner.value = optionIds.has(savedOwner) ? savedOwner : deviceOwnerId;
+                    expensePayer.value = optionIds.has(savedPayer) ? savedPayer : deviceOwner.value;
                 }
             }
 
@@ -513,8 +506,10 @@ try {
 
         unsubscribeRoom = onSnapshot(roomRef, snapshot => {
             if (currentRunId !== syncRunId || !syncContext) return;
-            const members = snapshot.data()?.members || {};
+            const roomData = snapshot.data() || {};
+            const members = roomData.members || {};
             syncContext.memberCount = Object.keys(members).length;
+            syncContext.capacity = Number.isInteger(Number(roomData.capacity)) ? Number(roomData.capacity) : 2;
             syncContext.roomReady = true;
             renderLiveSyncState();
         }, () => {

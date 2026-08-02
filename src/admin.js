@@ -669,8 +669,12 @@ function openDistribution(tripId = '') {
 function startDistributionListener() {
   state.distributionsUnsubscribe?.();
   state.distributionsUnsubscribe = onSnapshot(collection(db, 'adminDistributions'), snapshot => {
-    state.distributions = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
-      .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const previousParticipants = new Map(state.distributions.map(item => [item.id, item.participants || []]));
+    state.distributions = snapshot.docs.map(item => ({
+      id: item.id,
+      ...item.data(),
+      participants: previousParticipants.get(item.id) || []
+    })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     renderDistributions();
   }, error => {
     console.error(error);
@@ -685,15 +689,27 @@ function participantAppUrl() {
   return url.toString();
 }
 
+function participantInviteUrl(accessId) {
+  const url = new URL('./', window.location.href);
+  url.search = '';
+  url.hash = `join=${encodeURIComponent(text(accessId).toUpperCase().replace(/[^A-Z0-9]/g, ''))}`;
+  return url.toString();
+}
+
 async function createDistribution() {
   const tripId = $('distribution-trip').value;
   const label = $('distribution-label').value.trim();
+  const capacity = Number($('distribution-capacity').value);
   if (!tripId || !state.trips.has(tripId)) {
     showToast('配布する旅行を選択してください。', true);
     return;
   }
   if (!label) {
     showToast('配布先名を入力してください。', true);
+    return;
+  }
+  if (!Number.isInteger(capacity) || capacity < 1 || capacity > 50) {
+    showToast('定員は1〜50名の整数で入力してください。', true);
     return;
   }
   if (!state.publishedIds.has(tripId)) {
@@ -722,7 +738,7 @@ async function createDistribution() {
       tripId,
       label,
       status: 'active',
-      capacity: 2,
+      capacity,
       members: {},
       inviteHash: grantId,
       createdAt: serverTimestamp(),
@@ -738,7 +754,7 @@ async function createDistribution() {
       accessId,
       grantId,
       status: 'active',
-      capacity: 2,
+      capacity,
       createdAt: serverTimestamp(),
       createdBy: state.currentUser.uid
     });
@@ -755,7 +771,7 @@ async function createDistribution() {
     });
     await batch.commit();
     $('distribution-label').value = '';
-    showToast('配布ID ' + formatAccessId(accessId) + ' を発行しました。');
+    showToast('配布ID ' + formatAccessId(accessId) + ' を発行しました。登録リンクを配布先カードからコピーできます。');
   } catch (error) {
     console.error(error);
     showToast(`配布IDを発行できません: ${error.message}`, true);
@@ -768,7 +784,10 @@ function subscribeDistributionParticipants(distribution) {
   if (state.participantUnsubscribers.has(distribution.id)) return;
   const ref = collection(db, 'rooms', distribution.roomId || distribution.id, 'participants');
   const unsubscribe = onSnapshot(ref, snapshot => {
-    distribution.participants = snapshot.docs.map(item => ({ uid: item.id, ...item.data() }));
+    const currentDistribution = state.distributions.find(item => item.id === distribution.id);
+    if (currentDistribution) {
+      currentDistribution.participants = snapshot.docs.map(item => ({ uid: item.id, ...item.data() }));
+    }
     renderDistributions();
   }, error => {
     console.warn(`participants/${distribution.id}`, error);
@@ -802,7 +821,8 @@ function renderDistributions() {
     left.append(makeElement('h3', '', distribution.label || '名称未設定'));
     left.append(makeElement('span', 'muted small', `${distribution.tripId} · ${formatTimestamp(distribution.createdAt)}`));
     const participantCount = distribution.participants?.length || 0;
-    head.append(left, makeElement('strong', '', `${participantCount}/${distribution.capacity || 2}名`));
+    const capacity = Number.isInteger(Number(distribution.capacity)) ? Number(distribution.capacity) : 2;
+    head.append(left, makeElement('strong', '', `${participantCount}/${capacity}名`));
     const accessId = distribution.accessId ? formatAccessId(distribution.accessId) : '旧方式：新しい配布IDを発行してください';
     const invite = makeElement('code', 'invite-url', accessId);
     const participants = makeElement('div', 'participant-list');
@@ -811,21 +831,64 @@ function renderDistributions() {
     } else {
       participants.append(makeElement('span', 'muted small', 'まだ参加者はいません'));
     }
+    const capacityControl = makeElement('div', 'capacity-control');
+    const capacityLabel = makeElement('label', '', '定員');
+    const capacityInput = document.createElement('input');
+    capacityInput.type = 'number';
+    capacityInput.min = String(Math.max(1, participantCount));
+    capacityInput.max = '50';
+    capacityInput.step = '1';
+    capacityInput.value = String(capacity);
+    const updateCapacity = makeElement('button', 'compact ghost', '定員を変更');
+    updateCapacity.type = 'button';
+    updateCapacity.addEventListener('click', () => updateDistributionCapacity(distribution, Number(capacityInput.value), updateCapacity));
+    capacityLabel.append(capacityInput);
+    capacityControl.append(capacityLabel, updateCapacity);
+
     const actions = makeElement('div', 'trip-actions');
-    const copy = makeElement('button', 'compact primary', '配布IDをコピー');
+    const copyLink = makeElement('button', 'compact primary', '登録リンクをコピー');
+    copyLink.type = 'button';
+    copyLink.disabled = distribution.status !== 'active' || !distribution.accessId;
+    copyLink.addEventListener('click', () => copyText(participantInviteUrl(distribution.accessId), '自動登録リンクをコピーしました。'));
+    const copy = makeElement('button', 'compact ghost', '配布IDをコピー');
     copy.type = 'button';
     copy.disabled = distribution.status !== 'active' || !distribution.accessId;
     copy.addEventListener('click', () => copyText(formatAccessId(distribution.accessId), '配布IDをコピーしました。'));
-    const copyApp = makeElement('button', 'compact ghost', 'アプリURLをコピー');
+    const copyApp = makeElement('button', 'compact ghost', '空のアプリURLをコピー');
     copyApp.type = 'button';
-    copyApp.addEventListener('click', () => copyText(participantAppUrl(), '参加者アプリURLをコピーしました。'));
+    copyApp.addEventListener('click', () => copyText(participantAppUrl(), '空の参加者アプリURLをコピーしました。'));
     const toggle = makeElement('button', `compact ${distribution.status === 'active' ? 'danger' : ''}`, distribution.status === 'active' ? '配布を停止' : '再開');
     toggle.type = 'button';
     toggle.addEventListener('click', () => toggleDistribution(distribution));
-    actions.append(copy, copyApp, toggle);
-    card.append(head, invite, participants, actions);
+    actions.append(copyLink, copy, copyApp, toggle);
+    card.append(head, invite, participants, capacityControl, actions);
     list.append(card);
   });
+}
+
+async function updateDistributionCapacity(distribution, capacity, button) {
+  if (!Number.isInteger(capacity) || capacity < 1 || capacity > 50) {
+    showToast('定員は1〜50名の整数で入力してください。', true);
+    return;
+  }
+  setBusy(button, true, '変更中…');
+  try {
+    const roomRef = doc(db, 'rooms', distribution.roomId || distribution.id);
+    const roomSnapshot = await getDoc(roomRef);
+    if (!roomSnapshot.exists()) throw new Error('配布ルームが見つかりません。');
+    const memberCount = Object.keys(roomSnapshot.data()?.members || {}).length;
+    if (capacity < memberCount) throw new Error(`現在${memberCount}名が登録済みです。定員をそれ未満にはできません。`);
+    const batch = writeBatch(db);
+    batch.update(roomRef, { capacity, updatedAt: serverTimestamp() });
+    batch.update(doc(db, 'adminDistributions', distribution.id), { capacity, updatedAt: serverTimestamp() });
+    await batch.commit();
+    showToast(`定員を${capacity}名へ変更しました。`);
+  } catch (error) {
+    console.error(error);
+    showToast(`定員を変更できません: ${error.message}`, true);
+  } finally {
+    setBusy(button, false);
+  }
 }
 
 async function toggleDistribution(distribution) {

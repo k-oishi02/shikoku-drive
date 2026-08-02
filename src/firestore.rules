@@ -34,8 +34,11 @@ service cloud.firestore {
         && after.members.keys().hasAny([request.auth.uid])
         && after.members.size() == before.members.size() + 1
         && after.members.diff(before.members).affectedKeys().hasOnly([request.auth.uid])
-        && after.members.size() <= 2
-        && (!('capacity' in before) || after.members.size() <= before.capacity)
+        && before.capacity is int
+        && before.capacity >= 1
+        && before.capacity <= 50
+        && after.capacity == before.capacity
+        && after.members.size() <= before.capacity
         && (!('status' in before) || before.status == 'active')
         && after.joinProof == before.inviteHash
         && after.diff(before).affectedKeys().hasOnly([
