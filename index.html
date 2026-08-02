@@ -1,15 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <script>
-        // Keep the app shell available for offline use.
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(error => console.warn('Service worker registration failed', error));
-            }, { once: true });
-        }
-    </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#242424">
@@ -319,6 +310,12 @@
             padding-bottom: 20px; border-bottom: 1px solid var(--border-line);
         }
         .portal-cards { display: flex; flex-direction: column; gap: 16px; }
+        .portal-status {
+            margin: 0 0 16px; padding: 12px 14px; border: 1px solid #8f3541;
+            background: #321820; color: #ffdce1; font-family: var(--font-gothic);
+            font-size: 0.84rem; font-weight: 700; line-height: 1.6;
+        }
+        .portal-status[hidden] { display: none; }
         .portal-card {
             background: var(--bg-card); border: 1px solid var(--border-line);
             padding: 24px; text-decoration: none; color: inherit;
@@ -479,6 +476,7 @@
                 <button type="button" class="portal-tab-btn" id="portal-tab-past" onclick="switchPortalCategory('past')">思い出の旅 (MEMORIES)</button>
             </div>
 
+            <div id="portal-status" class="portal-status" role="alert" hidden></div>
             <div id="portal-cards" class="portal-cards"></div>
 
             <!-- ADD NEW TRIP INLINE FORM -->
@@ -728,7 +726,7 @@
                     <form id="expense-form" class="expense-form">
                         <label>
                             <span>金額</span>
-                            <input id="expense-amount" type="number" min="1" step="1" inputmode="numeric" placeholder="例：3200" required>
+                            <input id="expense-amount" type="number" min="1" max="9999999" step="1" inputmode="numeric" placeholder="例：3200" required>
                         </label>
                         <label>
                             <span>支払った人</span>
@@ -763,7 +761,7 @@
                         <div class="expense-settlement"><span>精算</span><strong id="expense-settlement">まだ支出はありません</strong></div>
                     </div>
                     <ul id="expense-list" class="expense-list" aria-label="支出一覧"></ul>
-                    <p class="local-save-note">入力は端末にも一時保存し、共有ルーム接続時はFirebaseで登録済みの参加者全員へ同期します。</p>
+                    <p id="expense-sync-note" class="local-save-note" aria-live="polite">接続確認中です。入力は端末にも保存され、LIVE接続後に参加者全員と管理者へ同期します。</p>
                 </div>
 
                 <!-- PAYPAY NATIVE APP + WEB LINK -->
@@ -801,6 +799,7 @@
         let TRIP_ROUTES = {};
         let countdownInterval = null;
         let tripLoadRunId = 0;
+        let portalLoadRunId = 0;
 
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -827,7 +826,8 @@
         const ROUTE_COLORS = ['#59d9b0', '#ffbf47', '#73a7ff', '#ff7d9c', '#b68cff', '#74d0e7'];
 
         function isValidDataKey(value) {
-            return DATA_KEY_PATTERN.test(String(value || ''));
+            const key = String(value || '');
+            return DATA_KEY_PATTERN.test(key) && !['__proto__', 'prototype', 'constructor'].includes(key);
         }
 
         const TRIP_ACCESS_KEY = 'participant-trip-access-v1';
@@ -935,7 +935,10 @@
         }
 
         function validTripConfig(value, tripId) {
-            return value?.tripId === tripId && value?.days && typeof value.days === 'object';
+            const days = value?.days;
+            if (value?.tripId !== tripId || !days || typeof days !== 'object' || Array.isArray(days)) return false;
+            const dayKeys = Object.keys(days);
+            return dayKeys.length > 0 && dayKeys.every(key => isValidDataKey(key) && Array.isArray(days[key]));
         }
 
         async function fetchTripConfig(tripId) {
@@ -1147,8 +1150,17 @@
             if (titleEl) titleEl.textContent = `${nickname} さんのしおり棚`;
         }
 
+        function showPortalStatus(message = '') {
+            const status = document.getElementById('portal-status');
+            if (!status) return;
+            status.textContent = message;
+            status.hidden = !message;
+        }
+
         function renderPortalDashboard() {
+            const currentPortalLoadId = ++portalLoadRunId;
             const container = document.getElementById('portal-cards');
+            showPortalStatus('');
 
             let joined = [];
             try {
@@ -1191,6 +1203,7 @@
             });
 
             Promise.all(promises).then(trips => {
+                if (currentPortalLoadId !== portalLoadRunId) return;
                 portalTripsCache = trips.filter(Boolean);
                 updatePortalOwnerLabel();
                 filterAndRenderPortalCards();
@@ -1287,6 +1300,7 @@
             tripLoadRunId += 1;
             window._stopSyncEngine?.();
             window.currentTripId = '';
+            window.currentTripLedgerToken = '';
             window.currentTripData = null;
             currentTripData = null;
         }
@@ -1298,10 +1312,24 @@
         }
 
 
+        function handleTripLoadFailure(error) {
+            console.error('Error loading trip config:', error);
+            const code = String(error?.code || '');
+            pauseTripRuntime();
+            history.replaceState(null, '', './');
+            document.getElementById('portal-overlay').classList.add('active');
+            document.getElementById('shiori-content').style.display = 'none';
+            renderPortalDashboard();
+            showPortalStatus(code.includes('access/revoked') || code.includes('access/invalid')
+                ? 'このしおりの配布は停止されたか、配布IDが無効です。管理者から新しい配布IDを受け取ってください。'
+                : 'しおりを読み込めませんでした。通信状態を確認して再度開いてください。オフライン利用には、一度オンラインでしおりを開いておく必要があります。');
+        }
+
         function loadShioriData(tripId) {
             if (!isValidDataKey(tripId)) return;
             const currentLoadId = ++tripLoadRunId;
             window.currentTripId = tripId;
+            window.currentTripLedgerToken = storedTripAccess(tripId)?.ledger || '';
             fetchTripConfig(tripId)
                 .then(data => {
                     if (currentLoadId !== tripLoadRunId || window.currentTripId !== tripId) return;
@@ -1335,8 +1363,9 @@
                         window.initEnhancements();
                     }
                 })
-                .catch(err => {
-                    console.error("Error loading trip config:", err);
+                .catch(error => {
+                    if (currentLoadId !== tripLoadRunId || window.currentTripId !== tripId) return;
+                    handleTripLoadFailure(error);
                 });
         }
 
@@ -1739,7 +1768,7 @@
 
             document.addEventListener('touchend', (event) => {
                 const activePanel = document.querySelector('.j-tab-panel.active');
-                const dayPanelIds = [...Object.keys(currentTripData?.days || {}).sort().map(k => `tab-${k}`), 'tab-checklist', 'tab-paypay'];
+                const dayPanelIds = [...sortDayKeys(Object.keys(currentTripData?.days || {})).map(k => `tab-${k}`), 'tab-checklist', 'tab-paypay'];
                 const currentIndex = dayPanelIds.indexOf(activePanel?.id);
                 const endX = event.changedTouches[0].clientX;
                 const endY = event.changedTouches[0].clientY;

@@ -47,17 +47,19 @@ function normalizeAccessId(value) {
     return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
+function storedAccessForTrip(tripId) {
+    try {
+        const stored = JSON.parse(localStorage.getItem(TRIP_ACCESS_KEY) || '{}')?.[tripId];
+        return stored && typeof stored === 'object' ? stored : null;
+    } catch (error) {
+        return null;
+    }
+}
+
 function accessError(code, message) {
     const error = new Error(message);
     error.code = code;
     return error;
-}
-
-function randomToken(byteLength = 32) {
-    const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
-    let binary = '';
-    bytes.forEach(byte => { binary += String.fromCharCode(byte); });
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
 async function sha256(value) {
@@ -68,15 +70,6 @@ async function sha256(value) {
         .join('');
 }
 
-function getOrCreateDeviceId() {
-    let id = localStorage.getItem('device_id');
-    if (!id) {
-        id = 'dev_' + randomToken(16);
-        localStorage.setItem('device_id', id);
-    }
-    return id;
-}
-
 function ensureRoomParameters(tripId) {
     const url = new URL(window.location.href);
     let roomId = url.searchParams.get('ledger');
@@ -84,11 +77,9 @@ function ensureRoomParameters(tripId) {
     const validLedger = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || ''));
     const validInvite = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || '')) || ACCESS_ID_PATTERN.test(String(value || ''));
     if (!validLedger(roomId) || !validInvite(invite)) {
-        try {
-            const stored = JSON.parse(localStorage.getItem(TRIP_ACCESS_KEY) || '{}')?.[tripId];
-            roomId = stored?.ledger || '';
-            invite = stored?.invite || '';
-        } catch (error) {}
+        const stored = storedAccessForTrip(tripId);
+        roomId = stored?.ledger || '';
+        invite = stored?.invite || '';
     }
     const roomCode = document.getElementById('sync-room-code');
     if (!validLedger(roomId) || !validInvite(invite)) {
@@ -108,6 +99,8 @@ function setSyncUi(mode, title, message) {
     const actions = document.getElementById('share-room-actions');
     const note = document.getElementById('sync-note');
     const members = document.getElementById('hero-participants');
+    const expenseSubmit = document.querySelector('#expense-form .expense-submit');
+    const expenseSyncNote = document.getElementById('expense-sync-note');
     if (badge) {
         badge.classList.toggle('live', mode === 'live');
         badge.classList.toggle('error', mode === 'error');
@@ -124,6 +117,23 @@ function setSyncUi(mode, title, message) {
             : mode === 'local'
                 ? 'MEMBERS: この端末のみ'
                 : 'MEMBERS: 接続中…';
+    }
+    if (expenseSubmit) {
+        expenseSubmit.textContent = mode === 'live'
+            ? 'ADD & SHARE'
+            : mode === 'connecting'
+                ? 'SAVE & SYNC SOON'
+                : 'SAVE OFFLINE';
+        expenseSubmit.dataset.syncMode = mode;
+    }
+    if (expenseSyncNote) {
+        expenseSyncNote.textContent = mode === 'live'
+            ? 'ADD & SHAREで、同じ配布先の参加者全員と管理者へリアルタイム共有します。'
+            : mode === 'local'
+                ? 'この端末だけに保存されます。共有するには、しおり棚のADDから配布IDを登録してください。'
+                : mode === 'error'
+                    ? '通信を回復すると自動同期します。現在の入力はこの端末に保存されます。'
+                    : '接続確認中です。入力は端末へ保存し、接続後に自動共有します。';
     }
 }
 
@@ -178,6 +188,19 @@ function cleanExpense(expense) {
     };
 }
 
+function expenseForCurrentRoom(expense) {
+    const cleaned = cleanExpense(expense);
+    const memberIds = Array.isArray(syncContext?.memberIds) ? syncContext.memberIds : [];
+    if (memberIds.includes(cleaned.payer)) return cleaned;
+    const visibleOrder = (Array.isArray(window.currentTripMembers) ? window.currentTripMembers : [])
+        .map(member => String(member?.id || ''))
+        .filter(id => memberIds.includes(id));
+    if (cleaned.payer === 'aoi') cleaned.payer = visibleOrder[0] || syncContext?.uid || '';
+    else if (cleaned.payer === 'kotaro') cleaned.payer = visibleOrder[1] || visibleOrder[0] || syncContext?.uid || '';
+    else cleaned.payer = syncContext?.uid || visibleOrder[0] || '';
+    return cleaned;
+}
+
 function activeParticipantEntries(snapshot) {
     const cutoff = Date.now() - PARTICIPANT_ACTIVE_MS;
     return snapshot.docs
@@ -227,9 +250,13 @@ async function persistAction(action, queueWhenUnavailable = true) {
     }
 
     const { expensesCollection, db } = syncContext;
+    if (action.type === 'upsert' && action.expense && !syncContext.participantsReady) {
+        if (queueWhenUnavailable) pendingActions.push({ ...action, tripId: actionTripId, ledgerToken: actionLedgerToken });
+        return false;
+    }
     if (action.type === 'upsert' && action.expense) {
-        const expense = cleanExpense(action.expense);
-        if (!validExpenseForSync(expense)) return false;
+        const expense = expenseForCurrentRoom(action.expense);
+        if (!validExpenseForSync(expense)) return true;
         await setDoc(doc(expensesCollection, expense.id), expense);
     } else if (action.type === 'remove' && action.id && !String(action.id).includes('/')) {
         await deleteDoc(doc(expensesCollection, String(action.id)));
@@ -251,7 +278,8 @@ async function flushPendingActions(tripId, ledgerToken) {
             continue;
         }
         try {
-            await persistAction(action, false);
+            const persisted = await persistAction(action, false);
+            if (!persisted) retry.push(action);
         } catch (error) {
             retry.push(action);
         }
@@ -272,14 +300,30 @@ window.copyLedgerInviteLink = async function () {
 };
 
 window.addEventListener('shikoku-expense-action', event => {
-    if (!syncContext && !inviteUrl) return;
-    const ledgerToken = new URLSearchParams(window.location.search).get('ledger') || '';
+    const tripId = String(window.currentTripId || '');
+    if (!tripId) return;
+    const stored = storedAccessForTrip(tripId);
+    const ledgerToken = syncContext?.tripId === tripId
+        ? String(syncContext.ledgerToken || '')
+        : String(stored?.ledger || '');
     const action = {
         ...(event.detail || {}),
-        tripId: String(window.currentTripId || ''),
+        tripId,
         ledgerToken
     };
-    persistAction(action).catch(() => {
+    persistAction(action).then(shared => {
+        const note = document.getElementById('expense-sync-note');
+        if (!note) return;
+        if (shared) {
+            note.textContent = action.type === 'remove'
+                ? '共有台帳から削除しました。参加者全員と管理者へ反映されます。'
+                : '共有しました。参加者全員と管理者の台帳へ反映されます。';
+        } else if (/^[A-Za-z0-9_-]{43}$/.test(ledgerToken)) {
+            note.textContent = '端末に保存しました。接続が完了すると参加者全員と管理者へ自動共有します。';
+        } else {
+            note.textContent = 'この端末だけに保存しました。共有するには、しおり棚のADDから配布IDを登録してください。';
+        }
+    }).catch(() => {
         setSyncUi('error', '同期に失敗しました', '通信状態を確認してください。入力内容はこの端末に残っています。');
     });
 });
@@ -327,6 +371,7 @@ export async function redeemAccessId(value) {
     if (!grant.tripId || !grant.roomId || !grant.ledgerToken || !grant.payloadJson) throw accessError('access/invalid', 'Access grant incomplete');
     let trip;
     try { trip = JSON.parse(grant.payloadJson); } catch (error) { throw accessError('access/invalid', 'Trip payload invalid'); }
+    if (trip?.tripId !== grant.tripId || !trip?.days || typeof trip.days !== 'object' || Array.isArray(trip.days)) throw accessError('access/invalid', 'Trip payload mismatch');
     try {
         await createOrJoinRoom(db, uid, grant.roomId, accessId);
     } catch (error) {
@@ -355,7 +400,13 @@ export async function fetchManagedTripConfig(tripId, access) {
     const grant = grantSnapshot.data();
     if (grant.status !== 'active') throw accessError('access/revoked', 'Access ID revoked');
     if (grant.tripId !== tripId || grant.ledgerToken !== access.ledger) throw accessError('access/invalid', 'Access grant does not match trip');
-    try { return JSON.parse(grant.payloadJson); } catch (error) { throw accessError('access/invalid', 'Trip payload invalid'); }
+    try {
+        const trip = JSON.parse(grant.payloadJson);
+        if (trip?.tripId !== tripId || !trip?.days || typeof trip.days !== 'object' || Array.isArray(trip.days)) throw new Error('Trip payload mismatch');
+        return trip;
+    } catch (error) {
+        throw accessError('access/invalid', 'Trip payload invalid');
+    }
 }
 
 export async function initSyncEngine(tripId) {
@@ -418,7 +469,8 @@ try {
             participantsReady: false,
             memberCount: 0,
             capacity: 2,
-            deviceOwnerInitialized: false
+            deviceOwnerInitialized: false,
+            memberIds: []
         };
 
         // Register participant nickname in Firestore
@@ -458,14 +510,21 @@ try {
                 .filter(item => item.activeAt >= cutoff)
                 .map(item => item.nickname))];
             const optionData = allParticipants.map(item => ({ id: item.uid, name: item.nickname }));
+            syncContext.memberIds = optionData.map(member => member.id);
             window.memberNames = Object.fromEntries(optionData.map(member => [member.id, member.name]));
             window.currentTripMembers = optionData;
 
             const pElem = document.getElementById('hero-participants');
             const displayNames = names.length > 0 ? names : [nickname];
             if (pElem) pElem.textContent = `MEMBERS: ${displayNames.join(', ')}`;
+            const participantsWereReady = syncContext.participantsReady;
             syncContext.participantsReady = true;
             renderLiveSyncState();
+            if (!participantsWereReady) {
+                flushPendingActions(syncContext.tripId, syncContext.ledgerToken).catch(() => {
+                    setSyncUi('error', '台帳の送信に失敗しました', '通信状態を確認してください。入力内容はこの端末に残っています。');
+                });
+            }
 
             const deviceOwner = document.getElementById('device-owner');
             const expensePayer = document.getElementById('expense-payer');
@@ -499,9 +558,12 @@ try {
         const cached = readCachedExpenses()
             .map(cleanExpense)
             .filter(validExpenseForSync);
-        await Promise.all(cached.map(expense =>
-            setDoc(doc(expensesCollection, expense.id), expense)
-        ));
+        await Promise.all(cached.map(expense => persistAction({
+            type: 'upsert',
+            expense,
+            tripId,
+            ledgerToken
+        })));
         if (currentRunId !== syncRunId) return;
 
         unsubscribeRoom = onSnapshot(roomRef, snapshot => {
@@ -587,24 +649,7 @@ export async function getDbInstance() {
     }
 }
 
-export async function listenToTripParticipants(tripId, callback) {
-    const db = await getDbInstance();
-    if (!db) {
-        callback([]);
-        return () => {};
-    }
-    const q = collection(db, 'trips', tripId, 'participants');
-    return onSnapshot(q, (snapshot) => {
-        const names = activeParticipantNames(snapshot);
-        callback(names);
-    }, (error) => {
-        console.error("Error monitoring participants for trip:", tripId, error);
-        callback([]);
-    });
-}
-
 window._redeemAccessId = redeemAccessId;
 window._fetchManagedTripConfig = fetchManagedTripConfig;
 window._initSyncEngine = initSyncEngine;
 window._stopSyncEngine = stopSyncEngine;
-window.listenToTripParticipants = listenToTripParticipants;

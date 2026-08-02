@@ -1,11 +1,7 @@
-const CACHE_NAME = 'shikoku-drive-pwa-v40';
+const CACHE_NAME = 'shikoku-drive-pwa-v41';
 const APP_SHELL = [
   './',
   './index.html',
-  './admin.html',
-  './src/admin.css',
-  './src/admin.js',
-  './data/trips.json',
   './src/enhancements.css',
   './src/enhancements.js',
   './src/firebase-sync.js',
@@ -68,6 +64,14 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const requestUrl = new URL(event.request.url);
   if (requestUrl.hostname === 'api.open-meteo.com') return;
+  const path = requestUrl.pathname;
+  const isAdminAsset = path.endsWith('/admin.html')
+    || path.endsWith('/src/admin.js')
+    || path.endsWith('/src/admin.css')
+    || path.endsWith('/firestore.rules')
+    || path.endsWith('/firebase.json')
+    || path.includes('/scripts/');
+  if (isAdminAsset) return;
   // Let external maps, tiles, fonts and app links use the browser's normal network path.
   // Caching opaque third-party responses here would grow the cache without a safe limit.
   if (requestUrl.origin !== self.location.origin) return;

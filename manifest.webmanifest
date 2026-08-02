@@ -1,7 +1,7 @@
 {
-  "name": "あおい＆こうたろう旅行しおり",
-  "short_name": "旅行しおり",
-  "description": "あおい＆こうたろうの旅行しおりプラットフォーム",
+  "name": "SHIORI 旅行しおり",
+  "short_name": "SHIORI",
+  "description": "管理者から配布された旅程を閲覧・共有できる旅行しおりアプリ",
   "lang": "ja",
   "start_url": "./?source=pwa",
   "scope": "./",
@@ -13,7 +13,7 @@
       "src": "images/header_shikoku.png",
       "sizes": "1024x1024",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

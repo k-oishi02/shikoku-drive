@@ -86,10 +86,10 @@
                         <section class="panel basics-panel">
                             <div class="panel-title"><span>01</span><h3>旅行の基本情報</h3></div>
                             <div class="form-grid">
-                                <label>しおりID<input id="trip-id" autocomplete="off" placeholder="shikoku2026"></label>
-                                <label>タイトル<input id="trip-title" autocomplete="off"></label>
-                                <label>サブタイトル<input id="trip-subtitle" autocomplete="off"></label>
-                                <label>キャッチコピー<input id="trip-catchphrase" autocomplete="off"></label>
+                                <label>しおりID<input id="trip-id" autocomplete="off" maxlength="40" placeholder="shikoku2026"></label>
+                                <label>タイトル<input id="trip-title" autocomplete="off" maxlength="100"></label>
+                                <label>サブタイトル<input id="trip-subtitle" autocomplete="off" maxlength="160"></label>
+                                <label>キャッチコピー<input id="trip-catchphrase" autocomplete="off" maxlength="200"></label>
                                 <label>開始日<input id="trip-start-date" type="date"></label>
                                 <label>終了日<input id="trip-end-date" type="date"></label>
                             </div>
@@ -104,7 +104,7 @@
                                     <button id="add-card" class="button primary compact" type="button">＋ カード</button>
                                 </div>
                             </div>
-                            <label class="day-label-field">日付ラベル<input id="editor-day-label" autocomplete="off" placeholder="8/30 (SUN) KAGAWA"></label>
+                            <label class="day-label-field">日付ラベル<input id="editor-day-label" autocomplete="off" maxlength="80" placeholder="8/30 (SUN) KAGAWA"></label>
                             <div id="editor-card-list" class="editor-card-list"></div>
                         </section>
                     </div>
@@ -122,7 +122,7 @@
                             <label class="distribution-capacity-field">定員<input id="distribution-capacity" type="number" min="1" max="50" step="1" value="2" inputmode="numeric"></label>
                             <button id="create-distribution" class="button primary" type="button">配布IDを発行</button>
                         </div>
-                        <p class="field-help">定員は1〜50名で設定できます。参加者は登録リンクを開くだけで追加され、配布IDをADDへ手入力する方法も使えます。配布先ごとに独立した参加者・割り勘ルームを作成します。</p>
+                        <p class="field-help">定員は1〜50名で設定できます。参加者は登録リンクを開くだけで追加され、配布IDをADDへ手入力する方法も使えます。配布先ごとに独立した参加者・割り勘ルームを作成し、共有支出は各配布先カードの「共有台帳」から管理者もリアルタイムで確認できます。</p>
                     </section>
                     <div class="section-heading"><h3>ACTIVE DISTRIBUTIONS</h3><span id="distribution-count">0件</span></div>
                     <div id="distribution-list" class="distribution-list" aria-live="polite"></div>
@@ -139,18 +139,18 @@
             </div>
             <input id="card-index" type="hidden">
             <div class="form-grid card-form-grid">
-                <label>時刻<input id="card-time" placeholder="09:00 - 10:00 / OPTIONAL"></label>
-                <label>バッジ<input id="card-badge" placeholder="GOURMET"></label>
-                <label class="span-2">タイトル<input id="card-title" required></label>
-                <label class="span-2">説明<textarea id="card-desc" rows="4" required></textarea></label>
+                <label>時刻<input id="card-time" maxlength="17" placeholder="09:00 - 10:00 / OPTIONAL"></label>
+                <label>バッジ<input id="card-badge" maxlength="30" placeholder="GOURMET"></label>
+                <label class="span-2">タイトル<input id="card-title" maxlength="120" required></label>
+                <label class="span-2">説明<textarea id="card-desc" rows="4" maxlength="2000" required></textarea></label>
                 <label>緯度<input id="card-lat" inputmode="decimal"></label>
                 <label>経度<input id="card-lon" inputmode="decimal"></label>
-                <label class="span-2">Google Map検索語<input id="card-map-query"></label>
-                <label>公式URL<input id="card-official" type="url"></label>
-                <label>公式ボタン名<input id="card-official-label"></label>
-                <label>食べログURL<input id="card-tabelog" type="url"></label>
-                <label>じゃらんURL<input id="card-jalan" type="url"></label>
-                <label>画像ファイル名<input id="card-image" placeholder="example.png"></label>
+                <label class="span-2">Google Map検索語<input id="card-map-query" maxlength="300"></label>
+                <label>公式URL<input id="card-official" type="url" maxlength="2000"></label>
+                <label>公式ボタン名<input id="card-official-label" maxlength="40"></label>
+                <label>食べログURL<input id="card-tabelog" type="url" maxlength="2000"></label>
+                <label>じゃらんURL<input id="card-jalan" type="url" maxlength="2000"></label>
+                <label>画像ファイル名<input id="card-image" maxlength="100" placeholder="example.png"></label>
                 <div class="check-field span-2">
                     <label><input id="card-map-enabled" type="checkbox" checked> MAPボタンを表示</label>
                     <label><input id="card-expense" type="checkbox"> 割り勘ボタンを表示</label>

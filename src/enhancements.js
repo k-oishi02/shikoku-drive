@@ -182,7 +182,7 @@
             entry = getEntries(panelId)[0];
             dayEl.textContent = `${TRIP_DAYS[panelId]?.label || 'DAY 01'} · 旅行前`;
             countdownEl.textContent = `出発まで ${formatDuration(tripStart - now)}`;
-            if (dayPanelForDate(now) === panelId && entry) {
+            if (getTokyoDateKey(now) === TRIP_DAYS[panelId]?.date && entry) {
                 departureTarget = { panelId, minute: entry.startMinute, title: entry.title };
                 routeEntry = entry;
             }
@@ -861,7 +861,7 @@
         const currentRunId = ++enhancementRunId;
 
         CHECKLIST_KEY = `checklist-${window.currentTripId}-v1`;
-        EXPENSE_KEY = expenseStorageKey(window.currentTripId, new URLSearchParams(window.location.search).get('ledger'));
+        EXPENSE_KEY = expenseStorageKey(window.currentTripId, window.currentTripLedgerToken);
 
         if (!window.currentTripDate) {
             window.currentTripDate = new Date().toISOString().slice(0, 10);

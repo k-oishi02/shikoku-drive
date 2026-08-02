@@ -13,6 +13,7 @@ import {
   getDocs,
   getFirestore,
   onSnapshot,
+  runTransaction,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -39,10 +40,12 @@ const state = {
   currentUser: null,
   trips: new Map(),
   publishedIds: new Set(),
+  publishedTrips: new Map(),
   activeTrip: null,
   activeDayKey: '',
   distributions: [],
   participantUnsubscribers: new Map(),
+  expenseUnsubscribers: new Map(),
   distributionsUnsubscribe: null,
   toastTimer: null
 };
@@ -100,6 +103,13 @@ function formatTimestamp(value) {
   return new Intl.DateTimeFormat('ja-JP', {
     month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
   }).format(date);
+}
+
+function formatYen(value) {
+  const amount = Number(value);
+  return new Intl.NumberFormat('ja-JP', {
+    style: 'currency', currency: 'JPY', maximumFractionDigits: 0
+  }).format(Number.isFinite(amount) ? amount : 0);
 }
 
 function randomToken() {
@@ -164,6 +174,8 @@ function stopLiveListeners() {
   state.distributionsUnsubscribe = null;
   state.participantUnsubscribers.forEach(unsubscribe => unsubscribe());
   state.participantUnsubscribers.clear();
+  state.expenseUnsubscribers.forEach(unsubscribe => unsubscribe());
+  state.expenseUnsubscribers.clear();
 }
 
 async function handleAuthState(user) {
@@ -213,24 +225,22 @@ function normalizeTrip(raw, fallbackId = '') {
   return trip;
 }
 
-async function loadStaticTrips() {
-  const registryResponse = await fetch('data/trips.json', { cache: 'no-store' });
-  if (!registryResponse.ok) throw new Error(`trips.json: ${registryResponse.status}`);
-  const registry = await registryResponse.json();
-  await Promise.all(registry.map(async entry => {
-    const response = await fetch(entry.config, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`${entry.config}: ${response.status}`);
-    const trip = normalizeTrip(await response.json(), entry.id);
-    state.trips.set(trip.tripId, { trip, source: 'static', updatedAt: null });
-  }));
-}
-
 async function loadCloudTrips() {
   const [drafts, published] = await Promise.all([
     getDocs(collection(db, 'adminTrips')),
     getDocs(collection(db, 'publishedTrips'))
   ]);
   state.publishedIds = new Set(published.docs.filter(item => item.data().published === true).map(item => item.id));
+  published.forEach(item => {
+    const data = item.data();
+    try {
+      const trip = normalizeTrip(JSON.parse(data.payloadJson), item.id);
+      state.publishedTrips.set(item.id, deepClone(trip));
+      state.trips.set(item.id, { trip, source: 'published', updatedAt: data.publishedAt || null });
+    } catch (error) {
+      console.warn(`Invalid publishedTrips/${item.id}`, error);
+    }
+  });
   drafts.forEach(item => {
     const data = item.data();
     try {
@@ -245,8 +255,8 @@ async function loadCloudTrips() {
 async function loadDashboard() {
   stopLiveListeners();
   state.trips.clear();
+  state.publishedTrips.clear();
   try {
-    await loadStaticTrips();
     await loadCloudTrips();
     renderTripLibrary();
     populateTripSelects();
@@ -495,11 +505,23 @@ function saveCard(event) {
   renderEditorCards();
 }
 
+function remapFerryLegs(dayKey, mapper) {
+  const legs = state.activeTrip?.ferryLegs?.[dayKey];
+  if (!Array.isArray(legs)) return;
+  state.activeTrip.ferryLegs[dayKey] = legs.map(leg => {
+    if (!leg || !Number.isInteger(leg.from) || !Number.isInteger(leg.to)) return null;
+    const from = mapper(leg.from);
+    const to = mapper(leg.to);
+    return Number.isInteger(from) && Number.isInteger(to) ? { ...leg, from, to } : null;
+  }).filter(Boolean);
+}
+
 function deleteCard() {
   const index = Number($('card-index').value);
   if (index < 0) return;
   if (!window.confirm('このカードを削除しますか？')) return;
   state.activeTrip.days[state.activeDayKey].splice(index, 1);
+  remapFerryLegs(state.activeDayKey, value => value === index ? null : (value > index ? value - 1 : value));
   $('card-dialog').close();
   renderEditorCards();
 }
@@ -510,6 +532,7 @@ function moveCard(direction) {
   const destination = index + direction;
   if (index < 0 || destination < 0 || destination >= cards.length) return;
   [cards[index], cards[destination]] = [cards[destination], cards[index]];
+  remapFerryLegs(state.activeDayKey, value => value === index ? destination : (value === destination ? index : value));
   $('card-dialog').close();
   renderEditorCards();
   openCardDialog(destination);
@@ -517,31 +540,108 @@ function moveCard(direction) {
 
 function validateTrip(trip) {
   const errors = [];
+  const validDate = value => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(text(value))) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  };
+  const scheduledMinutes = value => {
+    const match = text(value).match(/^(\d{2}):(\d{2}) - (\d{2}):(\d{2})$/);
+    if (!match) return null;
+    const parts = match.slice(1).map(Number);
+    if (parts[0] > 23 || parts[1] > 59 || parts[2] > 23 || parts[3] > 59) return null;
+    return { start: parts[0] * 60 + parts[1], end: parts[2] * 60 + parts[3] };
+  };
   if (!/^[a-z0-9][a-z0-9_-]{2,39}$/.test(trip.tripId)) errors.push('しおりIDは英小文字・数字・_・- の3〜40文字にしてください。');
   if (!trip.title) errors.push('タイトルを入力してください。');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trip.startDate)) errors.push('開始日を入力してください。');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trip.endDate)) errors.push('終了日を入力してください。');
+  if (!validDate(trip.startDate)) errors.push('開始日を正しい日付で入力してください。');
+  if (!validDate(trip.endDate)) errors.push('終了日を正しい日付で入力してください。');
   if (trip.startDate && trip.endDate && trip.startDate > trip.endDate) errors.push('終了日は開始日以降にしてください。');
   const dayKeys = Object.keys(trip.days || {});
   if (!dayKeys.length) errors.push('日程を1日以上作成してください。');
-  const validUrl = value => !value || /^https:\/\//i.test(value);
+  const cardIds = new Set();
+  const validUrl = value => {
+    if (!value) return true;
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'https:' && Boolean(parsed.hostname);
+    } catch (error) {
+      return false;
+    }
+  };
   dayKeys.forEach(dayKey => {
+    if (!/^day[1-9]\d*$/.test(dayKey)) errors.push(`${dayKey}: 日キーはday1、day2の形式にしてください。`);
     const cards = trip.days[dayKey];
+    let previousEnd = -1;
     if (!Array.isArray(cards)) {
       errors.push(`${dayKey}: カード一覧が不正です。`);
       return;
     }
     cards.forEach((card, index) => {
       const label = `${dayKey.toUpperCase()} カード${index + 1}`;
+      if (card.id) {
+        if (!/^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(text(card.id))) errors.push(`${label}: カードIDは英数字・_・-の80文字以内にしてください。`);
+        else if (cardIds.has(card.id)) errors.push(`${label}: カードID ${card.id} が重複しています。`);
+        else cardIds.add(card.id);
+      }
       if (!card.title) errors.push(`${label}: タイトルがありません。`);
+      if (text(card.title).length > 120) errors.push(`${label}: タイトルは120文字以内にしてください。`);
+      if (!card.badge) errors.push(`${label}: バッジがありません。`);
       if (!card.desc) errors.push(`${label}: 説明がありません。`);
+      if (text(card.desc).length > 2000) errors.push(`${label}: 説明は2000文字以内にしてください。`);
+      if (card.time === 'OPTIONAL') {
+        // Optional cards do not reserve a fixed slot.
+      } else {
+        const minutes = scheduledMinutes(card.time);
+        if (!minutes || minutes.end <= minutes.start) {
+          errors.push(`${label}: 時刻は「09:00 - 10:00」形式で、終了を開始より後にしてください。`);
+        } else {
+          if (minutes.start < previousEnd) errors.push(`${label}: 前の確定予定と時刻が重複しています。`);
+          previousEnd = Math.max(previousEnd, minutes.end);
+        }
+      }
       ['official', 'tabelog', 'jalan'].forEach(key => {
         if (!validUrl(card[key])) errors.push(`${label}: ${key} は https URLにしてください。`);
       });
-      if (card.lat != null && !Number.isFinite(Number(card.lat))) errors.push(`${label}: 緯度が不正です。`);
-      if (card.lon != null && !Number.isFinite(Number(card.lon))) errors.push(`${label}: 経度が不正です。`);
+      for (const [linkIndex, link] of (Array.isArray(card.links) ? card.links : []).entries()) {
+        if (!text(link?.label).trim()) errors.push(`${label}: 追加リンク${linkIndex + 1}の名前がありません。`);
+        if (!validUrl(link?.url)) errors.push(`${label}: 追加リンク${linkIndex + 1}は https URLにしてください。`);
+      }
+      for (const [walletKind, walletUrl] of Object.entries(card.wallet || {})) {
+        if (!validUrl(walletUrl)) errors.push(`${label}: wallet.${walletKind} は https URLにしてください。`);
+      }
+      if (card.lat != null && (!Number.isFinite(Number(card.lat)) || Number(card.lat) < -90 || Number(card.lat) > 90)) errors.push(`${label}: 緯度は-90〜90にしてください。`);
+      if (card.lon != null && (!Number.isFinite(Number(card.lon)) || Number(card.lon) < -180 || Number(card.lon) > 180)) errors.push(`${label}: 経度は-180〜180にしてください。`);
+      if (card.image && !/^[A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|jpe?g|webp|gif|svg)$/i.test(text(card.image))) errors.push(`${label}: 画像はimagesフォルダ内の安全なファイル名にしてください。`);
     });
+    const ferryLegs = trip.ferryLegs?.[dayKey] || [];
+    if (!Array.isArray(ferryLegs)) {
+      errors.push(`${dayKey}: フェリー区間が配列ではありません。`);
+    } else {
+      const confirmed = cards.map((card, index) => ({ card, index }))
+        .filter(({ card }) => card.time !== 'OPTIONAL' && card.map !== false && Number.isFinite(Number(card.lat)) && Number.isFinite(Number(card.lon)))
+        .map(({ index }) => index);
+      ferryLegs.forEach((leg, legIndex) => {
+        const label = `${dayKey.toUpperCase()} フェリー区間${legIndex + 1}`;
+        if (!leg || !Number.isInteger(leg.from) || !Number.isInteger(leg.to)) {
+          errors.push(`${label}: from/toは整数にしてください。`);
+          return;
+        }
+        if (leg.from < 0 || leg.to < 0 || leg.from >= cards.length || leg.to >= cards.length) {
+          errors.push(`${label}: 参照先カードが範囲外です。`);
+          return;
+        }
+        if (leg.to !== leg.from + 1 || confirmed.indexOf(leg.to) !== confirmed.indexOf(leg.from) + 1) {
+          errors.push(`${label}: 隣接する確定ルートカードを指定してください。`);
+        }
+      });
+    }
   });
+  try {
+    if (new TextEncoder().encode(JSON.stringify(trip)).length > 900000) errors.push('旅程データが大きすぎます。画像はファイル名で指定し、説明を短くしてください。');
+  } catch (error) {
+    errors.push('旅程データをJSONへ変換できません。');
+  }
   return errors;
 }
 
@@ -570,6 +670,10 @@ async function persistTrip(publish = false) {
   const payloadJson = JSON.stringify(state.activeTrip);
   try {
     if (publish) {
+      const distributionSnapshot = await getDocs(collection(db, 'adminDistributions'));
+      const activeDistributions = distributionSnapshot.docs
+        .map(item => ({ id: item.id, ...item.data() }))
+        .filter(distribution => distribution.tripId === tripId && distribution.status === 'active' && distribution.grantId);
       const batch = writeBatch(db);
       batch.set(doc(db, 'adminTrips', tripId), {
         tripId,
@@ -587,16 +691,23 @@ async function persistTrip(publish = false) {
         publishedAt: serverTimestamp(),
         updatedBy: state.currentUser.uid
       });
-      state.distributions
-        .filter(distribution => distribution.tripId === tripId && distribution.status === 'active' && distribution.grantId)
-        .slice(0, 450)
-        .forEach(distribution => batch.set(doc(db, 'accessGrants', distribution.grantId), {
+      activeDistributions.slice(0, 450).forEach(distribution => batch.set(doc(db, 'accessGrants', distribution.grantId), {
+        title: state.activeTrip.title,
+        payloadJson,
+        updatedAt: serverTimestamp()
+      }, { merge: true }));
+      await batch.commit();
+      for (let offset = 450; offset < activeDistributions.length; offset += 450) {
+        const grantBatch = writeBatch(db);
+        activeDistributions.slice(offset, offset + 450).forEach(distribution => grantBatch.set(doc(db, 'accessGrants', distribution.grantId), {
           title: state.activeTrip.title,
           payloadJson,
           updatedAt: serverTimestamp()
         }, { merge: true }));
-      await batch.commit();
+        await grantBatch.commit();
+      }
       state.publishedIds.add(tripId);
+      state.publishedTrips.set(tripId, deepClone(state.activeTrip));
       showToast('参加者ページへ公開しました。');
     } else {
       await setDoc(doc(db, 'adminTrips', tripId), {
@@ -670,10 +781,18 @@ function startDistributionListener() {
   state.distributionsUnsubscribe?.();
   state.distributionsUnsubscribe = onSnapshot(collection(db, 'adminDistributions'), snapshot => {
     const previousParticipants = new Map(state.distributions.map(item => [item.id, item.participants || []]));
+    const previousExpenses = new Map(state.distributions.map(item => [item.id, item.expenses || []]));
+    const previousExpenseState = new Map(state.distributions.map(item => [item.id, {
+      ready: item.expensesReady === true,
+      error: item.expensesError || ''
+    }]));
     state.distributions = snapshot.docs.map(item => ({
       id: item.id,
       ...item.data(),
-      participants: previousParticipants.get(item.id) || []
+      participants: previousParticipants.get(item.id) || [],
+      expenses: previousExpenses.get(item.id) || [],
+      expensesReady: previousExpenseState.get(item.id)?.ready === true,
+      expensesError: previousExpenseState.get(item.id)?.error || ''
     })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     renderDistributions();
   }, error => {
@@ -708,6 +827,10 @@ async function createDistribution() {
     showToast('配布先名を入力してください。', true);
     return;
   }
+  if (label.length > 40) {
+    showToast('配布先名は40文字以内にしてください。', true);
+    return;
+  }
   if (!Number.isInteger(capacity) || capacity < 1 || capacity > 50) {
     showToast('定員は1〜50名の整数で入力してください。', true);
     return;
@@ -720,7 +843,12 @@ async function createDistribution() {
   setBusy(button, true, '発行中…');
   const ledgerToken = randomToken();
   const roomId = `${tripId}_${ledgerToken}`;
-  const trip = state.trips.get(tripId)?.trip;
+  const trip = state.publishedTrips.get(tripId);
+  if (!trip) {
+    showToast('公開済みデータを取得できません。旅行をもう一度公開してください。', true);
+    setBusy(button, false);
+    return;
+  }
   const payloadJson = JSON.stringify(trip);
   try {
     let accessId = '';
@@ -795,6 +923,78 @@ function subscribeDistributionParticipants(distribution) {
   state.participantUnsubscribers.set(distribution.id, unsubscribe);
 }
 
+function subscribeDistributionExpenses(distribution) {
+  if (state.expenseUnsubscribers.has(distribution.id)) return;
+  const ref = collection(db, 'rooms', distribution.roomId || distribution.id, 'expenses');
+  const unsubscribe = onSnapshot(ref, snapshot => {
+    const currentDistribution = state.distributions.find(item => item.id === distribution.id);
+    if (currentDistribution) {
+      currentDistribution.expenses = snapshot.docs.map(item => {
+        const data = item.data() || {};
+        return {
+          id: item.id,
+          amount: Number(data.amount) || 0,
+          payer: text(data.payer),
+          category: text(data.category || 'その他'),
+          note: text(data.note),
+          comment: text(data.comment),
+          createdAt: text(data.createdAt)
+        };
+      }).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      currentDistribution.expensesReady = true;
+      currentDistribution.expensesError = '';
+    }
+    renderDistributions();
+  }, error => {
+    console.warn('expenses/' + distribution.id, error);
+    const currentDistribution = state.distributions.find(item => item.id === distribution.id);
+    if (currentDistribution) {
+      currentDistribution.expensesReady = true;
+      currentDistribution.expensesError = '共有台帳を取得できません';
+    }
+    renderDistributions();
+  });
+  state.expenseUnsubscribers.set(distribution.id, unsubscribe);
+}
+
+function renderDistributionLedger(distribution) {
+  const expenses = Array.isArray(distribution.expenses) ? distribution.expenses : [];
+  const total = expenses.reduce((sum, expense) => sum + Math.max(0, Number(expense.amount) || 0), 0);
+  const panel = makeElement('details', 'admin-ledger');
+  const summary = makeElement('summary');
+  const summaryText = makeElement('span');
+  summaryText.append(makeElement('strong', '', '共有台帳'), makeElement('small', '', String(expenses.length) + '件'));
+  summary.append(summaryText, makeElement('strong', 'admin-ledger-total', formatYen(total)));
+  panel.append(summary);
+
+  if (!distribution.expensesReady) {
+    panel.append(makeElement('p', 'admin-ledger-empty', '台帳を読み込んでいます…'));
+    return panel;
+  }
+  if (distribution.expensesError) {
+    panel.append(makeElement('p', 'admin-ledger-error', distribution.expensesError));
+    return panel;
+  }
+  if (!expenses.length) {
+    panel.append(makeElement('p', 'admin-ledger-empty', 'まだ共有支出はありません。'));
+    return panel;
+  }
+
+  const participantNames = new Map((distribution.participants || []).map(person => [person.uid, person.nickname || '名前未設定']));
+  const list = makeElement('div', 'admin-ledger-list');
+  expenses.forEach(expense => {
+    const row = makeElement('article', 'admin-ledger-row');
+    const copy = makeElement('div');
+    copy.append(makeElement('strong', '', expense.note || expense.category || '支出'));
+    copy.append(makeElement('small', '', [expense.category || 'その他', (participantNames.get(expense.payer) || '参加者') + 'が支払い', formatTimestamp(expense.createdAt)].join(' · ')));
+    if (expense.comment) copy.append(makeElement('small', 'admin-ledger-comment', expense.comment));
+    row.append(copy, makeElement('strong', 'admin-ledger-amount', formatYen(expense.amount)));
+    list.append(row);
+  });
+  panel.append(list);
+  return panel;
+}
+
 function renderDistributions() {
   const list = $('distribution-list');
   list.replaceChildren();
@@ -812,8 +1012,15 @@ function renderDistributions() {
       state.participantUnsubscribers.delete(id);
     }
   });
+  [...state.expenseUnsubscribers.entries()].forEach(([id, unsubscribe]) => {
+    if (!activeIds.has(id)) {
+      unsubscribe();
+      state.expenseUnsubscribers.delete(id);
+    }
+  });
   state.distributions.forEach(distribution => {
     subscribeDistributionParticipants(distribution);
+    subscribeDistributionExpenses(distribution);
     const card = makeElement('article', 'distribution-card');
     const head = makeElement('div', 'distribution-head');
     const left = makeElement('div');
@@ -861,7 +1068,8 @@ function renderDistributions() {
     toggle.type = 'button';
     toggle.addEventListener('click', () => toggleDistribution(distribution));
     actions.append(copyLink, copy, copyApp, toggle);
-    card.append(head, invite, participants, capacityControl, actions);
+    const ledger = renderDistributionLedger(distribution);
+    card.append(head, invite, participants, ledger, capacityControl, actions);
     list.append(card);
   });
 }
@@ -878,10 +1086,14 @@ async function updateDistributionCapacity(distribution, capacity, button) {
     if (!roomSnapshot.exists()) throw new Error('配布ルームが見つかりません。');
     const memberCount = Object.keys(roomSnapshot.data()?.members || {}).length;
     if (capacity < memberCount) throw new Error(`現在${memberCount}名が登録済みです。定員をそれ未満にはできません。`);
-    const batch = writeBatch(db);
-    batch.update(roomRef, { capacity, updatedAt: serverTimestamp() });
-    batch.update(doc(db, 'adminDistributions', distribution.id), { capacity, updatedAt: serverTimestamp() });
-    await batch.commit();
+    await runTransaction(db, async transaction => {
+      const latestRoom = await transaction.get(roomRef);
+      if (!latestRoom.exists()) throw new Error('配布ルームが見つかりません。');
+      const latestMemberCount = Object.keys(latestRoom.data()?.members || {}).length;
+      if (capacity < latestMemberCount) throw new Error(`現在${latestMemberCount}名が登録済みです。定員をそれ未満にはできません。`);
+      transaction.update(roomRef, { capacity, updatedAt: serverTimestamp() });
+      transaction.update(doc(db, 'adminDistributions', distribution.id), { capacity, updatedAt: serverTimestamp() });
+    });
     showToast(`定員を${capacity}名へ変更しました。`);
   } catch (error) {
     console.error(error);
@@ -893,13 +1105,13 @@ async function updateDistributionCapacity(distribution, capacity, button) {
 
 async function toggleDistribution(distribution) {
   const status = distribution.status === 'active' ? 'revoked' : 'active';
-  if (status === 'revoked' && !window.confirm('この配布IDを停止しますか？参加済みユーザーも閲覧・同期できなくなります。')) return;
+  if (status === 'revoked' && !window.confirm('この配布IDを停止しますか？オンライン接続中の参加者は閲覧・同期できなくなります。オフライン保存済みの内容は、次回オンライン確認まで端末に残る場合があります。')) return;
   try {
     const batch = writeBatch(db);
     batch.update(doc(db, 'adminDistributions', distribution.id), { status, updatedAt: serverTimestamp() });
     batch.update(doc(db, 'rooms', distribution.roomId || distribution.id), { status, updatedAt: serverTimestamp() });
     if (distribution.grantId) {
-      const trip = state.trips.get(distribution.tripId)?.trip;
+      const trip = state.publishedTrips.get(distribution.tripId);
       const grantUpdate = { status, updatedAt: serverTimestamp() };
       if (status === 'active' && trip) {
         grantUpdate.title = trip.title;
