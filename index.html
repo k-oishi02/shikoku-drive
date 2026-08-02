@@ -861,6 +861,22 @@
                 : null;
         }
 
+        function managedTripCacheKey(tripId, access = storedTripAccess(tripId)) {
+            if (!access) return '';
+            return `${MANAGED_TRIP_CACHE_PREFIX}${tripId}:${access.grantId || access.ledger}`;
+        }
+
+        function readCachedTripConfig(tripId) {
+            const cacheKey = managedTripCacheKey(tripId);
+            if (!cacheKey) return null;
+            try {
+                const cachedTrip = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+                return validTripConfig(cachedTrip, tripId) ? cachedTrip : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
         function saveTripAccess(tripId, details) {
             const access = readStoredObject(TRIP_ACCESS_KEY);
             access[tripId] = {
@@ -914,7 +930,7 @@
                 error.code = 'access/id-required';
                 throw error;
             }
-            const cacheKey = `${MANAGED_TRIP_CACHE_PREFIX}${tripId}:${access.grantId || access.ledger}`;
+            const cacheKey = managedTripCacheKey(tripId, access);
             try {
                 if (typeof window._fetchManagedTripConfig !== 'function') throw new Error('Access service is not ready');
                 const managedTrip = await window._fetchManagedTripConfig(tripId, access);
@@ -927,8 +943,8 @@
                     throw error;
                 }
                 try {
-                    const cachedTrip = JSON.parse(localStorage.getItem(cacheKey) || 'null');
-                    if (validTripConfig(cachedTrip, tripId)) return cachedTrip;
+                    const cachedTrip = readCachedTripConfig(tripId);
+                    if (cachedTrip) return cachedTrip;
                 } catch (cacheError) {}
                 throw error;
             }
@@ -1045,9 +1061,25 @@
         let portalTripsCache = [];
         let currentPortalCategory = 'upcoming';
 
+        function portalTripSummary(tripId, data, todayStr) {
+            if (!validTripConfig(data, tripId)) return null;
+            return {
+                id: tripId,
+                title: data.title,
+                subtitle: data.subtitle || '',
+                date: `${data.startDate} - ${data.endDate}`,
+                isPast: data.endDate ? (data.endDate < todayStr) : false
+            };
+        }
+
+        function updatePortalOwnerLabel() {
+            const nickname = localStorage.getItem('user_nickname') || '';
+            const titleEl = document.querySelector('.portal-sub');
+            if (titleEl) titleEl.textContent = `${nickname} さんのしおり棚`;
+        }
+
         function renderPortalDashboard() {
             const container = document.getElementById('portal-cards');
-            container.innerHTML = '<div style="color:var(--text-sub); font-size:0.88rem; padding:12px 0;">読み込み中...</div>';
 
             let joined = [];
             try {
@@ -1059,19 +1091,23 @@
 
             const todayStr = tokyoDateKey();
 
+            // The ADD flow already stores an authorized copy of the trip. Render that
+            // copy immediately when returning to the shelf, then validate/refresh it
+            // with Firebase in the background.
+            portalTripsCache = joined
+                .map(tripId => portalTripSummary(tripId, readCachedTripConfig(tripId), todayStr))
+                .filter(Boolean);
+            updatePortalOwnerLabel();
+            if (portalTripsCache.length || joined.length === 0) {
+                filterAndRenderPortalCards();
+            } else {
+                container.innerHTML = '<div style="color:var(--text-sub); font-size:0.88rem; padding:12px 0;">読み込み中...</div>';
+            }
+
             // Fetch details for all joined trips in parallel
             const promises = joined.map(tripId => {
                 return fetchTripConfig(tripId)
-                    .then(data => {
-                        const isPast = data.endDate ? (data.endDate < todayStr) : false;
-                        return {
-                            id: tripId,
-                            title: data.title,
-                            subtitle: data.subtitle || '',
-                            date: `${data.startDate} - ${data.endDate}`,
-                            isPast: isPast
-                        };
-                    })
+                    .then(data => portalTripSummary(tripId, data, todayStr))
                     .catch(error => {
                         const code = String(error?.code || '');
                         if (code.includes('access/revoked') || code.includes('access/invalid') || code.includes('access/id-required')) return null;
@@ -1087,12 +1123,7 @@
 
             Promise.all(promises).then(trips => {
                 portalTripsCache = trips.filter(Boolean);
-                const nickname = localStorage.getItem('user_nickname') || '';
-                const titleEl = document.querySelector('.portal-sub');
-                if (titleEl) {
-                    titleEl.textContent = `${nickname} さんのしおり棚`;
-                }
-
+                updatePortalOwnerLabel();
                 filterAndRenderPortalCards();
             });
         }
