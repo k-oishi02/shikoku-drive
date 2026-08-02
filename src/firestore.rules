@@ -57,7 +57,7 @@ service cloud.firestore {
     }
 
     match /accessGrants/{grantId} {
-      allow get: if signedIn() && resource.data.status == 'active';
+      allow get: if isAdmin() || (signedIn() && resource.data.status == 'active');
       allow list, create, update, delete: if isAdmin();
     }
 

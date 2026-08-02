@@ -225,7 +225,7 @@ assert(firebaseSync.includes('配布IDが無効です') && !firebaseSync.include
 assert(rules.includes('function isAdmin()') && rules.includes('match /admins/{uid}'), 'Firestore: 管理者ドキュメント認可');
 assert(rules.includes('.data.active == true') && adminJs.includes("snapshot.data()?.active === true"), '管理者権限はactive: trueのアカウントだけ');
 assert(rules.includes('match /adminTrips/{tripId}') && rules.includes('match /publishedTrips/{tripId}') && rules.includes('allow read, write: if isAdmin();'), 'Firestore: 下書きと公開旅程は管理者限定');
-assert(rules.includes('match /accessGrants/{grantId}') && rules.includes("resource.data.status == 'active'"), 'Firestore: 有効な配布IDだけ参加者が取得');
+assert(rules.includes('match /accessGrants/{grantId}') && rules.includes("allow get: if isAdmin() || (signedIn() && resource.data.status == 'active');"), 'Firestore: 管理者は配布IDを検査でき、有効な配布IDだけ参加者が取得');
 assert(rules.includes('match /adminDistributions/{distributionId}') && rules.includes('match /participants/{uid}'), 'Firestore: 配布先管理とルーム別参加者');
 assert(rules.includes('allow create: if isAdmin();') && !rules.includes('validLegacyRoomCreate'), 'Firestore: 配布ルーム作成は管理者だけ');
 assert(indexHtml.includes('src/enhancements.css') && indexHtml.includes('src/enhancements.js') && indexHtml.includes('src/firebase-sync.js'), 'index.html: src版アセットだけを参照');
