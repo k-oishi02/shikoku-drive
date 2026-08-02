@@ -156,7 +156,7 @@ assert(indexHtml.includes('Array.isArray(card.links)'), '汎用リンク描画')
 assert(indexHtml.includes('officialUrl = safeExternalUrl'), '公式リンク描画');
 assert(indexHtml.includes('card.map !== false'), 'カード別MAP表示制御');
 assert(indexHtml.includes("card.mapLabel || 'MAP →'"), 'カード別MAPラベル');
-assert(indexHtml.includes('escapeHtml(buildTripHref(t.id))') && indexHtml.includes('new URLSearchParams({ trip: String(tripId || \'\') })'), 'ポータルIDと招待パラメータを安全に構築');
+assert(indexHtml.includes('escapeHtml(buildTripHref(t.id))') && indexHtml.includes('return `?trip=${encodeURIComponent(String(tripId || \'\'))}`'), 'ポータルは保存済み配布権限から旅程URLを安全に構築');
 assert(indexHtml.includes('unavailable: true'), '対象日外天気の明示');
 assert(indexHtml.includes('daySwipeInitialized'), 'スワイプ重複登録防止');
 
@@ -189,7 +189,8 @@ for (const [sourceName, source] of localSources) {
 assert(adminHtml.includes('src/admin.css') && adminHtml.includes('src/admin.js'), 'admin.html: 管理画面専用アセットを参照');
 assert(adminJs.includes('GoogleAuthProvider') && adminJs.includes("doc(db, 'admins', user.uid)"), 'admin.js: Googleログインと管理者権限ゲート');
 assert(adminJs.includes("collection(db, 'adminTrips')") && adminJs.includes("doc(db, 'publishedTrips', tripId)"), 'admin.js: 下書きと公開旅程を分離');
-assert(adminJs.includes("collection(db, 'adminDistributions')") && adminJs.includes("doc(db, 'rooms', roomId)"), 'admin.js: 配布先と同期ルームを一括作成');
+assert(adminJs.includes("collection(db, 'adminDistributions')") && adminJs.includes("doc(db, 'rooms', roomId)") && adminJs.includes("doc(db, 'accessGrants', grantId)"), 'admin.js: 配布ID・同期ルーム・閲覧権限を一括作成');
+assert(adminJs.includes('function randomAccessId()') && adminJs.includes('formatAccessId') && adminHtml.includes('配布IDを発行'), 'admin: 12文字の配布IDを発行・表示');
 assert(adminJs.includes("collection(db, 'rooms', distribution.roomId || distribution.id, 'participants')"), 'admin.js: 配布ルーム別に参加者を監視');
 assert(!adminJs.includes('.innerHTML'), 'admin.js: 管理データはDOM APIで安全に描画');
 assert(adminCss.includes('.admin-layout') && adminCss.includes('@media (max-width: 620px)'), 'admin.css: デスクトップ・モバイル管理画面レイアウト');
@@ -200,28 +201,31 @@ const rawIcons = [...indexHtml.matchAll(/getElementById\('([^']*raw-icon-[^']+)'
 assert(rawIcons.length === 8, 'raw icon ID参照は期待する8件');
 for (const id of rawIcons) assert(new RegExp(`<img\\b[^>]*\\bid="${id}"[^>]*\\bsrc="data:image/`, 'i').test(indexHtml), `raw icon ${id}: data URI画像が存在`);
 
-assert(indexHtml.includes('documents/publishedTrips/${encodeURIComponent(tripId)}') && indexHtml.includes('return staticResponse.json()'), 'index.html: 公開旅程を優先し静的JSONへフォールバック');
-assert(indexHtml.includes('PUBLISHED_TRIP_CACHE_PREFIX') && indexHtml.includes('if (cloudUnavailable)') && indexHtml.includes('cachedTrip'), 'index.html: 最後に取得した公開旅程をオフライン利用');
-assert(indexHtml.includes('TRIP_ACCESS_KEY') && indexHtml.includes('rememberTripAccessFromUrl(tripIdParam)') && indexHtml.includes('buildTripHref(t.id)'), 'index.html: しおり棚を往復しても招待ルームを保持');
+assert(indexHtml.includes('window._fetchManagedTripConfig(tripId, access)') && !indexHtml.includes('documents/publishedTrips/${encodeURIComponent(tripId)}') && !indexHtml.includes('fetch(`data/${tripId}.json`'), 'index.html: 配布IDなしで公開旅程や静的JSONを直接読み込まない');
+assert(indexHtml.includes('MANAGED_TRIP_CACHE_PREFIX') && indexHtml.includes('access.grantId || access.ledger') && indexHtml.includes('cachedTrip'), 'index.html: 許可済み配布ルーム単位でオフライン旅程を保存');
+assert(indexHtml.includes('TRIP_ACCESS_KEY') && indexHtml.includes('rememberTripAccessFromUrl(tripIdParam)') && indexHtml.includes('storedTripAccess(tripIdParam)') && indexHtml.includes('buildTripHref(t.id)'), 'index.html: しおり棚を往復しても配布ID権限を保持');
+assert(indexHtml.includes('window._redeemAccessId(accessId)') && indexHtml.includes('ACCESS_ID_PATTERN.test(accessId)') && indexHtml.includes("const initialTrips = tripIdParam && storedTripAccess(tripIdParam) ? [tripIdParam] : [];"), 'index.html: ADDで配布IDを確認し初期状態ではしおりを自動追加しない');
+assert(indexHtml.includes('joined = joined.filter(tripId => isValidDataKey(tripId) && storedTripAccess(tripId))') && indexHtml.includes('portalTripsCache = trips.filter(Boolean)'), 'index.html: 配布IDのない新規・旧端末はこれからの旅を空にする');
 assert(indexHtml.includes("window.addEventListener('popstate', initAppRouter)") && indexHtml.includes('window._stopSyncEngine?.()'), 'index.html: 戻る操作と棚表示で旅行ランタイムを停止');
 assert(indexHtml.includes('const currentLoadId = ++tripLoadRunId') && indexHtml.includes('currentLoadId !== tripLoadRunId'), 'index.html: 棚へ戻った後に古い旅程読込が画面を再開しない');
 assert(!indexHtml.includes('moveFatherBeachCard()') && !indexHtml.includes('moveDay1HotelCard()') && !indexHtml.includes('moveTowelMuseumBeforeLunch()'), 'index.html: 管理者のカード順を参加者側で上書きしない');
 assert(indexHtml.includes('window.currentTripData = data'), 'index.html: 描画済み公開データを拡張機能へ共有');
 assert(indexHtml.includes('data-fixed="${card.fixed === true') && indexHtml.includes('data-rigid="${card.rigid === true'), 'index.html: 予定制約を参加者カードへ出力');
 assert(firebaseSync.includes("doc(roomRef, 'participants', deviceId)") && firebaseSync.includes("collection(roomRef, 'participants')"), 'firebase-sync.js: 参加者プレゼンスを招待ルーム単位に分離');
-assert(firebaseSync.includes("return null;") && firebaseSync.includes("setSyncUi('local', '閲覧モード'") && !firebaseSync.includes('url.searchParams.set(\'ledger\', roomId)'), 'firebase-sync.js: 招待なしではルームを自動生成せず閲覧モード');
+assert(firebaseSync.includes("return null;") && firebaseSync.includes("setSyncUi('local', 'しおり未登録'") && !firebaseSync.includes('url.searchParams.set(\'ledger\', roomId)'), 'firebase-sync.js: 配布IDなしではルームを自動生成せずADDを案内');
 assert(firebaseSync.includes('window._stopSyncEngine = stopSyncEngine'), 'firebase-sync.js: 棚へ戻ると同期監視を停止');
 assert(firebaseSync.includes('syncContext.ledgerToken === actionLedgerToken') && firebaseSync.includes('action.ledgerToken !== ledgerToken'), 'firebase-sync.js: 保留支出を別の招待ルームへ流さない');
 assert(firebaseSync.includes('function setIdentityControlLocked(locked)') && firebaseSync.includes('deviceOwner.disabled = locked') && firebaseSync.includes('setIdentityControlLocked(true)') && firebaseSync.includes('setIdentityControlLocked(false)'), 'firebase-sync.js: 共有ルームの支払者は参加順から自動設定し手動入替を防ぐ');
-assert(firebaseSync.includes('招待リンクが無効です') && !firebaseSync.includes('Firestoreルールが未設定です'), 'firebase-sync.js: 参加者向けの招待エラー表示');
+assert(firebaseSync.includes('配布IDが無効です') && !firebaseSync.includes('Firestoreルールが未設定です'), 'firebase-sync.js: 参加者向けの配布IDエラー表示');
 +assert(indexHtml.includes('id="share-room-actions"') && indexHtml.includes('id="sync-note"') && indexHtml.includes('aria-live="polite">MEMBERS:'), 'index.html: 同期状態を支援技術へ通知し正常時要素を識別');
-+assert(firebaseSync.includes("actions.hidden = mode !== 'live'") && firebaseSync.includes("note.hidden = mode !== 'live'"), 'firebase-sync.js: ROOM・招待ボタン・正常説明はLIVE時だけ表示');
++assert(firebaseSync.includes('actions.hidden = true') && firebaseSync.includes("note.hidden = mode !== 'live'"), 'firebase-sync.js: 参加者による再配布ボタンを隠し同期説明だけLIVE時に表示');
 +assert(firebaseSync.includes("'MEMBERS: 同期なし'") && firebaseSync.includes("'MEMBERS: この端末のみ'") && firebaseSync.includes("'MEMBERS: 接続中…'"), 'firebase-sync.js: MEMBERSを接続状態に応じて更新');
 +assert(firebaseSync.includes('syncContext.roomReady') && firebaseSync.includes('syncContext.participantsReady') && firebaseSync.includes('renderLiveSyncState()'), 'firebase-sync.js: ルームと参加者一覧の両方が成功してからLIVE表示');
 +assert(firebaseSync.includes("console.error('Participant sync failed'") && firebaseSync.includes("'参加者情報を同期できません'"), 'firebase-sync.js: 参加者監視失敗をLoadingのままにしない');
 assert(rules.includes('function isAdmin()') && rules.includes('match /admins/{uid}'), 'Firestore: 管理者ドキュメント認可');
 assert(rules.includes('.data.active == true') && adminJs.includes("snapshot.data()?.active === true"), '管理者権限はactive: trueのアカウントだけ');
-assert(rules.includes('match /adminTrips/{tripId}') && rules.includes('match /publishedTrips/{tripId}'), 'Firestore: 下書きと公開旅程の権限分離');
+assert(rules.includes('match /adminTrips/{tripId}') && rules.includes('match /publishedTrips/{tripId}') && rules.includes('allow read, write: if isAdmin();'), 'Firestore: 下書きと公開旅程は管理者限定');
+assert(rules.includes('match /accessGrants/{grantId}') && rules.includes("resource.data.status == 'active'"), 'Firestore: 有効な配布IDだけ参加者が取得');
 assert(rules.includes('match /adminDistributions/{distributionId}') && rules.includes('match /participants/{uid}'), 'Firestore: 配布先管理とルーム別参加者');
 assert(rules.includes('allow create: if isAdmin();') && !rules.includes('validLegacyRoomCreate'), 'Firestore: 配布ルーム作成は管理者だけ');
 assert(indexHtml.includes('src/enhancements.css') && indexHtml.includes('src/enhancements.js') && indexHtml.includes('src/firebase-sync.js'), 'index.html: src版アセットだけを参照');
@@ -247,6 +251,7 @@ assert(enhancements.includes('共有台帳から削除しますか？'), 'enhanc
 assert(firebaseSync.includes('const currentRunId = ++syncRunId;') && firebaseSync.includes('currentRunId !== syncRunId'), 'firebase-sync.js: 二重初期化・競合guard');
 assert(firebaseSync.includes('EXPENSE_KEY = `expenses-${tripId}-${ledgerToken}-v2`;') && firebaseSync.includes('signInAnonymously(auth)') && firebaseSync.includes('persistentMultipleTabManager'), 'firebase-sync.js: ルーム別cache・匿名認証・複数タブ永続化');
 assert(firebaseSync.includes('window._initSyncEngine = initSyncEngine'), 'firebase-sync.js: 同期エンジン公開');
+assert(firebaseSync.includes('window._redeemAccessId = redeemAccessId') && firebaseSync.includes("doc(db, 'accessGrants', grantId)") && firebaseSync.includes('createOrJoinRoom(db, uid, grant.roomId, accessId)'), 'firebase-sync.js: ADD配布IDを権限・ルームへ交換');
 
 const shellMatch = sw.match(/const APP_SHELL\s*=\s*\[([\s\S]*?)\];/);
 if (!shellMatch) fail('sw.js: APP_SHELL配列が見つかりません');
@@ -255,11 +260,12 @@ else {
     assert(shellPaths.length > 0, 'sw.js: APP_SHELLが空でない');
     for (const shellPath of shellPaths) assert(fs.existsSync(shellPath === './' ? root : path.resolve(root, shellPath.replace(/^\.\//, ''))), `sw.js: APP_SHELL ${shellPath} が存在`);
 }
-assert(sw.includes("const CACHE_NAME = 'shikoku-drive-pwa-v39';"), 'sw.js: 参加者仕様修正版キャッシュv39');
+assert(sw.includes("const CACHE_NAME = 'shikoku-drive-pwa-v40';"), 'sw.js: 配布ID方式キャッシュv40');
 assert(sw.includes("event.data.action === 'SKIP_WAITING'") && sw.includes('if (requestUrl.origin !== self.location.origin) return;'), 'sw.js: 更新メッセージと外部origin除外');
 assert(sw.includes('fetch(event.request)') && sw.includes('cache.put(cacheKey, copy)'), 'sw.js: Web assetはネットワーク優先');
 assert(sw.includes("event.request.mode !== 'navigate'") && sw.includes("return caches.match('./index.html');") && !sw.includes("caches.match(event.request) || caches.match('./index.html')"), 'sw.js: indexフォールバックはnavigate限定でPromise真値バグなし');
 assert(sw.includes("url.search = '';") && sw.includes("url.hash = '';") && sw.includes('const cacheKey = cacheKeyFor(event.request);') && !sw.includes('cache.put(event.request, copy)'), 'sw.js: 招待トークンをキャッシュキーへ保存しない');
+assert(!sw.includes('./data/shikoku2026.json') && !sw.includes('./data/hokkaido2027.json'), 'sw.js: 未認証の旅程JSONをアプリシェルへ保存しない');
 
 if (data) {
     const shortcuts = Object.values(data.days || {}).flat().filter(card => card.expenseShortcut === true);

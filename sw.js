@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shikoku-drive-pwa-v39';
+const CACHE_NAME = 'shikoku-drive-pwa-v40';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,8 +6,6 @@ const APP_SHELL = [
   './src/admin.css',
   './src/admin.js',
   './data/trips.json',
-  './data/shikoku2026.json',
-  './data/hokkaido2027.json',
   './src/enhancements.css',
   './src/enhancements.js',
   './src/firebase-sync.js',

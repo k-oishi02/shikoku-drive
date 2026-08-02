@@ -110,6 +110,18 @@ function randomToken() {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
+const ACCESS_ID_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function randomAccessId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return [...bytes].map(byte => ACCESS_ID_ALPHABET[byte % ACCESS_ID_ALPHABET.length]).join('');
+}
+
+function formatAccessId(value) {
+  const normalized = text(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return normalized.match(/.{1,4}/g)?.join('-') || '—';
+}
+
 async function sha256(value) {
   const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return [...new Uint8Array(buffer)].map(byte => byte.toString(16).padStart(2, '0')).join('');
@@ -575,6 +587,14 @@ async function persistTrip(publish = false) {
         publishedAt: serverTimestamp(),
         updatedBy: state.currentUser.uid
       });
+      state.distributions
+        .filter(distribution => distribution.tripId === tripId && distribution.status === 'active' && distribution.grantId)
+        .slice(0, 450)
+        .forEach(distribution => batch.set(doc(db, 'accessGrants', distribution.grantId), {
+          title: state.activeTrip.title,
+          payloadJson,
+          updatedAt: serverTimestamp()
+        }, { merge: true }));
       await batch.commit();
       state.publishedIds.add(tripId);
       showToast('参加者ページへ公開しました。');
@@ -658,13 +678,10 @@ function startDistributionListener() {
   });
 }
 
-function distributionInviteUrl(distribution) {
+function participantAppUrl() {
   const url = new URL('./', window.location.href);
   url.search = '';
   url.hash = '';
-  url.searchParams.set('trip', distribution.tripId);
-  url.searchParams.set('ledger', distribution.ledgerToken);
-  url.searchParams.set('invite', distribution.inviteToken);
   return url.toString();
 }
 
@@ -679,13 +696,26 @@ async function createDistribution() {
     showToast('配布先名を入力してください。', true);
     return;
   }
+  if (!state.publishedIds.has(tripId)) {
+    showToast('配布IDを発行する前に、この旅行を参加者へ公開してください。', true);
+    return;
+  }
   const button = $('create-distribution');
   setBusy(button, true, '発行中…');
   const ledgerToken = randomToken();
-  const inviteToken = randomToken();
   const roomId = `${tripId}_${ledgerToken}`;
+  const trip = state.trips.get(tripId)?.trip;
+  const payloadJson = JSON.stringify(trip);
   try {
-    const inviteHash = await sha256(inviteToken);
+    let accessId = '';
+    let grantId = '';
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      accessId = randomAccessId();
+      grantId = await sha256(accessId);
+      if (!(await getDoc(doc(db, 'accessGrants', grantId))).exists()) break;
+      accessId = '';
+    }
+    if (!accessId) throw new Error('配布IDを生成できませんでした。もう一度お試しください。');
     const batch = writeBatch(db);
     batch.set(doc(db, 'rooms', roomId), {
       schemaVersion: 2,
@@ -694,7 +724,7 @@ async function createDistribution() {
       status: 'active',
       capacity: 2,
       members: {},
-      inviteHash,
+      inviteHash: grantId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       createdBy: state.currentUser.uid
@@ -704,18 +734,31 @@ async function createDistribution() {
       tripId,
       label,
       ledgerToken,
-      inviteToken,
+      inviteToken: accessId,
+      accessId,
+      grantId,
       status: 'active',
       capacity: 2,
       createdAt: serverTimestamp(),
       createdBy: state.currentUser.uid
     });
+    batch.set(doc(db, 'accessGrants', grantId), {
+      tripId,
+      roomId,
+      ledgerToken,
+      status: 'active',
+      title: trip.title,
+      payloadJson,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      createdBy: state.currentUser.uid
+    });
     await batch.commit();
     $('distribution-label').value = '';
-    showToast('招待リンクを発行しました。');
+    showToast('配布ID ' + formatAccessId(accessId) + ' を発行しました。');
   } catch (error) {
     console.error(error);
-    showToast(`招待リンクを発行できません: ${error.message}`, true);
+    showToast(`配布IDを発行できません: ${error.message}`, true);
   } finally {
     setBusy(button, false);
   }
@@ -740,7 +783,7 @@ function renderDistributions() {
   $('metric-invites').textContent = String(activeCount);
   $('distribution-count').textContent = `${state.distributions.length}件`;
   if (!state.distributions.length) {
-    list.append(makeElement('div', 'empty-state', '配布先はまだありません。旅行を選び、招待リンクを発行してください。'));
+    list.append(makeElement('div', 'empty-state', '配布先はまだありません。旅行を選び、配布IDを発行してください。'));
     return;
   }
   const activeIds = new Set(state.distributions.map(item => item.id));
@@ -760,7 +803,8 @@ function renderDistributions() {
     left.append(makeElement('span', 'muted small', `${distribution.tripId} · ${formatTimestamp(distribution.createdAt)}`));
     const participantCount = distribution.participants?.length || 0;
     head.append(left, makeElement('strong', '', `${participantCount}/${distribution.capacity || 2}名`));
-    const invite = makeElement('code', 'invite-url', distributionInviteUrl(distribution));
+    const accessId = distribution.accessId ? formatAccessId(distribution.accessId) : '旧方式：新しい配布IDを発行してください';
+    const invite = makeElement('code', 'invite-url', accessId);
     const participants = makeElement('div', 'participant-list');
     if (participantCount) {
       distribution.participants.forEach(person => participants.append(makeElement('span', 'participant', person.nickname || '名前未設定')));
@@ -768,14 +812,17 @@ function renderDistributions() {
       participants.append(makeElement('span', 'muted small', 'まだ参加者はいません'));
     }
     const actions = makeElement('div', 'trip-actions');
-    const copy = makeElement('button', 'compact primary', '招待リンクをコピー');
+    const copy = makeElement('button', 'compact primary', '配布IDをコピー');
     copy.type = 'button';
-    copy.disabled = distribution.status !== 'active';
-    copy.addEventListener('click', () => copyText(distributionInviteUrl(distribution), '招待リンクをコピーしました。'));
+    copy.disabled = distribution.status !== 'active' || !distribution.accessId;
+    copy.addEventListener('click', () => copyText(formatAccessId(distribution.accessId), '配布IDをコピーしました。'));
+    const copyApp = makeElement('button', 'compact ghost', 'アプリURLをコピー');
+    copyApp.type = 'button';
+    copyApp.addEventListener('click', () => copyText(participantAppUrl(), '参加者アプリURLをコピーしました。'));
     const toggle = makeElement('button', `compact ${distribution.status === 'active' ? 'danger' : ''}`, distribution.status === 'active' ? '配布を停止' : '再開');
     toggle.type = 'button';
     toggle.addEventListener('click', () => toggleDistribution(distribution));
-    actions.append(copy, toggle);
+    actions.append(copy, copyApp, toggle);
     card.append(head, invite, participants, actions);
     list.append(card);
   });
@@ -783,11 +830,20 @@ function renderDistributions() {
 
 async function toggleDistribution(distribution) {
   const status = distribution.status === 'active' ? 'revoked' : 'active';
-  if (status === 'revoked' && !window.confirm('この招待リンクを停止しますか？参加済みユーザーも同期できなくなります。')) return;
+  if (status === 'revoked' && !window.confirm('この配布IDを停止しますか？参加済みユーザーも閲覧・同期できなくなります。')) return;
   try {
     const batch = writeBatch(db);
     batch.update(doc(db, 'adminDistributions', distribution.id), { status, updatedAt: serverTimestamp() });
     batch.update(doc(db, 'rooms', distribution.roomId || distribution.id), { status, updatedAt: serverTimestamp() });
+    if (distribution.grantId) {
+      const trip = state.trips.get(distribution.tripId)?.trip;
+      const grantUpdate = { status, updatedAt: serverTimestamp() };
+      if (status === 'active' && trip) {
+        grantUpdate.title = trip.title;
+        grantUpdate.payloadJson = JSON.stringify(trip);
+      }
+      batch.update(doc(db, 'accessGrants', distribution.grantId), grantUpdate);
+    }
     await batch.commit();
     showToast(status === 'active' ? '配布を再開しました。' : '配布を停止しました。');
   } catch (error) {

@@ -40,6 +40,18 @@ let unsubscribeParticipants = null;
 let participantHeartbeat = null;
 let syncRunId = 0;
 const PARTICIPANT_ACTIVE_MS = 5 * 60 * 1000;
+const TRIP_ACCESS_KEY = 'participant-trip-access-v1';
+const ACCESS_ID_PATTERN = /^[A-Z2-9]{12}$/;
+
+function normalizeAccessId(value) {
+    return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function accessError(code, message) {
+    const error = new Error(message);
+    error.code = code;
+    return error;
+}
 
 function randomToken(byteLength = 32) {
     const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
@@ -67,11 +79,19 @@ function getOrCreateDeviceId() {
 
 function ensureRoomParameters(tripId) {
     const url = new URL(window.location.href);
-    const roomId = url.searchParams.get('ledger');
-    const invite = url.searchParams.get('invite');
-    const validToken = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || ''));
+    let roomId = url.searchParams.get('ledger');
+    let invite = url.searchParams.get('invite');
+    const validLedger = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || ''));
+    const validInvite = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || '')) || ACCESS_ID_PATTERN.test(String(value || ''));
+    if (!validLedger(roomId) || !validInvite(invite)) {
+        try {
+            const stored = JSON.parse(localStorage.getItem(TRIP_ACCESS_KEY) || '{}')?.[tripId];
+            roomId = stored?.ledger || '';
+            invite = stored?.invite || '';
+        } catch (error) {}
+    }
     const roomCode = document.getElementById('sync-room-code');
-    if (!validToken(roomId) || !validToken(invite)) {
+    if (!validLedger(roomId) || !validInvite(invite)) {
         inviteUrl = '';
         if (roomCode) roomCode.textContent = 'VIEW ONLY';
         return null;
@@ -96,7 +116,7 @@ function setSyncUi(mode, title, message) {
     }
     if (titleEl) titleEl.textContent = title;
     if (status) status.textContent = message;
-    if (actions) actions.hidden = mode !== 'live';
+    if (actions) actions.hidden = true;
     if (note) note.hidden = mode !== 'live';
     if (members && mode !== 'live') {
         members.textContent = mode === 'error'
@@ -120,12 +140,12 @@ function renderLiveSyncState() {
     const roleLabel = syncContext.role === 'owner' ? '作成者' : '参加者';
     setSyncUi('live', `${roleLabel}として接続済み`, `${count}/2台が登録済み。追加・削除は自動同期されます。`);
     const roomFull = count >= 2;
-    setShareEnabled(!roomFull, roomFull ? '2台接続済み' : '招待リンクをコピー');
+    setShareEnabled(false, roomFull ? '2台接続済み' : '管理者配布IDを使用');
     const note = document.getElementById('sync-note');
     if (note) {
         note.textContent = roomFull
             ? '2台の同期が有効です。入力内容は双方へ自動反映されます。'
-            : '招待リンクを相手の端末で開くと、二人の入力がリアルタイム同期されます。';
+            : 'もう一人もアプリのADDへ同じ配布IDを入力すると、リアルタイム同期が始まります。';
     }
 }
 
@@ -284,6 +304,59 @@ async function createOrJoinRoom(db, uid, roomId, invite) {
     return { roomRef, role: 'member' };
 }
 
+export async function redeemAccessId(value) {
+    const accessId = normalizeAccessId(value);
+    if (!ACCESS_ID_PATTERN.test(accessId)) throw accessError('access/invalid', 'Invalid access ID');
+    const grantId = await sha256(accessId);
+    const db = await getDbInstance();
+    if (!db) throw accessError('access/unavailable', 'Access service unavailable');
+    const auth = getAuth();
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw accessError('access/unavailable', 'Anonymous authentication failed');
+    let grantSnapshot;
+    try {
+        grantSnapshot = await getDoc(doc(db, 'accessGrants', grantId));
+    } catch (error) {
+        if (String(error?.code || '').includes('permission-denied')) throw accessError('access/revoked', 'Access ID revoked');
+        throw error;
+    }
+    if (!grantSnapshot.exists()) throw accessError('access/invalid', 'Access ID not found');
+    const grant = grantSnapshot.data();
+    if (grant.status !== 'active') throw accessError('access/revoked', 'Access ID revoked');
+    if (!grant.tripId || !grant.roomId || !grant.ledgerToken || !grant.payloadJson) throw accessError('access/invalid', 'Access grant incomplete');
+    let trip;
+    try { trip = JSON.parse(grant.payloadJson); } catch (error) { throw accessError('access/invalid', 'Trip payload invalid'); }
+    try {
+        await createOrJoinRoom(db, uid, grant.roomId, accessId);
+    } catch (error) {
+        if (String(error?.code || '').includes('permission-denied')) throw accessError('access/full', 'Room is full or inactive');
+        throw error;
+    }
+    return { tripId: grant.tripId, ledgerToken: grant.ledgerToken, grantId, trip };
+}
+
+export async function fetchManagedTripConfig(tripId, access) {
+    const accessId = normalizeAccessId(access?.invite);
+    const legacyInvite = /^[A-Za-z0-9_-]{43}$/.test(String(access?.invite || ''));
+    if (!ACCESS_ID_PATTERN.test(accessId) && !legacyInvite) throw accessError('access/invalid', 'Invalid saved access');
+    if (legacyInvite) throw accessError('access/revoked', 'Legacy invite must be replaced with a distribution ID');
+    const grantId = await sha256(accessId);
+    if (access?.grantId && access.grantId !== grantId) throw accessError('access/invalid', 'Access grant mismatch');
+    const db = await getDbInstance();
+    let grantSnapshot;
+    try {
+        grantSnapshot = await getDoc(doc(db, 'accessGrants', grantId));
+    } catch (error) {
+        if (String(error?.code || '').includes('permission-denied')) throw accessError('access/revoked', 'Access ID revoked');
+        throw error;
+    }
+    if (!grantSnapshot.exists()) throw accessError('access/invalid', 'Access ID not found');
+    const grant = grantSnapshot.data();
+    if (grant.status !== 'active') throw accessError('access/revoked', 'Access ID revoked');
+    if (grant.tripId !== tripId || grant.ledgerToken !== access.ledger) throw accessError('access/invalid', 'Access grant does not match trip');
+    try { return JSON.parse(grant.payloadJson); } catch (error) { throw accessError('access/invalid', 'Trip payload invalid'); }
+}
+
 export async function initSyncEngine(tripId) {
     const currentRunId = ++syncRunId;
     syncContext = null;
@@ -298,7 +371,7 @@ try {
             setIdentityControlLocked(false);
             EXPENSE_KEY = `expenses-${tripId}-local-v2`;
             window.setExpenseStorageScope?.(tripId, null);
-            setSyncUi('local', '閲覧モード', '共有台帳へ参加するには、管理者から届いた招待リンクで開いてください。');
+            setSyncUi('local', 'しおり未登録', 'しおり棚のADDへ、管理者から届いた配布IDを入力してください。');
             return;
         }
         const { roomId, invite, ledgerToken } = roomParameters;
@@ -467,7 +540,7 @@ try {
         if (code.includes('auth/operation-not-allowed')) {
             setSyncUi('error', '共有機能を利用できません', '管理者へ連絡してください。端末内では引き続き記録できます。');
         } else if (code.includes('permission-denied') || code.includes('not-found')) {
-            setSyncUi('error', '招待リンクが無効です', '配布が停止されたか、リンクが古い可能性があります。管理者から新しいリンクを受け取ってください。');
+            setSyncUi('error', '配布IDが無効です', '配布が停止された可能性があります。管理者から新しい配布IDを受け取ってください。');
         } else {
             setSyncUi('error', '共有同期を開始できません', '通信状態を確認してください。端末内の入力は残っています。');
         }
@@ -535,6 +608,8 @@ export async function listenToTripParticipants(tripId, callback) {
     });
 }
 
+window._redeemAccessId = redeemAccessId;
+window._fetchManagedTripConfig = fetchManagedTripConfig;
 window._initSyncEngine = initSyncEngine;
 window._stopSyncEngine = stopSyncEngine;
 window.listenToTripParticipants = listenToTripParticipants;

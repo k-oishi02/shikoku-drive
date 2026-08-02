@@ -483,13 +483,13 @@
 
             <!-- ADD NEW TRIP INLINE FORM -->
             <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-line);">
-                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%; padding: 14px; font-family: var(--font-mont); font-size: 0.75rem; letter-spacing: 2px;" onclick="showAddTripInput()">＋ 新しい旅程を追加 (ADD NEW TRIP)</button>
+                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%; padding: 14px; font-family: var(--font-mont); font-size: 0.75rem; letter-spacing: 2px;" onclick="showAddTripInput()">＋ 配布IDでしおりを追加 (ADD)</button>
 
                 <div id="add-trip-container" style="display: none; margin-top: 16px;">
                     <form onsubmit="handleAddTripSubmit(event)" style="display: flex; flex-direction: column; gap: 12px;">
                         <label class="welcome-label">
-                            <span>新しい旅程IDを入力</span>
-                            <input id="new-trip-id" type="text" placeholder="例：hokkaido2027" required maxlength="25" style="width: 100%; background: #242424; border: 1px solid var(--border-line); color: #ffffff; padding: 12px 14px; font-family: var(--font-gothic); font-size: 0.92rem; outline: none;">
+                            <span>管理者から届いた配布IDを入力</span>
+                            <input id="new-trip-id" type="text" placeholder="例：ABCD-EFGH-JKLM" required maxlength="20" autocomplete="off" autocapitalize="characters" style="width: 100%; background: #242424; border: 1px solid var(--border-line); color: #ffffff; padding: 12px 14px; font-family: var(--font-gothic); font-size: 0.92rem; outline: none;">
                         </label>
                         <div id="add-trip-error" class="welcome-error" style="display: none; margin-top: 0;"></div>
                         <div style="display: flex; gap: 8px;">
@@ -831,8 +831,10 @@
         }
 
         const TRIP_ACCESS_KEY = 'participant-trip-access-v1';
-        const PUBLISHED_TRIP_CACHE_PREFIX = 'published-trip-cache-v1:';
-        const INVITE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+        const MANAGED_TRIP_CACHE_PREFIX = 'managed-trip-cache-v2:';
+        const LEDGER_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+        const LEGACY_INVITE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+        const ACCESS_ID_PATTERN = /^[A-Z2-9]{12}$/;
 
         function readStoredObject(key) {
             try {
@@ -843,25 +845,55 @@
             }
         }
 
+        function normalizeAccessId(value) {
+            return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        }
+
+        function isValidAccessSecret(value) {
+            const text = String(value || '');
+            return ACCESS_ID_PATTERN.test(text) || LEGACY_INVITE_TOKEN_PATTERN.test(text);
+        }
+
+        function storedTripAccess(tripId) {
+            const saved = readStoredObject(TRIP_ACCESS_KEY)[tripId];
+            return LEDGER_TOKEN_PATTERN.test(String(saved?.ledger || '')) && isValidAccessSecret(saved?.invite)
+                ? saved
+                : null;
+        }
+
+        function saveTripAccess(tripId, details) {
+            const access = readStoredObject(TRIP_ACCESS_KEY);
+            access[tripId] = {
+                ledger: details.ledger,
+                invite: details.invite,
+                grantId: details.grantId || ''
+            };
+            localStorage.setItem(TRIP_ACCESS_KEY, JSON.stringify(access));
+        }
+
+        function forgetTripAccess(tripId) {
+            const access = readStoredObject(TRIP_ACCESS_KEY);
+            delete access[tripId];
+            localStorage.setItem(TRIP_ACCESS_KEY, JSON.stringify(access));
+            let joined = [];
+            try { joined = JSON.parse(localStorage.getItem('joined_trips') || '[]'); } catch (error) {}
+            localStorage.setItem('joined_trips', JSON.stringify((Array.isArray(joined) ? joined : []).filter(id => id !== tripId)));
+        }
+
         function rememberTripAccessFromUrl(tripId) {
             if (!isValidDataKey(tripId)) return;
             const params = new URLSearchParams(window.location.search);
             const ledger = params.get('ledger');
             const invite = params.get('invite');
-            if (!INVITE_TOKEN_PATTERN.test(String(ledger || '')) || !INVITE_TOKEN_PATTERN.test(String(invite || ''))) return;
-            const access = readStoredObject(TRIP_ACCESS_KEY);
-            access[tripId] = { ledger, invite };
-            try { localStorage.setItem(TRIP_ACCESS_KEY, JSON.stringify(access)); } catch (error) {}
+            if (!LEDGER_TOKEN_PATTERN.test(String(ledger || '')) || !isValidAccessSecret(invite)) return;
+            saveTripAccess(tripId, { ledger, invite: String(invite), grantId: '' });
+            params.delete('ledger');
+            params.delete('invite');
+            history.replaceState(null, '', `?${params.toString()}`);
         }
 
         function buildTripHref(tripId) {
-            const params = new URLSearchParams({ trip: String(tripId || '') });
-            const saved = readStoredObject(TRIP_ACCESS_KEY)[tripId];
-            if (INVITE_TOKEN_PATTERN.test(String(saved?.ledger || '')) && INVITE_TOKEN_PATTERN.test(String(saved?.invite || ''))) {
-                params.set('ledger', saved.ledger);
-                params.set('invite', saved.invite);
-            }
-            return `?${params.toString()}`;
+            return `?trip=${encodeURIComponent(String(tripId || ''))}`;
         }
 
         function tokyoDateKey(date = new Date()) {
@@ -876,40 +908,30 @@
 
         async function fetchTripConfig(tripId) {
             if (!isValidDataKey(tripId)) throw new Error('Invalid trip ID');
-            const documentUrl = `https://firestore.googleapis.com/v1/projects/shikoku-drive/databases/(default)/documents/publishedTrips/${encodeURIComponent(tripId)}`;
-            let cloudUnavailable = false;
+            const access = storedTripAccess(tripId);
+            if (!access) {
+                const error = new Error('Access ID required');
+                error.code = 'access/id-required';
+                throw error;
+            }
+            const cacheKey = `${MANAGED_TRIP_CACHE_PREFIX}${tripId}:${access.grantId || access.ledger}`;
             try {
-                const cloudResponse = await fetch(documentUrl, { cache: 'no-store' });
-                if (cloudResponse.ok) {
-                    const documentData = await cloudResponse.json();
-                    const fields = documentData?.fields || {};
-                    const isPublished = fields.published?.booleanValue === true;
-                    const payloadJson = fields.payloadJson?.stringValue;
-                    if (isPublished && payloadJson) {
-                        const cloudTrip = JSON.parse(payloadJson);
-                        if (validTripConfig(cloudTrip, tripId)) {
-                            try {
-                                localStorage.setItem(`${PUBLISHED_TRIP_CACHE_PREFIX}${tripId}`, JSON.stringify(cloudTrip));
-                            } catch (error) {}
-                            return cloudTrip;
-                        }
-                    }
-                } else {
-                    cloudUnavailable = cloudResponse.status >= 500;
-                }
+                if (typeof window._fetchManagedTripConfig !== 'function') throw new Error('Access service is not ready');
+                const managedTrip = await window._fetchManagedTripConfig(tripId, access);
+                if (!validTripConfig(managedTrip, tripId)) throw new Error('Invalid managed trip');
+                localStorage.setItem(cacheKey, JSON.stringify(managedTrip));
+                return managedTrip;
             } catch (error) {
-                cloudUnavailable = true;
-                console.info('Published trip is temporarily unavailable.', error);
-            }
-            if (cloudUnavailable) {
+                if (String(error?.code || '').includes('access/revoked') || String(error?.code || '').includes('access/invalid')) {
+                    forgetTripAccess(tripId);
+                    throw error;
+                }
                 try {
-                    const cachedTrip = JSON.parse(localStorage.getItem(`${PUBLISHED_TRIP_CACHE_PREFIX}${tripId}`) || 'null');
+                    const cachedTrip = JSON.parse(localStorage.getItem(cacheKey) || 'null');
                     if (validTripConfig(cachedTrip, tripId)) return cachedTrip;
-                } catch (error) {}
+                } catch (cacheError) {}
+                throw error;
             }
-            const staticResponse = await fetch(`data/${tripId}.json`, { cache: 'no-store' });
-            if (!staticResponse.ok) throw new Error(`Trip data request failed: ${staticResponse.status}`);
-            return staticResponse.json();
         }
 
         function sortDayKeys(keys) {
@@ -977,18 +999,15 @@
 
             document.getElementById('welcome-overlay').classList.remove('active');
 
-            if (tripIdParam) {
-                // Direct shiori view override
+            if (tripIdParam && storedTripAccess(tripIdParam)) {
                 addJoinedTrip(tripIdParam);
                 localStorage.setItem('trip_id', tripIdParam);
-
-                // Show shiori, hide portal
                 document.getElementById('portal-overlay').classList.remove('active');
                 document.getElementById('shiori-content').style.display = 'block';
                 loadShioriData(tripIdParam);
             } else {
-                // Show Portal (Trip Shelf)
                 pauseTripRuntime();
+                if (tripIdParam) history.replaceState(null, '', './');
                 document.getElementById('portal-overlay').classList.add('active');
                 document.getElementById('shiori-content').style.display = 'none';
                 renderPortalDashboard();
@@ -1017,7 +1036,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const rawTripIdParam = urlParams.get('trip');
             const tripIdParam = isValidDataKey(rawTripIdParam) ? rawTripIdParam : null;
-            const initialTrips = [tripIdParam || 'shikoku2026'].filter(isValidDataKey);
+            const initialTrips = tripIdParam && storedTripAccess(tripIdParam) ? [tripIdParam] : [];
             localStorage.setItem('joined_trips', JSON.stringify(initialTrips));
 
             window.location.reload();
@@ -1035,8 +1054,7 @@
                 joined = JSON.parse(localStorage.getItem('joined_trips') || '[]');
             } catch(e) {}
             if (!Array.isArray(joined)) joined = [];
-            joined = joined.filter(isValidDataKey);
-            if (joined.length === 0) joined = ['shikoku2026'];
+            joined = joined.filter(tripId => isValidDataKey(tripId) && storedTripAccess(tripId));
             localStorage.setItem('joined_trips', JSON.stringify(joined));
 
             const todayStr = tokyoDateKey();
@@ -1054,17 +1072,21 @@
                             isPast: isPast
                         };
                     })
-                    .catch(err => ({
-                        id: tripId,
-                        title: `旅程 ID: ${tripId}`,
-                        subtitle: '詳細を読み込めませんでした。',
-                        date: '--',
-                        isPast: false
-                    }));
+                    .catch(error => {
+                        const code = String(error?.code || '');
+                        if (code.includes('access/revoked') || code.includes('access/invalid') || code.includes('access/id-required')) return null;
+                        return {
+                            id: tripId,
+                            title: `旅程 ID: ${tripId}`,
+                            subtitle: '通信できないため詳細を読み込めませんでした。',
+                            date: '--',
+                            isPast: false
+                        };
+                    });
             });
 
             Promise.all(promises).then(trips => {
-                portalTripsCache = trips;
+                portalTripsCache = trips.filter(Boolean);
                 const nickname = localStorage.getItem('user_nickname') || '';
                 const titleEl = document.querySelector('.portal-sub');
                 if (titleEl) {
@@ -1118,37 +1140,51 @@
             document.getElementById('add-trip-container').style.display = 'none';
         }
 
-        function handleAddTripSubmit(e) {
+        async function handleAddTripSubmit(e) {
             e.preventDefault();
-            const newId = document.getElementById('new-trip-id').value.trim();
+            const input = document.getElementById('new-trip-id');
             const errorEl = document.getElementById('add-trip-error');
-            if (!newId) return;
-            if (!isValidDataKey(newId)) {
-                errorEl.textContent = 'しおりIDは半角英数字・ハイフン・アンダースコアのみ使用できます。';
+            const accessId = normalizeAccessId(input.value);
+            const submitButton = e.currentTarget.querySelector('button[type="submit"]');
+            if (!ACCESS_ID_PATTERN.test(accessId)) {
+                errorEl.textContent = '配布IDは12文字です。管理者から届いたIDを確認してください。';
                 errorEl.style.display = 'block';
                 return;
             }
-
             errorEl.style.display = 'none';
-
-            fetchTripConfig(newId)
-                .then(data => {
-                    addJoinedTrip(newId);
-                    hideAddTripInput();
-                    renderPortalDashboard();
-                })
-                .catch(err => {
-                    errorEl.textContent = "指定の旅程IDが見つかりませんでした。";
-                    errorEl.style.display = 'block';
+            submitButton.disabled = true;
+            submitButton.textContent = '確認中…';
+            try {
+                if (typeof window._redeemAccessId !== 'function') throw new Error('配布ID確認サービスを準備しています。少し待って再度お試しください。');
+                const result = await window._redeemAccessId(accessId);
+                saveTripAccess(result.tripId, {
+                    ledger: result.ledgerToken,
+                    invite: accessId,
+                    grantId: result.grantId
                 });
+                localStorage.setItem(`${MANAGED_TRIP_CACHE_PREFIX}${result.tripId}:${result.grantId}`, JSON.stringify(result.trip));
+                addJoinedTrip(result.tripId);
+                hideAddTripInput();
+                history.pushState(null, '', buildTripHref(result.tripId));
+                initAppRouter();
+            } catch (error) {
+                errorEl.textContent = String(error?.code || '').includes('access/full')
+                    ? 'この配布IDはすでに2名が登録済みです。'
+                    : '配布IDが無効か、管理者によって停止されています。';
+                errorEl.style.display = 'block';
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = '追加';
+            }
         }
 
         function resetOnboarding() {
-            if (confirm("登録されている名前としおりIDをリセットして、別のしおりを選択しますか？")) {
+            if (confirm("登録されている名前と配布IDをリセットして、別のしおりを選択しますか？")) {
                 localStorage.removeItem('user_nickname');
                 localStorage.removeItem('trip_id');
                 localStorage.removeItem('joined_trips');
                 localStorage.removeItem(TRIP_ACCESS_KEY);
+                Object.keys(localStorage).filter(key => key.startsWith(MANAGED_TRIP_CACHE_PREFIX)).forEach(key => localStorage.removeItem(key));
                 window.location.reload();
             }
         }
