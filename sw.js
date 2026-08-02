@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shikoku-drive-pwa-v42';
+const CACHE_NAME = 'shikoku-drive-pwa-v43';
 const APP_SHELL = [
   './',
   './index.html',

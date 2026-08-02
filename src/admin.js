@@ -1,4 +1,4 @@
-import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
 import {
   getAuth,
   GoogleAuthProvider,
@@ -30,7 +30,9 @@ const firebaseConfig = {
   measurementId: 'G-VV9YHYW85C'
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const ADMIN_APP_NAME = 'shiori-admin';
+const app = getApps().find(existingApp => existingApp.name === ADMIN_APP_NAME)
+  || initializeApp(firebaseConfig, ADMIN_APP_NAME);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
