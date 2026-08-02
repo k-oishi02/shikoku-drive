@@ -1,4 +1,4 @@
-import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
 import {
     getAuth,
     signInAnonymously
@@ -42,6 +42,12 @@ let syncRunId = 0;
 const PARTICIPANT_ACTIVE_MS = 5 * 60 * 1000;
 const TRIP_ACCESS_KEY = 'participant-trip-access-v1';
 const ACCESS_ID_PATTERN = /^[A-Z2-9]{12}$/;
+const PARTICIPANT_APP_NAME = 'shiori-participant';
+
+function getParticipantApp() {
+    return getApps().find(app => app.name === PARTICIPANT_APP_NAME)
+        || initializeApp(firebaseConfig, PARTICIPANT_APP_NAME);
+}
 
 function normalizeAccessId(value) {
     return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -355,7 +361,7 @@ export async function redeemAccessId(value) {
     const grantId = await sha256(accessId);
     const db = await getDbInstance();
     if (!db) throw accessError('access/unavailable', 'Access service unavailable');
-    const auth = getAuth();
+    const auth = getAuth(getParticipantApp());
     const uid = auth.currentUser?.uid;
     if (!uid) throw accessError('access/unavailable', 'Anonymous authentication failed');
     let grantSnapshot;
@@ -431,12 +437,7 @@ try {
         setIdentityControlLocked(true);
         EXPENSE_KEY = `expenses-${tripId}-${ledgerToken}-v2`;
         window.setExpenseStorageScope?.(tripId, ledgerToken);
-        let app;
-        if (getApps().length === 0) {
-            app = initializeApp(firebaseConfig);
-        } else {
-            app = getApp();
-        }
+        const app = getParticipantApp();
         const auth = getAuth(app);
 
         let db;
@@ -620,12 +621,7 @@ export function stopSyncEngine() {
 
 export async function getDbInstance() {
     try {
-        let app;
-        if (getApps().length === 0) {
-            app = initializeApp(firebaseConfig);
-        } else {
-            app = getApp();
-        }
+        const app = getParticipantApp();
 
         let db;
         try {
