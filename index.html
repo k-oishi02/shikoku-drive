@@ -1204,6 +1204,7 @@
 
         function displayCardTitle(card) {
             const title = String(card?.title || '');
+            if (title === 'レンタカー返却') return 'トヨタレンタカー松山空港店';
             const route = itineraryRouteParts(title);
             return route ? route.destination : title;
         }
@@ -1227,10 +1228,40 @@
             };
         }
 
+        function splitCombinedRentalPickup(card) {
+            if (String(card?.title || '') !== 'レンタカー・お弁当受取') return [card];
+            const rental = {
+                time: '08:10 - 08:40',
+                badge: 'RENTAL CAR',
+                title: 'トヨタレンタカー高松空港店',
+                desc: '空港到着後、予約車両を受取。車は島へ載せない。高松港に駐車する。',
+                mapQuery: 'トヨタレンタカー高松空港店',
+                official: card.official,
+                officialLabel: '店舗情報',
+                expenseShortcut: true
+            };
+            const bento = {
+                time: '08:40 - 10:15',
+                badge: 'BENTO',
+                title: '高松オルネ',
+                desc: '10:00に予約弁当を受取後、高松港へ。8/27までに予約。帰港後に車を回収する。',
+                links: [
+                    {
+                        label: 'ルート',
+                        kind: 'route',
+                        url: 'https://www.google.com/maps/dir/?api=1&origin=トヨタレンタカー高松空港店&destination=高松オルネ&travelmode=driving'
+                    },
+                    ...(Array.isArray(card.links) ? card.links : [])
+                ],
+                expenseShortcut: true
+            };
+            return [rental, bento];
+        }
         function mergeIncomingMovementCards(cards) {
             const result = [];
             let pending = [];
-            for (const sourceCard of Array.isArray(cards) ? cards : []) {
+            const expandedCards = (Array.isArray(cards) ? cards : []).flatMap(splitCombinedRentalPickup);
+            for (const sourceCard of expandedCards) {
                 if (isLandMovementCard(sourceCard)) {
                     pending.push(sourceCard);
                     continue;
