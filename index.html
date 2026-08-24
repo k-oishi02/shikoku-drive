@@ -904,10 +904,91 @@
         function initAppRouter() {
             const nickname = localStorage.getItem('user_nickname');
             const pendingAccessId = capturePendingAccessId();
+            const urlParams = new URLSearchParams(window.location.search);
+            const rawTripIdParam = urlParams.get('trip');
+            const tripIdParam = isValidDataKey(rawTripIdParam) ? rawTripIdParam : null;
 
-            window.location.reload();
+            if (!nickname) {
+                document.getElementById('welcome-overlay').classList.add('active');
+                document.getElementById('portal-overlay').classList.remove('active');
+                document.getElementById('shiori-content').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('welcome-overlay').classList.remove('active');
+
+            if (pendingAccessId) {
+                beginAutomaticAccessRegistration(pendingAccessId);
+                return;
+            }
+
+            if (tripIdParam && storedTripAccess(tripIdParam)) {
+                document.getElementById('portal-overlay').classList.remove('active');
+                document.getElementById('shiori-content').style.display = 'block';
+                loadShioriData(tripIdParam);
+                return;
+            }
+
+            pauseTripRuntime();
+            if (rawTripIdParam) history.replaceState(null, '', './');
+            document.getElementById('portal-overlay').classList.add('active');
+            document.getElementById('shiori-content').style.display = 'none';
+            renderPortalDashboard();
         }
 
+        let automaticAccessId = '';
+
+        function accessRegistrationErrorMessage(error) {
+            return String(error?.code || '').includes('access/full')
+                ? 'この配布先は定員に達しています。管理者へ連絡してください。'
+                : '配布IDが無効か、管理者によって停止されています。';
+        }
+
+        async function redeemAndStoreAccess(accessId) {
+            if (typeof window._redeemAccessId !== 'function') throw new Error('配布ID確認サービスを準備しています。少し待って再度お試しください。');
+            const result = await window._redeemAccessId(accessId);
+            saveTripAccess(result.tripId, {
+                ledger: result.ledgerToken,
+                accessId,
+                grantId: result.grantId
+            });
+            localStorage.setItem(`${MANAGED_TRIP_CACHE_PREFIX}${result.tripId}:${result.grantId}`, JSON.stringify(result.trip));
+            return result;
+        }
+
+        async function beginAutomaticAccessRegistration(accessId) {
+            if (automaticAccessId === accessId) return;
+            automaticAccessId = accessId;
+            pauseTripRuntime();
+            document.getElementById('portal-overlay').classList.add('active');
+            document.getElementById('shiori-content').style.display = 'none';
+            document.getElementById('portal-cards').innerHTML = '<div style="color:var(--text-sub); font-size:0.88rem; padding:12px 0;">登録リンクを確認中…</div>';
+            try {
+                const result = await redeemAndStoreAccess(accessId);
+                sessionStorage.removeItem(PENDING_ACCESS_ID_KEY);
+                automaticAccessId = '';
+                history.replaceState(null, '', buildTripHref(result.tripId));
+                initAppRouter();
+            } catch (error) {
+                sessionStorage.removeItem(PENDING_ACCESS_ID_KEY);
+                automaticAccessId = '';
+                history.replaceState(null, '', './');
+                renderPortalDashboard();
+                showAddTripInput();
+                document.getElementById('new-trip-id').value = accessId;
+                const errorEl = document.getElementById('add-trip-error');
+                errorEl.textContent = accessRegistrationErrorMessage(error);
+                errorEl.style.display = 'block';
+            }
+        }
+
+        function handleOnboardingSubmit(event) {
+            event.preventDefault();
+            const nickname = document.getElementById('welcome-nickname').value.trim();
+            if (!nickname) return;
+            localStorage.setItem('user_nickname', nickname);
+            initAppRouter();
+        }
         let portalTripsCache = [];
         let currentPortalCategory = 'upcoming';
 
