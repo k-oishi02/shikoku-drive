@@ -1197,98 +1197,6 @@
                 });
         }
 
-        function itineraryRouteParts(title) {
-            const parts = String(title || '').split(/\s*(?:→|⇒|➜)\s*/).map(part => part.trim()).filter(Boolean);
-            return parts.length >= 2 ? { origin: parts[0], destination: parts[parts.length - 1] } : null;
-        }
-
-        function displayCardTitle(card) {
-            const title = String(card?.title || '');
-            if (title === 'レンタカー返却') return 'トヨタレンタカー松山空港店';
-            const route = itineraryRouteParts(title);
-            return route ? route.destination : title;
-        }
-        const LAND_MOVEMENT_BADGES = new Set(['MOVE', 'BUS', 'HELLO CYCLING', 'DRIVE', 'BREAK']);
-
-        function isLandMovementCard(card) {
-            const badge = String(card?.badge || '').toUpperCase();
-            const title = String(card?.title || '');
-            return LAND_MOVEMENT_BADGES.has(badge) && (itineraryRouteParts(title) || /移動/.test(title));
-        }
-
-        function movementRouteLink(card) {
-            const route = itineraryRouteParts(card?.title);
-            if (!route) return null;
-            const badge = String(card?.badge || '').toUpperCase();
-            const travelmode = badge === 'BUS' ? 'transit' : badge === 'HELLO CYCLING' ? 'bicycling' : 'driving';
-            return {
-                label: 'ルート',
-                kind: 'route',
-                url: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(route.origin)}&destination=${encodeURIComponent(route.destination)}&travelmode=${travelmode}`
-            };
-        }
-
-        function splitCombinedRentalPickup(card) {
-            if (String(card?.title || '') !== 'レンタカー・お弁当受取') return [card];
-            const rental = {
-                time: '08:10 - 08:40',
-                badge: 'RENTAL CAR',
-                title: 'トヨタレンタカー高松空港店',
-                desc: '空港到着後、予約車両を受取。車は島へ載せない。高松港に駐車する。',
-                mapQuery: 'トヨタレンタカー高松空港店',
-                official: card.official,
-                officialLabel: '店舗情報',
-                expenseShortcut: true
-            };
-            const bento = {
-                time: '08:40 - 10:15',
-                badge: 'BENTO',
-                title: '高松オルネ',
-                desc: '10:00に予約弁当を受取後、高松港へ。8/27までに予約。帰港後に車を回収する。',
-                links: [
-                    {
-                        label: 'ルート',
-                        kind: 'route',
-                        url: 'https://www.google.com/maps/dir/?api=1&origin=トヨタレンタカー高松空港店&destination=高松オルネ&travelmode=driving'
-                    },
-                    ...(Array.isArray(card.links) ? card.links : [])
-                ],
-                expenseShortcut: true
-            };
-            return [rental, bento];
-        }
-        function mergeIncomingMovementCards(cards) {
-            const result = [];
-            let pending = [];
-            const expandedCards = (Array.isArray(cards) ? cards : []).flatMap(splitCombinedRentalPickup);
-            for (const sourceCard of expandedCards) {
-                if (isLandMovementCard(sourceCard)) {
-                    pending.push(sourceCard);
-                    continue;
-                }
-                const card = { ...sourceCard, links: Array.isArray(sourceCard.links) ? [...sourceCard.links] : [] };
-                if (pending.length) {
-                    const firstTime = String(pending[0].time || '');
-                    const currentTime = String(card.time || '');
-                    const start = firstTime.match(/^(\d{2}:\d{2})\s+-/i)?.[1];
-                    const end = currentTime.match(/-\s+(\d{2}:\d{2})$/i)?.[1];
-                    if (start && end) card.time = `${start} - ${end}`;
-                    const incomingRoute = movementRouteLink(pending[pending.length - 1]);
-                    if (incomingRoute && !card.links.some(link => link?.kind === 'route' || link?.label === 'ルート')) {
-                        card.links.unshift(incomingRoute);
-                    }
-                    pending = [];
-                }
-                result.push(card);
-            }
-            return result;
-        }
-        function displayCardDescription(card) {
-            const description = String(card?.desc || '');
-            const route = itineraryRouteParts(card?.title);
-            if (!route || (description.includes(route.origin) && description.includes(route.destination))) return description;
-            return `${route.origin}から${route.destination}へ。${description}`;
-        }
         function buildShioriUI(data) {
             weatherCache = {};
             activeWeatherKey = '';
@@ -1338,9 +1246,9 @@
                 const label = data.dayLabels?.[key] || `DAY ${String(idx + 1).padStart(2, '0')}`;
 
                 let cardsHtml = '';
-                mergeIncomingMovementCards(data.days[key]).forEach(card => {
-                    const cardTitle = displayCardTitle(card);
-                    const cardDescription = displayCardDescription(card);
+                (Array.isArray(data.days[key]) ? data.days[key] : []).forEach(card => {
+                    const cardTitle = String(card?.title || '');
+                    const cardDescription = String(card?.desc || '');
                     const imagePath = card.image ? `images/${escapeHtml(card.image)}` : '';
                     const imgHtml = imagePath ? `<img class="j-card-img" src="${imagePath}" alt="${escapeHtml(cardTitle)}" loading="lazy">` : '';
                     const mapQuery = String(card.mapQuery || '').trim();
