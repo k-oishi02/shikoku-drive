@@ -1205,16 +1205,53 @@
         function displayCardTitle(card) {
             const title = String(card?.title || '');
             const route = itineraryRouteParts(title);
-            if (!route) return title;
+            return route ? route.destination : title;
+        }
+        const LAND_MOVEMENT_BADGES = new Set(['MOVE', 'BUS', 'HELLO CYCLING', 'DRIVE', 'BREAK']);
+
+        function isLandMovementCard(card) {
             const badge = String(card?.badge || '').toUpperCase();
-            if (badge === 'FLIGHT') return `${route.destination.replace(/空港$/, '')}行きフライト`;
-            if (badge === 'FERRY') {
-                if (route.destination === '土庄港') return '小豆島行きフェリー';
-                return `${route.destination.replace(/港$/, '')}行きフェリー`;
-            }
-            return `${route.destination}へ移動`;
+            const title = String(card?.title || '');
+            return LAND_MOVEMENT_BADGES.has(badge) && (itineraryRouteParts(title) || /移動/.test(title));
         }
 
+        function movementRouteLink(card) {
+            const route = itineraryRouteParts(card?.title);
+            if (!route) return null;
+            const badge = String(card?.badge || '').toUpperCase();
+            const travelmode = badge === 'BUS' ? 'transit' : badge === 'HELLO CYCLING' ? 'bicycling' : 'driving';
+            return {
+                label: 'ルート',
+                kind: 'route',
+                url: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(route.origin)}&destination=${encodeURIComponent(route.destination)}&travelmode=${travelmode}`
+            };
+        }
+
+        function mergeIncomingMovementCards(cards) {
+            const result = [];
+            let pending = [];
+            for (const sourceCard of Array.isArray(cards) ? cards : []) {
+                if (isLandMovementCard(sourceCard)) {
+                    pending.push(sourceCard);
+                    continue;
+                }
+                const card = { ...sourceCard, links: Array.isArray(sourceCard.links) ? [...sourceCard.links] : [] };
+                if (pending.length) {
+                    const firstTime = String(pending[0].time || '');
+                    const currentTime = String(card.time || '');
+                    const start = firstTime.match(/^(\d{2}:\d{2})\s+-/i)?.[1];
+                    const end = currentTime.match(/-\s+(\d{2}:\d{2})$/i)?.[1];
+                    if (start && end) card.time = `${start} - ${end}`;
+                    const incomingRoute = movementRouteLink(pending[pending.length - 1]);
+                    if (incomingRoute && !card.links.some(link => link?.kind === 'route' || link?.label === 'ルート')) {
+                        card.links.unshift(incomingRoute);
+                    }
+                    pending = [];
+                }
+                result.push(card);
+            }
+            return result;
+        }
         function displayCardDescription(card) {
             const description = String(card?.desc || '');
             const route = itineraryRouteParts(card?.title);
@@ -1270,7 +1307,7 @@
                 const label = data.dayLabels?.[key] || `DAY ${String(idx + 1).padStart(2, '0')}`;
 
                 let cardsHtml = '';
-                data.days[key].forEach(card => {
+                mergeIncomingMovementCards(data.days[key]).forEach(card => {
                     const cardTitle = displayCardTitle(card);
                     const cardDescription = displayCardDescription(card);
                     const imagePath = card.image ? `images/${escapeHtml(card.image)}` : '';
