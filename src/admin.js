@@ -533,9 +533,31 @@ function moveCard(direction) {
 
 function validateTrip(trip) {
   const errors = [];
+  const validDate = value => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(text(value))) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  };
+  const scheduledMinutes = value => {
+    const match = text(value).match(/^(\d{2}):(\d{2}) - (\d{2}):(\d{2})$/);
+    if (!match) return null;
+    const [startHour, startMinute, endHour, endMinute] = match.slice(1).map(Number);
+    if (startHour > 23 || startMinute > 59 || endHour > 23 || endMinute > 59) return null;
+    return { start: startHour * 60 + startMinute, end: endHour * 60 + endMinute };
+  };
+  const validUrl = value => {
+    if (!text(value).trim()) return true;
+    try {
+      const parsed = new URL(text(value).trim());
+      return parsed.protocol === 'https:' && Boolean(parsed.hostname);
+    } catch (error) {
+      return false;
+    }
+  };
   if (!/^[a-z0-9][a-z0-9_-]{2,39}$/.test(trip.tripId)) errors.push('旅行IDは英小文字・数字・_・-で3〜40文字にしてください。');
   if (!trip.title || text(trip.title).length > 120) errors.push('旅行タイトルは1〜120文字で入力してください。');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trip.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(trip.endDate)) errors.push('開始日と終了日を入力してください。');
+  if (!validDate(trip.startDate)) errors.push('開始日を正しい日付で入力してください。');
+  if (!validDate(trip.endDate)) errors.push('終了日を正しい日付で入力してください。');
   if (trip.startDate && trip.endDate && trip.startDate > trip.endDate) errors.push('終了日は開始日以降にしてください。');
   for (const [dayKey, cards] of Object.entries(trip.days || {})) {
     if (!Array.isArray(cards)) {
@@ -588,7 +610,14 @@ function showEditorErrors(errors) {
 
 async function persistTrip(publish = false) {
   readTripBasics();
-  const errors = validateTrip(state.activeTrip);
+  let errors;
+  try {
+    errors = validateTrip(state.activeTrip);
+  } catch (error) {
+    console.error(error);
+    showToast(`公開前の確認に失敗しました: ${error.message}`, true);
+    return;
+  }
   if (errors.length) {
     showEditorErrors(errors);
     return;
