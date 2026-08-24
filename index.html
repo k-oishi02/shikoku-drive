@@ -1197,6 +1197,30 @@
                 });
         }
 
+        function itineraryRouteParts(title) {
+            const parts = String(title || '').split(/\s*(?:→|⇒|➜)\s*/).map(part => part.trim()).filter(Boolean);
+            return parts.length >= 2 ? { origin: parts[0], destination: parts[parts.length - 1] } : null;
+        }
+
+        function displayCardTitle(card) {
+            const title = String(card?.title || '');
+            const route = itineraryRouteParts(title);
+            if (!route) return title;
+            const badge = String(card?.badge || '').toUpperCase();
+            if (badge === 'FLIGHT') return `${route.destination.replace(/空港$/, '')}行きフライト`;
+            if (badge === 'FERRY') {
+                if (route.destination === '土庄港') return '小豆島行きフェリー';
+                return `${route.destination.replace(/港$/, '')}行きフェリー`;
+            }
+            return `${route.destination}へ移動`;
+        }
+
+        function displayCardDescription(card) {
+            const description = String(card?.desc || '');
+            const route = itineraryRouteParts(card?.title);
+            if (!route || (description.includes(route.origin) && description.includes(route.destination))) return description;
+            return `${route.origin}から${route.destination}へ。${description}`;
+        }
         function buildShioriUI(data) {
             weatherCache = {};
             activeWeatherKey = '';
@@ -1247,8 +1271,10 @@
 
                 let cardsHtml = '';
                 data.days[key].forEach(card => {
+                    const cardTitle = displayCardTitle(card);
+                    const cardDescription = displayCardDescription(card);
                     const imagePath = card.image ? `images/${escapeHtml(card.image)}` : '';
-                    const imgHtml = imagePath ? `<img class="j-card-img" src="${imagePath}" alt="${escapeHtml(card.title)}" loading="lazy">` : '';
+                    const imgHtml = imagePath ? `<img class="j-card-img" src="${imagePath}" alt="${escapeHtml(cardTitle)}" loading="lazy">` : '';
                     const mapQuery = String(card.mapQuery || '').trim();
 
                     const cardLinks = Array.isArray(card.links) ? card.links : [];
@@ -1257,13 +1283,13 @@
                     if (routeLink) {
                         linksHtml += renderActionLink(routeLink.url, routeLink.label, {
                             primary: true,
-                            ariaLabel: `${card.title || '目的地'}までのルートを開く`
+                            ariaLabel: `${cardTitle || '目的地'}までのルートを開く`
                         });
                     } else if (mapQuery) {
                         const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
                         linksHtml += renderActionLink(mapUrl, card.mapLabel || '地図', {
                             primary: true, visibleLabel: 'MAP',
-                            ariaLabel: `${card.title || '目的地'}を地図で開く`
+                            ariaLabel: `${cardTitle || '目的地'}を地図で開く`
                         });
                     }
                     const tabelogUrl = safeExternalUrl(card.tabelog);
@@ -1293,8 +1319,8 @@
                     cardsHtml += `
                         <div class="j-card" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
                             <span class="j-card-time">${escapeHtml(card.time)}</span>
-                            <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span>${escapeHtml(card.title)}</div>
-                            <div class="j-card-desc">${escapeHtml(card.desc)}</div>
+                            <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span>${escapeHtml(cardTitle)}</div>
+                            <div class="j-card-desc">${escapeHtml(cardDescription)}</div>
                             ${imgHtml}
                             ${btnRowHtml}
                         </div>
