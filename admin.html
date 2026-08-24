@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="icon" href="images/shiori-icon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="src/admin.css">
 </head>
 <body>
@@ -63,7 +64,7 @@
                     <div class="metric-grid" aria-label="管理状況">
                         <article><span>TRIPS</span><strong id="metric-trips">0</strong><small>登録された旅行</small></article>
                         <article><span>PUBLISHED</span><strong id="metric-published">0</strong><small>公開中</small></article>
-                        <article><span>INVITES</span><strong id="metric-invites">0</strong><small>有効な配布先</small></article>
+                        <article><span>DISTRIBUTIONS</span><strong id="metric-distributions">0</strong><small>有効な配布先</small></article>
                     </div>
                     <div class="section-heading"><h3>TRIP LIBRARY</h3><span id="overview-updated">—</span></div>
                     <div id="admin-trip-list" class="trip-grid" aria-live="polite"></div>
@@ -73,6 +74,7 @@
                     <div class="view-heading editor-heading">
                         <div><p class="eyebrow">ITINERARY BUILDER</p><h2>しおり・旅程を編集</h2></div>
                         <div class="button-group">
+                            <a class="button ghost" href="https://github.com/k-oishi02/shikoku-drive/blob/main/JSON_RULEBOOK.md" target="_blank" rel="noopener noreferrer">JSONルール ↗</a>
                             <label class="button ghost" for="import-trip-file">JSON読込</label>
                             <input id="import-trip-file" type="file" accept="application/json,.json" hidden>
                             <button id="download-trip" class="button ghost" type="button">JSON書出</button>
@@ -86,7 +88,7 @@
                         <section class="panel basics-panel">
                             <div class="panel-title"><span>01</span><h3>旅行の基本情報</h3></div>
                             <div class="form-grid">
-                                <label>しおりID<input id="trip-id" autocomplete="off" maxlength="40" placeholder="shikoku2026"></label>
+                                <label>しおりID<input id="trip-id" autocomplete="off" maxlength="40" placeholder="trip2026"></label>
                                 <label>タイトル<input id="trip-title" autocomplete="off" maxlength="100"></label>
                                 <label>サブタイトル<input id="trip-subtitle" autocomplete="off" maxlength="160"></label>
                                 <label>キャッチコピー<input id="trip-catchphrase" autocomplete="off" maxlength="200"></label>
@@ -119,10 +121,10 @@
                         <div class="distribution-form">
                             <label>旅行<select id="distribution-trip"></select></label>
                             <label>配布先名<input id="distribution-label" maxlength="40" placeholder="友人グループ用"></label>
-                            <label class="distribution-capacity-field">定員<input id="distribution-capacity" type="number" min="1" max="50" step="1" value="2" inputmode="numeric"></label>
+                            <label class="distribution-capacity-field">端末枠<input id="distribution-capacity" type="number" min="1" max="50" step="1" value="2" inputmode="numeric"></label>
                             <button id="create-distribution" class="button primary" type="button">配布IDを発行</button>
                         </div>
-                        <p class="field-help">定員は1〜50名で設定できます。参加者は登録リンクを開くだけで追加され、配布IDをADDへ手入力する方法も使えます。配布先ごとに独立した参加者・割り勘ルームを作成し、共有支出は各配布先カードの「共有台帳」から管理者もリアルタイムで確認できます。</p>
+                        <p class="field-help">端末枠は1〜50台で設定できます。参加者は登録リンクを開くだけで追加され、配布IDをADDへ手入力する方法も使えます。配布先ごとに独立した参加者・割り勘ルームを作成し、共有支出は各配布先カードの「共有台帳」から管理者もリアルタイムで確認できます。</p>
                     </section>
                     <div class="section-heading"><h3>ACTIVE DISTRIBUTIONS</h3><span id="distribution-count">0件</span></div>
                     <div id="distribution-list" class="distribution-list" aria-live="polite"></div>
@@ -139,23 +141,19 @@
             </div>
             <input id="card-index" type="hidden">
             <div class="form-grid card-form-grid">
-                <label>時刻<input id="card-time" maxlength="17" placeholder="09:00 - 10:00 / OPTIONAL"></label>
+                <label>時刻<input id="card-time" maxlength="17" placeholder="09:00 - 10:00"></label>
                 <label>バッジ<input id="card-badge" maxlength="30" placeholder="GOURMET"></label>
                 <label class="span-2">タイトル<input id="card-title" maxlength="120" required></label>
-                <label class="span-2">説明<textarea id="card-desc" rows="4" maxlength="2000" required></textarea></label>
-                <label>緯度<input id="card-lat" inputmode="decimal"></label>
-                <label>経度<input id="card-lon" inputmode="decimal"></label>
-                <label class="span-2">Google Map検索語<input id="card-map-query" maxlength="300"></label>
+                <label class="span-2">説明<textarea id="card-desc" rows="4" maxlength="240" required></textarea></label>
+                <label class="span-2">Google Maps検索語（空欄ならMAP非表示）<input id="card-map-query" maxlength="300"></label>
                 <label>公式URL<input id="card-official" type="url" maxlength="2000"></label>
                 <label>公式ボタン名<input id="card-official-label" maxlength="40"></label>
                 <label>食べログURL<input id="card-tabelog" type="url" maxlength="2000"></label>
                 <label>じゃらんURL<input id="card-jalan" type="url" maxlength="2000"></label>
                 <label>画像ファイル名<input id="card-image" maxlength="100" placeholder="example.png"></label>
+                <label class="span-2">追加リンク（1行1件：ボタン名 | URL）<textarea id="card-links" rows="4" maxlength="8000" placeholder="ルート | https://www.google.com/maps/dir/..."></textarea></label>
                 <div class="check-field span-2">
-                    <label><input id="card-map-enabled" type="checkbox" checked> MAPボタンを表示</label>
-                    <label><input id="card-expense" type="checkbox"> 割り勘ボタンを表示</label>
-                    <label><input id="card-fixed" type="checkbox"> 開始時刻を固定</label>
-                    <label><input id="card-rigid" type="checkbox"> 所要時間を短縮不可</label>
+                    <label><input id="card-expense" type="checkbox"> ADD COSTボタンを表示</label>
                 </div>
             </div>
             <div class="dialog-actions">

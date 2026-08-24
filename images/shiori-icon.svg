@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">SHIORI旅行しおり</title>
+  <desc id="description">旅程ノートと現在地ピンを組み合わせたアイコン</desc>
+  <rect width="512" height="512" rx="112" fill="#1c1c1c"/>
+  <path d="M126 94h230c28 0 50 22 50 50v260c0 8-6 14-14 14H162c-31 0-56-25-56-56V114c0-11 9-20 20-20Z" fill="#f4f0e8"/>
+  <path d="M162 94v324" stroke="#ffbf47" stroke-width="24"/>
+  <path d="M214 168h132M214 222h94M214 362h132" stroke="#242424" stroke-width="18" stroke-linecap="round"/>
+  <path d="M310 251c-35 0-63 28-63 63 0 48 63 91 63 91s63-43 63-91c0-35-28-63-63-63Z" fill="#59d9b0" stroke="#242424" stroke-width="14"/>
+  <circle cx="310" cy="314" r="19" fill="#242424"/>
+</svg>

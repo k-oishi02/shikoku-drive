@@ -47,6 +47,7 @@ const state = {
   activeDayKey: '',
   distributions: [],
   participantUnsubscribers: new Map(),
+  roomUnsubscribers: new Map(),
   expenseUnsubscribers: new Map(),
   distributionsUnsubscribe: null,
   toastTimer: null
@@ -176,6 +177,8 @@ function stopLiveListeners() {
   state.distributionsUnsubscribe = null;
   state.participantUnsubscribers.forEach(unsubscribe => unsubscribe());
   state.participantUnsubscribers.clear();
+  state.roomUnsubscribers.forEach(unsubscribe => unsubscribe());
+  state.roomUnsubscribers.clear();
   state.expenseUnsubscribers.forEach(unsubscribe => unsubscribe());
   state.expenseUnsubscribers.clear();
 }
@@ -213,7 +216,7 @@ async function handleAuthState(user) {
 function normalizeTrip(raw, fallbackId = '') {
   const trip = deepClone(raw || {});
   trip.tripId = text(trip.tripId || fallbackId).trim();
-  trip.title = text(trip.title || 'TRAVEL GUIDE');
+  trip.title = text(trip.title || '旅行しおり');
   trip.subtitle = text(trip.subtitle);
   trip.catchphrase = text(trip.catchphrase);
   trip.startDate = text(trip.startDate);
@@ -222,8 +225,10 @@ function normalizeTrip(raw, fallbackId = '') {
   trip.dayLabels = trip.dayLabels && typeof trip.dayLabels === 'object' ? trip.dayLabels : {};
   Object.keys(trip.days).forEach(key => {
     if (!Array.isArray(trip.days[key])) trip.days[key] = [];
+    trip.days[key] = trip.days[key].map(cleanCard);
     if (!trip.dayLabels[key]) trip.dayLabels[key] = key.toUpperCase();
   });
+  ['ferryLegs', 'optionalRules', 'detourSuggestions', 'mapCenter', 'mapZoom', 'members'].forEach(key => delete trip[key]);
   return trip;
 }
 
@@ -324,15 +329,13 @@ function showView(viewName) {
 function blankTrip() {
   return normalizeTrip({
     tripId: '',
-    title: 'TRAVEL GUIDE',
+    title: '旅行しおり',
     subtitle: '',
     catchphrase: '',
     startDate: '',
     endDate: '',
     dayLabels: { day1: 'DAY 1' },
     days: { day1: [] },
-    ferryLegs: { day1: [] },
-    members: [{ id: 'aoi', name: 'メンバー1' }, { id: 'kotaro', name: 'メンバー2' }],
     weatherLocations: {},
     checklist: []
   });
@@ -416,11 +419,22 @@ function addDay() {
   const dayKey = `day${next}`;
   state.activeTrip.days[dayKey] = [];
   state.activeTrip.dayLabels[dayKey] = `DAY ${next}`;
-  state.activeTrip.ferryLegs ||= {};
-  state.activeTrip.ferryLegs[dayKey] ||= [];
   state.activeDayKey = dayKey;
   renderDaySelect();
   renderEditorCards();
+}
+
+function parseCardLinks(value) {
+  return text(value).split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+    const separator = line.indexOf('|');
+    const label = (separator < 0 ? line : line.slice(0, separator)).trim();
+    const url = (separator < 0 ? '' : line.slice(separator + 1)).trim();
+    return label === 'ルート' ? { label, url, kind: 'route' } : { label, url };
+  });
+}
+
+function formatCardLinks(links) {
+  return (Array.isArray(links) ? links : []).map(link => text(link?.label).trim() + ' | ' + text(link?.url).trim()).join('\n');
 }
 
 function cardFieldMap() {
@@ -429,38 +443,31 @@ function cardFieldMap() {
     badge: $('card-badge').value.trim(),
     title: $('card-title').value.trim(),
     desc: $('card-desc').value.trim(),
-    lat: $('card-lat').value.trim(),
-    lon: $('card-lon').value.trim(),
     mapQuery: $('card-map-query').value.trim(),
     official: $('card-official').value.trim(),
     officialLabel: $('card-official-label').value.trim(),
     tabelog: $('card-tabelog').value.trim(),
     jalan: $('card-jalan').value.trim(),
     image: $('card-image').value.trim(),
-    map: $('card-map-enabled').checked,
-    expenseShortcut: $('card-expense').checked,
-    fixed: $('card-fixed').checked,
-    rigid: $('card-rigid').checked
+    links: parseCardLinks($('card-links').value),
+    expenseShortcut: $('card-expense').checked
   };
 }
 
 function cleanCard(card) {
-  const cleaned = { ...card };
+  const cleaned = {};
   ['time', 'badge', 'title', 'desc', 'mapQuery', 'official', 'officialLabel', 'tabelog', 'jalan', 'image'].forEach(key => {
-    const value = text(cleaned[key]).trim();
+    const value = text(card?.[key]).trim();
     if (value) cleaned[key] = value;
-    else delete cleaned[key];
   });
-  ['lat', 'lon'].forEach(key => {
-    const value = text(cleaned[key]).trim();
-    if (!value) delete cleaned[key];
-    else if (Number.isFinite(Number(value))) cleaned[key] = Number(value);
-  });
-  if (cleaned.map === true) delete cleaned.map;
-  if (cleaned.map === false) cleaned.map = false;
-  if (!cleaned.expenseShortcut) delete cleaned.expenseShortcut;
-  if (!cleaned.fixed) delete cleaned.fixed;
-  if (!cleaned.rigid) delete cleaned.rigid;
+  const links = (Array.isArray(card?.links) ? card.links : []).map(link => {
+    const label = text(link?.label).trim();
+    const url = text(link?.url).trim();
+    if (!label && !url) return null;
+    return link?.kind === 'route' || label === 'ルート' ? { label, url, kind: 'route' } : { label, url };
+  }).filter(Boolean);
+  if (links.length) cleaned.links = links;
+  if (card?.expenseShortcut === true) cleaned.expenseShortcut = true;
   return cleaned;
 }
 
@@ -473,18 +480,14 @@ function openCardDialog(index = -1) {
   $('card-badge').value = text(card.badge);
   $('card-title').value = text(card.title);
   $('card-desc').value = text(card.desc);
-  $('card-lat').value = text(card.lat);
-  $('card-lon').value = text(card.lon);
   $('card-map-query').value = text(card.mapQuery);
   $('card-official').value = text(card.official);
   $('card-official-label').value = text(card.officialLabel);
   $('card-tabelog').value = text(card.tabelog);
   $('card-jalan').value = text(card.jalan);
   $('card-image').value = text(card.image);
-  $('card-map-enabled').checked = card.map !== false;
+  $('card-links').value = formatCardLinks(card.links);
   $('card-expense').checked = card.expenseShortcut === true;
-  $('card-fixed').checked = card.fixed === true;
-  $('card-rigid').checked = card.rigid === true;
   $('delete-card').hidden = index < 0;
   $('move-card-up').hidden = index <= 0;
   $('move-card-down').hidden = index < 0 || index >= cards.length - 1;
@@ -507,23 +510,12 @@ function saveCard(event) {
   renderEditorCards();
 }
 
-function remapFerryLegs(dayKey, mapper) {
-  const legs = state.activeTrip?.ferryLegs?.[dayKey];
-  if (!Array.isArray(legs)) return;
-  state.activeTrip.ferryLegs[dayKey] = legs.map(leg => {
-    if (!leg || !Number.isInteger(leg.from) || !Number.isInteger(leg.to)) return null;
-    const from = mapper(leg.from);
-    const to = mapper(leg.to);
-    return Number.isInteger(from) && Number.isInteger(to) ? { ...leg, from, to } : null;
-  }).filter(Boolean);
-}
 
 function deleteCard() {
   const index = Number($('card-index').value);
   if (index < 0) return;
   if (!window.confirm('このカードを削除しますか？')) return;
   state.activeTrip.days[state.activeDayKey].splice(index, 1);
-  remapFerryLegs(state.activeDayKey, value => value === index ? null : (value > index ? value - 1 : value));
   $('card-dialog').close();
   renderEditorCards();
 }
@@ -534,7 +526,6 @@ function moveCard(direction) {
   const destination = index + direction;
   if (index < 0 || destination < 0 || destination >= cards.length) return;
   [cards[index], cards[destination]] = [cards[destination], cards[index]];
-  remapFerryLegs(state.activeDayKey, value => value === index ? destination : (value === destination ? index : value));
   $('card-dialog').close();
   renderEditorCards();
   openCardDialog(destination);
@@ -542,103 +533,41 @@ function moveCard(direction) {
 
 function validateTrip(trip) {
   const errors = [];
-  const validDate = value => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(text(value))) return false;
-    const parsed = new Date(`${value}T00:00:00Z`);
-    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
-  };
-  const scheduledMinutes = value => {
-    const match = text(value).match(/^(\d{2}):(\d{2}) - (\d{2}):(\d{2})$/);
-    if (!match) return null;
-    const parts = match.slice(1).map(Number);
-    if (parts[0] > 23 || parts[1] > 59 || parts[2] > 23 || parts[3] > 59) return null;
-    return { start: parts[0] * 60 + parts[1], end: parts[2] * 60 + parts[3] };
-  };
-  if (!/^[a-z0-9][a-z0-9_-]{2,39}$/.test(trip.tripId)) errors.push('しおりIDは英小文字・数字・_・- の3〜40文字にしてください。');
-  if (!trip.title) errors.push('タイトルを入力してください。');
-  if (!validDate(trip.startDate)) errors.push('開始日を正しい日付で入力してください。');
-  if (!validDate(trip.endDate)) errors.push('終了日を正しい日付で入力してください。');
+  if (!/^[a-z0-9][a-z0-9_-]{2,39}$/.test(trip.tripId)) errors.push('旅行IDは英小文字・数字・_・-で3〜40文字にしてください。');
+  if (!trip.title || text(trip.title).length > 120) errors.push('旅行タイトルは1〜120文字で入力してください。');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trip.startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(trip.endDate)) errors.push('開始日と終了日を入力してください。');
   if (trip.startDate && trip.endDate && trip.startDate > trip.endDate) errors.push('終了日は開始日以降にしてください。');
-  const dayKeys = Object.keys(trip.days || {});
-  if (!dayKeys.length) errors.push('日程を1日以上作成してください。');
-  const cardIds = new Set();
-  const validUrl = value => {
-    if (!value) return true;
-    try {
-      const parsed = new URL(value);
-      return parsed.protocol === 'https:' && Boolean(parsed.hostname);
-    } catch (error) {
-      return false;
-    }
-  };
-  dayKeys.forEach(dayKey => {
-    if (!/^day[1-9]\d*$/.test(dayKey)) errors.push(`${dayKey}: 日キーはday1、day2の形式にしてください。`);
-    const cards = trip.days[dayKey];
-    let previousEnd = -1;
+  for (const [dayKey, cards] of Object.entries(trip.days || {})) {
     if (!Array.isArray(cards)) {
-      errors.push(`${dayKey}: カード一覧が不正です。`);
-      return;
+      errors.push(`${dayKey}: カード配列が不正です。`);
+      continue;
     }
+    let previousEnd = -1;
     cards.forEach((card, index) => {
       const label = `${dayKey.toUpperCase()} カード${index + 1}`;
-      if (card.id) {
-        if (!/^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(text(card.id))) errors.push(`${label}: カードIDは英数字・_・-の80文字以内にしてください。`);
-        else if (cardIds.has(card.id)) errors.push(`${label}: カードID ${card.id} が重複しています。`);
-        else cardIds.add(card.id);
-      }
       if (!card.title) errors.push(`${label}: タイトルがありません。`);
       if (text(card.title).length > 120) errors.push(`${label}: タイトルは120文字以内にしてください。`);
       if (!card.badge) errors.push(`${label}: バッジがありません。`);
       if (!card.desc) errors.push(`${label}: 説明がありません。`);
-      if (text(card.desc).length > 2000) errors.push(`${label}: 説明は2000文字以内にしてください。`);
-      if (card.time === 'OPTIONAL') {
-        // Optional cards do not reserve a fixed slot.
+      if (text(card.desc).length > 240) errors.push(`${label}: 説明は240文字以内にしてください。`);
+      const minutes = scheduledMinutes(card.time);
+      if (!minutes || minutes.end <= minutes.start) {
+        errors.push(`${label}: 時刻は「09:00 - 10:00」形式で、終了を開始より後にしてください。`);
       } else {
-        const minutes = scheduledMinutes(card.time);
-        if (!minutes || minutes.end <= minutes.start) {
-          errors.push(`${label}: 時刻は「09:00 - 10:00」形式で、終了を開始より後にしてください。`);
-        } else {
-          if (minutes.start < previousEnd) errors.push(`${label}: 前の確定予定と時刻が重複しています。`);
-          previousEnd = Math.max(previousEnd, minutes.end);
-        }
+        if (minutes.start < previousEnd) errors.push(`${label}: 前の予定と時刻が重複しています。`);
+        previousEnd = Math.max(previousEnd, minutes.end);
       }
       ['official', 'tabelog', 'jalan'].forEach(key => {
         if (!validUrl(card[key])) errors.push(`${label}: ${key} は https URLにしてください。`);
       });
       for (const [linkIndex, link] of (Array.isArray(card.links) ? card.links : []).entries()) {
         if (!text(link?.label).trim()) errors.push(`${label}: 追加リンク${linkIndex + 1}の名前がありません。`);
-        if (!validUrl(link?.url)) errors.push(`${label}: 追加リンク${linkIndex + 1}は https URLにしてください。`);
+        if (!text(link?.url).trim() || !validUrl(link?.url)) errors.push(`${label}: 追加リンク${linkIndex + 1}は https URLにしてください。`);
+        if (link?.kind != null && link.kind !== 'route') errors.push(`${label}: 追加リンク${linkIndex + 1}のkindはrouteだけ指定できます。`);
       }
-      for (const [walletKind, walletUrl] of Object.entries(card.wallet || {})) {
-        if (!validUrl(walletUrl)) errors.push(`${label}: wallet.${walletKind} は https URLにしてください。`);
-      }
-      if (card.lat != null && (!Number.isFinite(Number(card.lat)) || Number(card.lat) < -90 || Number(card.lat) > 90)) errors.push(`${label}: 緯度は-90〜90にしてください。`);
-      if (card.lon != null && (!Number.isFinite(Number(card.lon)) || Number(card.lon) < -180 || Number(card.lon) > 180)) errors.push(`${label}: 経度は-180〜180にしてください。`);
       if (card.image && !/^[A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|jpe?g|webp|gif|svg)$/i.test(text(card.image))) errors.push(`${label}: 画像はimagesフォルダ内の安全なファイル名にしてください。`);
     });
-    const ferryLegs = trip.ferryLegs?.[dayKey] || [];
-    if (!Array.isArray(ferryLegs)) {
-      errors.push(`${dayKey}: フェリー区間が配列ではありません。`);
-    } else {
-      const confirmed = cards.map((card, index) => ({ card, index }))
-        .filter(({ card }) => card.time !== 'OPTIONAL' && card.map !== false && Number.isFinite(Number(card.lat)) && Number.isFinite(Number(card.lon)))
-        .map(({ index }) => index);
-      ferryLegs.forEach((leg, legIndex) => {
-        const label = `${dayKey.toUpperCase()} フェリー区間${legIndex + 1}`;
-        if (!leg || !Number.isInteger(leg.from) || !Number.isInteger(leg.to)) {
-          errors.push(`${label}: from/toは整数にしてください。`);
-          return;
-        }
-        if (leg.from < 0 || leg.to < 0 || leg.from >= cards.length || leg.to >= cards.length) {
-          errors.push(`${label}: 参照先カードが範囲外です。`);
-          return;
-        }
-        if (leg.to !== leg.from + 1 || confirmed.indexOf(leg.to) !== confirmed.indexOf(leg.from) + 1) {
-          errors.push(`${label}: 隣接する確定ルートカードを指定してください。`);
-        }
-      });
-    }
-  });
+  }
   try {
     if (new TextEncoder().encode(JSON.stringify(trip)).length > 900000) errors.push('旅程データが大きすぎます。画像はファイル名で指定し、説明を短くしてください。');
   } catch (error) {
@@ -646,7 +575,6 @@ function validateTrip(trip) {
   }
   return errors;
 }
-
 function hideEditorErrors() {
   $('editor-errors').hidden = true;
   $('editor-errors').textContent = '';
@@ -783,6 +711,8 @@ function startDistributionListener() {
   state.distributionsUnsubscribe?.();
   state.distributionsUnsubscribe = onSnapshot(collection(db, 'adminDistributions'), snapshot => {
     const previousParticipants = new Map(state.distributions.map(item => [item.id, item.participants || []]));
+    const previousRoomMembers = new Map(state.distributions.map(item => [item.id, item.roomMembers || []]));
+    const previousRoomReady = new Map(state.distributions.map(item => [item.id, item.roomReady === true]));
     const previousExpenses = new Map(state.distributions.map(item => [item.id, item.expenses || []]));
     const previousExpenseState = new Map(state.distributions.map(item => [item.id, {
       ready: item.expensesReady === true,
@@ -792,6 +722,8 @@ function startDistributionListener() {
       id: item.id,
       ...item.data(),
       participants: previousParticipants.get(item.id) || [],
+      roomMembers: previousRoomMembers.get(item.id) || [],
+      roomReady: previousRoomReady.get(item.id) === true,
       expenses: previousExpenses.get(item.id) || [],
       expensesReady: previousExpenseState.get(item.id)?.ready === true,
       expensesError: previousExpenseState.get(item.id)?.error || ''
@@ -810,7 +742,7 @@ function participantAppUrl() {
   return url.toString();
 }
 
-function participantInviteUrl(accessId) {
+function participantRegistrationUrl(accessId) {
   const url = new URL('./', window.location.href);
   url.search = '';
   url.hash = `join=${encodeURIComponent(text(accessId).toUpperCase().replace(/[^A-Z0-9]/g, ''))}`;
@@ -834,7 +766,7 @@ async function createDistribution() {
     return;
   }
   if (!Number.isInteger(capacity) || capacity < 1 || capacity > 50) {
-    showToast('定員は1〜50名の整数で入力してください。', true);
+    showToast('端末枠は1〜50台の整数で入力してください。', true);
     return;
   }
   if (!state.publishedIds.has(tripId)) {
@@ -870,7 +802,7 @@ async function createDistribution() {
       status: 'active',
       capacity,
       members: {},
-      inviteHash: grantId,
+      accessIdHash: grantId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       createdBy: state.currentUser.uid
@@ -880,7 +812,6 @@ async function createDistribution() {
       tripId,
       label,
       ledgerToken,
-      inviteToken: accessId,
       accessId,
       grantId,
       status: 'active',
@@ -910,6 +841,10 @@ async function createDistribution() {
   }
 }
 
+function normalizeParticipantName(value) {
+  return text(value).normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('ja-JP');
+}
+
 function subscribeDistributionParticipants(distribution) {
   if (state.participantUnsubscribers.has(distribution.id)) return;
   const ref = collection(db, 'rooms', distribution.roomId || distribution.id, 'participants');
@@ -925,6 +860,24 @@ function subscribeDistributionParticipants(distribution) {
   state.participantUnsubscribers.set(distribution.id, unsubscribe);
 }
 
+function subscribeDistributionRoom(distribution) {
+  if (state.roomUnsubscribers.has(distribution.id)) return;
+  const ref = doc(db, 'rooms', distribution.roomId || distribution.id);
+  const unsubscribe = onSnapshot(ref, snapshot => {
+    const currentDistribution = state.distributions.find(item => item.id === distribution.id);
+    if (currentDistribution) {
+      const roomData = snapshot.data() || {};
+      currentDistribution.roomMembers = Object.keys(roomData.members || {});
+      currentDistribution.roomReady = true;
+      currentDistribution.capacity = Number.isInteger(Number(roomData.capacity)) ? Number(roomData.capacity) : currentDistribution.capacity;
+    }
+    renderDistributions();
+  }, error => {
+    console.warn('room/' + distribution.id, error);
+  });
+  state.roomUnsubscribers.set(distribution.id, unsubscribe);
+}
+
 function subscribeDistributionExpenses(distribution) {
   if (state.expenseUnsubscribers.has(distribution.id)) return;
   const ref = collection(db, 'rooms', distribution.roomId || distribution.id, 'expenses');
@@ -938,9 +891,9 @@ function subscribeDistributionExpenses(distribution) {
           amount: Number(data.amount) || 0,
           payer: text(data.payer),
           category: text(data.category || 'その他'),
-          note: text(data.note),
-          comment: text(data.comment),
-          createdAt: text(data.createdAt)
+          note: [text(data.note), text(data.comment)].map(value => value.trim()).filter(Boolean).join(' — ').slice(0, 120),
+          createdAt: text(data.createdAt),
+          creatorUid: text(data.creatorUid)
         };
       }).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       currentDistribution.expensesReady = true;
@@ -959,6 +912,150 @@ function subscribeDistributionExpenses(distribution) {
   state.expenseUnsubscribers.set(distribution.id, unsubscribe);
 }
 
+async function deleteDistributionExpense(distribution, expense, button) {
+  const label = expense.note || expense.category || 'この支出';
+  if (!window.confirm('「' + label + '」' + formatYen(expense.amount) + ' を共有台帳から削除しますか？')) return;
+  setBusy(button, true, '削除中…');
+  try {
+    const expenseRef = doc(db, 'rooms', distribution.roomId || distribution.id, 'expenses', expense.id);
+    const batch = writeBatch(db);
+    batch.delete(expenseRef);
+    await batch.commit();
+    showToast('共有支出を削除しました。');
+  } catch (error) {
+    console.error(error);
+    showToast('共有支出を削除できません: ' + error.message, true);
+    setBusy(button, false);
+  }
+}
+
+async function clearDistributionLedger(distribution, button) {
+  if (distribution.status === 'active') {
+    showToast('全削除の前に配布を停止してください。停止中は参加者の新規追加を防げます。', true);
+    return;
+  }
+  const expensesRef = collection(db, 'rooms', distribution.roomId || distribution.id, 'expenses');
+  try {
+    let snapshot = await getDocs(expensesRef);
+    if (!snapshot.size) {
+      showToast('共有台帳はすでに空です。');
+      return;
+    }
+    if (!window.confirm('共有支出 ' + snapshot.size + '件をすべて削除しますか？元に戻せません。')) return;
+    if (window.prompt('確認のため「全削除」と入力してください。') !== '全削除') return;
+    setBusy(button, true, '全削除中…');
+    for (let pass = 0; pass < 5 && snapshot.size; pass += 1) {
+      await deleteDocumentsInChunks(snapshot.docs);
+      snapshot = await getDocs(expensesRef);
+    }
+    if (snapshot.size) throw new Error('削除中に台帳が更新されました。配布停止を確認して再実行してください。');
+    showToast('共有台帳を全削除しました。');
+  } catch (error) {
+    console.error(error);
+    showToast('共有台帳を全削除できません: ' + error.message, true);
+    setBusy(button, false);
+  }
+}
+
+async function migrateParticipantExpenseReferences(expensesRef, uid, replacementUid) {
+  const snapshot = await getDocs(expensesRef);
+  const migrations = snapshot.docs.filter(item => {
+    const data = item.data() || {};
+    return data.payer === uid || data.creatorUid === uid;
+  });
+  if (!replacementUid || !migrations.length) return migrations.length;
+  for (let offset = 0; offset < migrations.length; offset += 400) {
+    const batch = writeBatch(db);
+    migrations.slice(offset, offset + 400).forEach(item => {
+      const data = item.data() || {};
+      const update = {};
+      if (data.payer === uid) update.payer = replacementUid;
+      if (data.creatorUid === uid) update.creatorUid = replacementUid;
+      batch.update(item.ref, update);
+    });
+    await batch.commit();
+  }
+  return migrations.length;
+}
+
+async function removeParticipantDevice(distribution, uid, button) {
+  const roomId = distribution.roomId || distribution.id;
+  const roomRef = doc(db, 'rooms', roomId);
+  const participantRef = doc(roomRef, 'participants', uid);
+  const participantsRef = collection(roomRef, 'participants');
+  const expensesRef = collection(roomRef, 'expenses');
+  try {
+    const [roomSnapshot, participantSnapshot, participantsSnapshot, expensesSnapshot] = await Promise.all([
+      getDoc(roomRef),
+      getDoc(participantRef),
+      getDocs(participantsRef),
+      getDocs(expensesRef)
+    ]);
+    if (!roomSnapshot.exists()) throw new Error('配布ルームが見つかりません。');
+    const roomMembers = roomSnapshot.data()?.members || {};
+    if (!roomMembers[uid] && !participantSnapshot.exists()) {
+      showToast('この端末はすでに解除されています。');
+      return;
+    }
+
+    const target = participantSnapshot.data() || {};
+    const targetName = text(target.nickname).trim();
+    const candidates = participantsSnapshot.docs
+      .filter(item => item.id !== uid && roomMembers[item.id])
+      .map(item => ({ uid: item.id, ...item.data() }))
+      .filter(item => targetName && normalizeParticipantName(item.nickname) === normalizeParticipantName(targetName))
+      .sort((a, b) => (a.joinedAt?.seconds || Number.MAX_SAFE_INTEGER) - (b.joinedAt?.seconds || Number.MAX_SAFE_INTEGER)
+        || a.uid.localeCompare(b.uid));
+    const replacement = candidates[0] || null;
+    const referencedExpenses = expensesSnapshot.docs.filter(item => {
+      const data = item.data() || {};
+      return data.payer === uid || data.creatorUid === uid;
+    });
+    if (referencedExpenses.length && !replacement) {
+      showToast('この端末を参照する支出があります。同じ表示名の新端末を登録してから解除してください。', true);
+      return;
+    }
+
+    const displayName = targetName || '参加者情報のない端末';
+    const migrationNote = replacement ? '\n同じ表示名の端末へ支払者・登録者を移行します。' : '';
+    if (!window.confirm('「' + displayName + '」端末 …' + uid.slice(-6) + ' を配布先から解除しますか？' + migrationNote)) return;
+    setBusy(button, true, '解除中…');
+
+    if (replacement) {
+      await migrateParticipantExpenseReferences(expensesRef, uid, replacement.uid);
+    }
+
+    await runTransaction(db, async transaction => {
+      const latestRoom = await transaction.get(roomRef);
+      if (!latestRoom.exists()) throw new Error('配布ルームが見つかりません。');
+      const members = { ...(latestRoom.data()?.members || {}) };
+      if (Object.prototype.hasOwnProperty.call(members, uid)) {
+        delete members[uid];
+        transaction.update(roomRef, { members, updatedAt: serverTimestamp() });
+      }
+    });
+
+    const remainingReferenceCount = await migrateParticipantExpenseReferences(
+      expensesRef,
+      uid,
+      replacement?.uid || ''
+    );
+    if (remainingReferenceCount && !replacement) {
+      throw new Error('解除中にこの端末の支出が追加されました。参加者情報は残しているため、同名の新端末を登録後に再試行できます。');
+    }
+
+    const finalBatch = writeBatch(db);
+    finalBatch.delete(participantRef);
+    await finalBatch.commit();
+    showToast(replacement
+      ? '支出の支払者・登録者を同名端末へ移行し、参加端末を解除しました。'
+      : '参加端末を解除しました。');
+  } catch (error) {
+    console.error(error);
+    showToast('参加端末を解除できません: ' + error.message, true);
+    setBusy(button, false);
+  }
+}
 function renderDistributionLedger(distribution) {
   const expenses = Array.isArray(distribution.expenses) ? distribution.expenses : [];
   const total = expenses.reduce((sum, expense) => sum + Math.max(0, Number(expense.amount) || 0), 0);
@@ -989,67 +1086,186 @@ function renderDistributionLedger(distribution) {
     const copy = makeElement('div');
     copy.append(makeElement('strong', '', expense.note || expense.category || '支出'));
     copy.append(makeElement('small', '', [expense.category || 'その他', (participantNames.get(expense.payer) || '参加者') + 'が支払い', formatTimestamp(expense.createdAt)].join(' · ')));
-    if (expense.comment) copy.append(makeElement('small', 'admin-ledger-comment', expense.comment));
-    row.append(copy, makeElement('strong', 'admin-ledger-amount', formatYen(expense.amount)));
+    const amount = makeElement('strong', 'admin-ledger-amount', formatYen(expense.amount));
+    const remove = makeElement('button', 'compact danger admin-ledger-delete', '削除');
+    remove.type = 'button';
+    remove.addEventListener('click', () => deleteDistributionExpense(distribution, expense, remove));
+    const controls = makeElement('div', 'admin-ledger-controls');
+    controls.append(amount, remove);
+    row.append(copy, controls);
     list.append(row);
   });
   panel.append(list);
+  const actions = makeElement('div', 'admin-ledger-actions');
+  const clear = makeElement('button', 'compact danger', '台帳を全削除');
+  clear.type = 'button';
+  clear.addEventListener('click', () => clearDistributionLedger(distribution, clear));
+  actions.append(clear);
+  panel.append(actions);
   return panel;
+}
+
+async function deleteDocumentsInChunks(documents) {
+  for (let offset = 0; offset < documents.length; offset += 400) {
+    const batch = writeBatch(db);
+    documents.slice(offset, offset + 400).forEach(item => batch.delete(item.ref));
+    await batch.commit();
+  }
+}
+
+async function deleteDistribution(distribution, button) {
+  if (distribution.status === 'active') {
+    showToast('先に配布を停止してください。', true);
+    return;
+  }
+  const initialDistributionRef = doc(db, 'adminDistributions', distribution.id);
+  try {
+    const initialSnapshot = await getDoc(initialDistributionRef);
+    if (!initialSnapshot.exists()) {
+      showToast('この配布先はすでに削除されています。');
+      return;
+    }
+    const initialData = initialSnapshot.data() || {};
+    if (initialData.status === 'active') throw new Error('配布が再開されています。先に停止してください。');
+    const roomId = initialData.roomId || distribution.roomId || distribution.id;
+    const roomRef = doc(db, 'rooms', roomId);
+    const [participantsSnapshot, expensesSnapshot] = await Promise.all([
+      getDocs(collection(roomRef, 'participants')),
+      getDocs(collection(roomRef, 'expenses'))
+    ]);
+    const label = initialData.label || distribution.label || '名称未設定';
+    const confirmed = window.confirm(
+      '「' + label + '」を完全削除しますか？\n\n参加者 ' + participantsSnapshot.size + '名、共有支出 ' + expensesSnapshot.size + '件、配布ID・同期ルームを削除します。元に戻せません。'
+    );
+    if (!confirmed) return;
+    setBusy(button, true, '削除中…');
+
+    await runTransaction(db, async transaction => {
+      const [latestDistribution, latestRoom] = await Promise.all([
+        transaction.get(initialDistributionRef),
+        transaction.get(roomRef)
+      ]);
+      if (!latestDistribution.exists()) throw new Error('この配布先はすでに削除されています。');
+      if (latestDistribution.data()?.status === 'active' || latestRoom.data()?.status === 'active') {
+        throw new Error('配布が再開されたため削除を中止しました。');
+      }
+      transaction.update(initialDistributionRef, { status: 'deleting', updatedAt: serverTimestamp() });
+      if (latestRoom.exists()) transaction.update(roomRef, { status: 'deleting', updatedAt: serverTimestamp() });
+    });
+
+    const [participantsToDelete, expensesToDelete] = await Promise.all([
+      getDocs(collection(roomRef, 'participants')),
+      getDocs(collection(roomRef, 'expenses'))
+    ]);
+    await deleteDocumentsInChunks([...participantsToDelete.docs, ...expensesToDelete.docs]);
+    const latestData = (await getDoc(initialDistributionRef)).data() || initialData;
+    const finalBatch = writeBatch(db);
+    finalBatch.delete(roomRef);
+    finalBatch.delete(initialDistributionRef);
+    const grantId = latestData.grantId || distribution.grantId;
+    if (grantId) finalBatch.delete(doc(db, 'accessGrants', grantId));
+    await finalBatch.commit();
+    showToast('「' + label + '」を完全削除しました。');
+  } catch (error) {
+    console.error(error);
+    showToast('配布先を削除できません: ' + error.message, true);
+    setBusy(button, false);
+  }
 }
 
 function renderDistributions() {
   const list = $('distribution-list');
   list.replaceChildren();
   const activeCount = state.distributions.filter(item => item.status === 'active').length;
-  $('metric-invites').textContent = String(activeCount);
-  $('distribution-count').textContent = `${state.distributions.length}件`;
+  $('metric-distributions').textContent = String(activeCount);
+  $('distribution-count').textContent = String(state.distributions.length) + '件';
+
+  const activeIds = new Set(state.distributions.map(item => item.id));
+  [
+    state.participantUnsubscribers,
+    state.roomUnsubscribers,
+    state.expenseUnsubscribers
+  ].forEach(unsubscribers => {
+    [...unsubscribers.entries()].forEach(([id, unsubscribe]) => {
+      if (!activeIds.has(id)) {
+        unsubscribe();
+        unsubscribers.delete(id);
+      }
+    });
+  });
+
   if (!state.distributions.length) {
     list.append(makeElement('div', 'empty-state', '配布先はまだありません。旅行を選び、配布IDを発行してください。'));
     return;
   }
-  const activeIds = new Set(state.distributions.map(item => item.id));
-  [...state.participantUnsubscribers.entries()].forEach(([id, unsubscribe]) => {
-    if (!activeIds.has(id)) {
-      unsubscribe();
-      state.participantUnsubscribers.delete(id);
-    }
-  });
-  [...state.expenseUnsubscribers.entries()].forEach(([id, unsubscribe]) => {
-    if (!activeIds.has(id)) {
-      unsubscribe();
-      state.expenseUnsubscribers.delete(id);
-    }
-  });
+
   state.distributions.forEach(distribution => {
     subscribeDistributionParticipants(distribution);
+    subscribeDistributionRoom(distribution);
     subscribeDistributionExpenses(distribution);
     const card = makeElement('article', 'distribution-card');
     const head = makeElement('div', 'distribution-head');
     const left = makeElement('div');
-    left.append(makeElement('span', `pill ${distribution.status === 'active' ? '' : 'draft'}`, distribution.status === 'active' ? '有効' : '停止'));
+    const isDeleting = distribution.status === 'deleting';
+    const statusLabel = distribution.status === 'active' ? '有効' : isDeleting ? '削除中' : '停止';
+    left.append(makeElement('span', 'pill ' + (distribution.status === 'active' ? '' : 'draft'), statusLabel));
     left.append(makeElement('h3', '', distribution.label || '名称未設定'));
-    left.append(makeElement('span', 'muted small', `${distribution.tripId} · ${formatTimestamp(distribution.createdAt)}`));
-    const participantCount = distribution.participants?.length || 0;
+    left.append(makeElement('span', 'muted small', distribution.tripId + ' · ' + formatTimestamp(distribution.createdAt)));
+
+    const participantDocs = Array.isArray(distribution.participants) ? distribution.participants : [];
+    const participantByUid = new Map(participantDocs.map(person => [person.uid, person]));
+    const roomMemberIds = distribution.roomReady
+      ? [...new Set(Array.isArray(distribution.roomMembers) ? distribution.roomMembers : [])]
+      : [...new Set(participantDocs.map(person => person.uid))];
+    const roomMemberSet = new Set(roomMemberIds);
+    const listedIds = [...new Set([...roomMemberIds, ...participantDocs.map(person => person.uid)])];
+    const uniqueNames = new Set();
+    let unnamedMemberCount = 0;
+    roomMemberIds.forEach(uid => {
+      const nameKey = normalizeParticipantName(participantByUid.get(uid)?.nickname);
+      if (nameKey) uniqueNames.add(nameKey);
+      else unnamedMemberCount += 1;
+    });
+    const peopleCount = uniqueNames.size + unnamedMemberCount;
+    const deviceCount = roomMemberIds.length;
     const capacity = Number.isInteger(Number(distribution.capacity)) ? Number(distribution.capacity) : 2;
-    head.append(left, makeElement('strong', '', `${participantCount}/${capacity}名`));
-    const accessId = distribution.accessId ? formatAccessId(distribution.accessId) : '旧方式：新しい配布IDを発行してください';
-    const invite = makeElement('code', 'invite-url', accessId);
-    const participants = makeElement('div', 'participant-list');
-    if (participantCount) {
-      distribution.participants.forEach(person => participants.append(makeElement('span', 'participant', person.nickname || '名前未設定')));
+    head.append(left, makeElement('strong', '', peopleCount + '名（' + deviceCount + '/' + capacity + '端末）'));
+
+    const accessId = distribution.accessId ? formatAccessId(distribution.accessId) : '配布IDなし：この配布先を削除し、新しく発行してください';
+    const accessIdCode = makeElement('code', 'distribution-id', accessId);
+    const participants = makeElement('div', 'participant-list participant-device-list');
+    if (listedIds.length) {
+      listedIds.forEach(uid => {
+        const person = participantByUid.get(uid);
+        const label = person?.nickname || '参加者情報のない端末';
+        const slotStatus = roomMemberSet.has(uid) ? '' : ' · 配布枠外';
+        const joinedAt = person?.joinedAt ? ' · ' + formatTimestamp(person.joinedAt) : '';
+        const detail = '…' + uid.slice(-6) + joinedAt + slotStatus;
+        const item = makeElement('span', 'participant participant-device');
+        const copy = makeElement('span', 'participant-device-copy');
+        copy.append(makeElement('strong', '', label), makeElement('small', '', detail));
+        const removeDevice = makeElement('button', 'compact danger', '解除');
+        removeDevice.type = 'button';
+        removeDevice.addEventListener('click', () => removeParticipantDevice(distribution, uid, removeDevice));
+        item.append(copy, removeDevice);
+        participants.append(item);
+      });
     } else {
-      participants.append(makeElement('span', 'muted small', 'まだ参加者はいません'));
+      participants.append(makeElement('span', 'muted small', 'まだ参加端末はありません'));
     }
+    participants.append(makeElement('p', 'participant-merge-note', '同じ表示名は同一人物として割り勘集計します。別人なら表示名を変えてください。'));
     const capacityControl = makeElement('div', 'capacity-control');
-    const capacityLabel = makeElement('label', '', '定員');
+    const capacityLabel = makeElement('label', '', '端末枠');
     const capacityInput = document.createElement('input');
     capacityInput.type = 'number';
-    capacityInput.min = String(Math.max(1, participantCount));
+    capacityInput.min = String(Math.max(1, deviceCount));
     capacityInput.max = '50';
     capacityInput.step = '1';
     capacityInput.value = String(capacity);
-    const updateCapacity = makeElement('button', 'compact ghost', '定員を変更');
+    capacityInput.disabled = isDeleting;
+    const updateCapacity = makeElement('button', 'compact ghost', '端末枠を変更');
     updateCapacity.type = 'button';
+    updateCapacity.disabled = isDeleting;
     updateCapacity.addEventListener('click', () => updateDistributionCapacity(distribution, Number(capacityInput.value), updateCapacity));
     capacityLabel.append(capacityInput);
     capacityControl.append(capacityLabel, updateCapacity);
@@ -1058,7 +1274,7 @@ function renderDistributions() {
     const copyLink = makeElement('button', 'compact primary', '登録リンクをコピー');
     copyLink.type = 'button';
     copyLink.disabled = distribution.status !== 'active' || !distribution.accessId;
-    copyLink.addEventListener('click', () => copyText(participantInviteUrl(distribution.accessId), '自動登録リンクをコピーしました。'));
+    copyLink.addEventListener('click', () => copyText(participantRegistrationUrl(distribution.accessId), '自動登録リンクをコピーしました。'));
     const copy = makeElement('button', 'compact ghost', '配布IDをコピー');
     copy.type = 'button';
     copy.disabled = distribution.status !== 'active' || !distribution.accessId;
@@ -1068,17 +1284,24 @@ function renderDistributions() {
     copyApp.addEventListener('click', () => copyText(participantAppUrl(), '空の参加者アプリURLをコピーしました。'));
     const toggle = makeElement('button', `compact ${distribution.status === 'active' ? 'danger' : ''}`, distribution.status === 'active' ? '配布を停止' : '再開');
     toggle.type = 'button';
+    toggle.disabled = isDeleting;
     toggle.addEventListener('click', () => toggleDistribution(distribution));
     actions.append(copyLink, copy, copyApp, toggle);
+    if (distribution.status !== 'active') {
+      const remove = makeElement('button', 'compact danger', isDeleting ? '削除を再試行' : '完全削除');
+      remove.type = 'button';
+      remove.addEventListener('click', () => deleteDistribution(distribution, remove));
+      actions.append(remove);
+    }
     const ledger = renderDistributionLedger(distribution);
-    card.append(head, invite, participants, ledger, capacityControl, actions);
+    card.append(head, accessIdCode, participants, ledger, capacityControl, actions);
     list.append(card);
   });
 }
 
 async function updateDistributionCapacity(distribution, capacity, button) {
   if (!Number.isInteger(capacity) || capacity < 1 || capacity > 50) {
-    showToast('定員は1〜50名の整数で入力してください。', true);
+    showToast('端末枠は1〜50台の整数で入力してください。', true);
     return;
   }
   setBusy(button, true, '変更中…');
@@ -1087,25 +1310,29 @@ async function updateDistributionCapacity(distribution, capacity, button) {
     const roomSnapshot = await getDoc(roomRef);
     if (!roomSnapshot.exists()) throw new Error('配布ルームが見つかりません。');
     const memberCount = Object.keys(roomSnapshot.data()?.members || {}).length;
-    if (capacity < memberCount) throw new Error(`現在${memberCount}名が登録済みです。定員をそれ未満にはできません。`);
+    if (capacity < memberCount) throw new Error(`現在${memberCount}台の端末が登録済みです。端末枠をそれ未満にはできません。`);
     await runTransaction(db, async transaction => {
       const latestRoom = await transaction.get(roomRef);
       if (!latestRoom.exists()) throw new Error('配布ルームが見つかりません。');
       const latestMemberCount = Object.keys(latestRoom.data()?.members || {}).length;
-      if (capacity < latestMemberCount) throw new Error(`現在${latestMemberCount}名が登録済みです。定員をそれ未満にはできません。`);
+      if (capacity < latestMemberCount) throw new Error(`現在${latestMemberCount}台の端末が登録済みです。端末枠をそれ未満にはできません。`);
       transaction.update(roomRef, { capacity, updatedAt: serverTimestamp() });
       transaction.update(doc(db, 'adminDistributions', distribution.id), { capacity, updatedAt: serverTimestamp() });
     });
-    showToast(`定員を${capacity}名へ変更しました。`);
+    showToast(`端末枠を${capacity}台へ変更しました。`);
   } catch (error) {
     console.error(error);
-    showToast(`定員を変更できません: ${error.message}`, true);
+    showToast(`端末枠を変更できません: ${error.message}`, true);
   } finally {
     setBusy(button, false);
   }
 }
 
 async function toggleDistribution(distribution) {
+  if (distribution.status === 'deleting') {
+    showToast('削除処理中の配布先は再開できません。完全削除を再試行してください。', true);
+    return;
+  }
   const status = distribution.status === 'active' ? 'revoked' : 'active';
   if (status === 'revoked' && !window.confirm('この配布IDを停止しますか？オンライン接続中の参加者は閲覧・同期できなくなります。オフライン保存済みの内容は、次回オンライン確認まで端末に残る場合があります。')) return;
   try {

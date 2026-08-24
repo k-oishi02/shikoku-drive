@@ -8,12 +8,10 @@ import {
     deleteDoc,
     doc,
     getDoc,
-    getDocs,
     onSnapshot,
     serverTimestamp,
     setDoc,
     updateDoc,
-    writeBatch,
     initializeFirestore,
     getFirestore,
     persistentLocalCache,
@@ -30,10 +28,9 @@ const firebaseConfig = {
     measurementId: 'G-VV9YHYW85C'
 };
 
-let EXPENSE_KEY = 'shikoku-drive-expenses-v1';
+let EXPENSE_KEY = 'shiori-expenses-local-v2';
 const pendingActions = [];
 let syncContext = null;
-let inviteUrl = '';
 let unsubscribeRoom = null;
 let unsubscribeExpenses = null;
 let unsubscribeParticipants = null;
@@ -42,6 +39,15 @@ let syncRunId = 0;
 const PARTICIPANT_ACTIVE_MS = 5 * 60 * 1000;
 const TRIP_ACCESS_KEY = 'participant-trip-access-v1';
 const ACCESS_ID_PATTERN = /^[A-Z2-9]{12}$/;
+
+function publishLedgerAccess(uid = '', live = false) {
+    const access = { uid: String(uid || ''), isAdmin: false, live: live === true };
+    window.currentLedgerAccess = access;
+    window.dispatchEvent(new CustomEvent('shiori-ledger-access', { detail: access }));
+}
+
+publishLedgerAccess();
+window.expensePayerAliases = {};
 
 function normalizeAccessId(value) {
     return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -71,45 +77,29 @@ async function sha256(value) {
 }
 
 function ensureRoomParameters(tripId) {
-    const url = new URL(window.location.href);
-    let roomId = url.searchParams.get('ledger');
-    let invite = url.searchParams.get('invite');
-    const validLedger = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || ''));
-    const validInvite = value => /^[A-Za-z0-9_-]{43}$/.test(String(value || '')) || ACCESS_ID_PATTERN.test(String(value || ''));
-    if (!validLedger(roomId) || !validInvite(invite)) {
-        const stored = storedAccessForTrip(tripId);
-        roomId = stored?.ledger || '';
-        invite = stored?.invite || '';
-    }
-    const roomCode = document.getElementById('sync-room-code');
-    if (!validLedger(roomId) || !validInvite(invite)) {
-        inviteUrl = '';
-        if (roomCode) roomCode.textContent = 'VIEW ONLY';
-        return null;
-    }
-    inviteUrl = url.toString();
-    if (roomCode) roomCode.textContent = `ROOM: ${roomId.slice(-6).toUpperCase()}`;
-    return { roomId: `${tripId}_${roomId}`, invite, ledgerToken: roomId };
+    const stored = storedAccessForTrip(tripId);
+    const ledgerToken = String(stored?.ledger || "");
+    const accessId = normalizeAccessId(stored?.accessId);
+    const validLedger = /^[A-Za-z0-9_-]{43}$/.test(ledgerToken);
+    if (!validLedger || !ACCESS_ID_PATTERN.test(accessId)) return null;
+    return { roomId: `${tripId}_${ledgerToken}`, accessId, ledgerToken };
 }
 
 function setSyncUi(mode, title, message) {
     const badge = document.getElementById('sync-badge');
     const titleEl = document.getElementById('sync-title');
     const status = document.getElementById('sync-status');
-    const actions = document.getElementById('share-room-actions');
     const note = document.getElementById('sync-note');
     const members = document.getElementById('hero-participants');
     const expenseSubmit = document.querySelector('#expense-form .expense-submit');
-    const expenseSyncNote = document.getElementById('expense-sync-note');
     if (badge) {
         badge.classList.toggle('live', mode === 'live');
         badge.classList.toggle('error', mode === 'error');
         badge.classList.toggle('local', mode === 'local');
-        badge.textContent = mode === 'live' ? 'LIVE SYNC' : mode === 'error' ? 'ACTION NEEDED' : mode === 'local' ? 'VIEW ONLY' : 'CONNECTING';
+        badge.textContent = mode === 'live' ? 'LIVE SYNC' : mode === 'error' ? 'ACTION NEEDED' : mode === 'local' ? 'LOCAL ONLY' : 'CONNECTING';
     }
     if (titleEl) titleEl.textContent = title;
     if (status) status.textContent = message;
-    if (actions) actions.hidden = true;
     if (note) note.hidden = mode !== 'live';
     if (members && mode !== 'live') {
         members.textContent = mode === 'error'
@@ -126,37 +116,20 @@ function setSyncUi(mode, title, message) {
                 : 'SAVE OFFLINE';
         expenseSubmit.dataset.syncMode = mode;
     }
-    if (expenseSyncNote) {
-        expenseSyncNote.textContent = mode === 'live'
-            ? 'ADD & SHAREで、同じ配布先の参加者全員と管理者へリアルタイム共有します。'
-            : mode === 'local'
-                ? 'この端末だけに保存されます。共有するには、しおり棚のADDから配布IDを登録してください。'
-                : mode === 'error'
-                    ? '通信を回復すると自動同期します。現在の入力はこの端末に保存されます。'
-                    : '接続確認中です。入力は端末へ保存し、接続後に自動共有します。';
-    }
-}
-
-function setShareEnabled(enabled, label = '招待リンクをコピー') {
-    const button = document.getElementById('share-link-button');
-    if (!button) return;
-    button.disabled = !enabled;
-    button.textContent = label;
 }
 
 function renderLiveSyncState() {
     if (!syncContext?.roomReady || !syncContext?.participantsReady) return;
-    const count = Number(syncContext.memberCount || 0);
-    const capacity = Math.max(count, Number(syncContext.capacity || 2));
-    const roleLabel = syncContext.role === 'owner' ? '作成者' : '参加者';
-    setSyncUi('live', `${roleLabel}として接続済み`, `${count}/${capacity}名が登録済み。追加・削除は自動同期されます。`);
-    const roomFull = count >= capacity;
-    setShareEnabled(false, roomFull ? `${capacity}名登録済み` : '管理者の登録リンクを使用');
+    const deviceCount = Number(syncContext.memberCount || 0);
+    const peopleCount = Number(syncContext.logicalMemberCount ?? deviceCount);
+    const capacity = Math.max(deviceCount, Number(syncContext.capacity || 2));
+    setSyncUi('live', '\u53c2\u52a0\u8005\u3068\u3057\u3066\u63a5\u7d9a\u6e08\u307f', `${peopleCount}\u540d\uff08${deviceCount}/${capacity}\u7aef\u672b\uff09\u304c\u767b\u9332\u6e08\u307f\u3002\u8ffd\u52a0\u30fb\u524a\u9664\u306f\u81ea\u52d5\u540c\u671f\u3055\u308c\u307e\u3059\u3002`);
+    const roomFull = deviceCount >= capacity;
     const note = document.getElementById('sync-note');
     if (note) {
         note.textContent = roomFull
-            ? `定員${capacity}名の同期が有効です。入力内容は全員へ自動反映されます。`
-            : `あと${capacity - count}名登録できます。管理者の登録リンク、または同じ配布IDを使用してください。`;
+            ? `端末枠${capacity}台が埋まっています。入力内容は全員へ自動反映されます。`
+            : `あと${capacity - deviceCount}台の端末を登録できます。管理者の登録リンク、または同じ配布IDを使用してください。`;
     }
 }
 
@@ -164,7 +137,7 @@ function setIdentityControlLocked(locked) {
     const deviceOwner = document.getElementById('device-owner');
     if (!deviceOwner) return;
     deviceOwner.disabled = locked;
-    deviceOwner.title = locked ? '招待ルームの参加順から自動設定されています' : '';
+    deviceOwner.title = locked ? '配布ルームの参加順から自動設定されています' : '';
 }
 
 function readCachedExpenses() {
@@ -177,46 +150,34 @@ function readCachedExpenses() {
 }
 
 function cleanExpense(expense) {
+    const note = [expense.note, expense.comment].map(value => String(value || '').trim()).filter(Boolean).join(' — ').slice(0, 120);
     return {
         id: String(expense.id || '').slice(0, 120),
         amount: Math.max(0, Math.round(Number(expense.amount) || 0)),
         payer: String(expense.payer || '').slice(0, 128),
         category: String(expense.category || 'その他').slice(0, 20),
-        note: String(expense.note || '').slice(0, 40),
-        comment: String(expense.comment || '').slice(0, 80),
-        createdAt: String(expense.createdAt || new Date().toISOString()).slice(0, 40)
+        note,
+        createdAt: String(expense.createdAt || new Date().toISOString()).slice(0, 40),
+        creatorUid: String(expense.creatorUid || '').slice(0, 128),
+        pendingSync: expense.pendingSync === true
     };
 }
 
 function expenseForCurrentRoom(expense) {
     const cleaned = cleanExpense(expense);
     const memberIds = Array.isArray(syncContext?.memberIds) ? syncContext.memberIds : [];
-    if (memberIds.includes(cleaned.payer)) return cleaned;
-    const visibleOrder = (Array.isArray(window.currentTripMembers) ? window.currentTripMembers : [])
-        .map(member => String(member?.id || ''))
-        .filter(id => memberIds.includes(id));
-    if (cleaned.payer === 'aoi') cleaned.payer = visibleOrder[0] || syncContext?.uid || '';
-    else if (cleaned.payer === 'kotaro') cleaned.payer = visibleOrder[1] || visibleOrder[0] || syncContext?.uid || '';
-    else cleaned.payer = syncContext?.uid || visibleOrder[0] || '';
-    return cleaned;
+    const payerAlias = window.expensePayerAliases?.[cleaned.payer];
+    if (payerAlias) cleaned.payer = payerAlias;
+    if (!memberIds.includes(cleaned.payer)) {
+        cleaned.payer = window.expensePayerAliases?.[syncContext?.uid]
+            || syncContext?.uid
+            || memberIds[0]
+            || '';
+    }
+    const { pendingSync, ...payload } = cleaned;
+    return { ...payload, creatorUid: cleaned.creatorUid || syncContext?.uid || '' };
 }
 
-function activeParticipantEntries(snapshot) {
-    const cutoff = Date.now() - PARTICIPANT_ACTIVE_MS;
-    return snapshot.docs
-        .map(item => {
-            const data = item.data();
-            const activeAt = data?.lastActive?.toMillis?.() || 0;
-            const nickname = String(data?.nickname || '').trim().slice(0, 40);
-            return nickname && activeAt >= cutoff ? { uid: item.id, nickname, activeAt } : null;
-        })
-        .filter(Boolean)
-        .sort((a, b) => b.activeAt - a.activeAt);
-}
-
-function activeParticipantNames(snapshot) {
-    return [...new Set(activeParticipantEntries(snapshot).map(item => item.nickname))];
-}
 
 function validExpenseForSync(expense) {
     return Boolean(
@@ -231,7 +192,7 @@ function validExpenseForSync(expense) {
 }
 
 function emitRemoteExpenses(expenses) {
-    window.dispatchEvent(new CustomEvent('shikoku-expenses-remote', { detail: expenses }));
+    window.dispatchEvent(new CustomEvent('shiori-expenses-remote', { detail: expenses }));
 }
 
 async function persistAction(action, queueWhenUnavailable = true) {
@@ -249,22 +210,20 @@ async function persistAction(action, queueWhenUnavailable = true) {
         return false;
     }
 
-    const { expensesCollection, db } = syncContext;
-    if (action.type === 'upsert' && action.expense && !syncContext.participantsReady) {
+    const { expensesCollection, uid } = syncContext;
+    if (action.type === 'upsert' && action.expense && (!syncContext.participantsReady || !syncContext.roomReady)) {
         if (queueWhenUnavailable) pendingActions.push({ ...action, tripId: actionTripId, ledgerToken: actionLedgerToken });
         return false;
     }
     if (action.type === 'upsert' && action.expense) {
+        const localExpense = cleanExpense(action.expense);
+        if (localExpense.creatorUid && localExpense.creatorUid !== uid) return true;
         const expense = expenseForCurrentRoom(action.expense);
+        if (!localExpense.creatorUid && !localExpense.pendingSync && expense.payer !== uid) return true;
         if (!validExpenseForSync(expense)) return true;
         await setDoc(doc(expensesCollection, expense.id), expense);
     } else if (action.type === 'remove' && action.id && !String(action.id).includes('/')) {
         await deleteDoc(doc(expensesCollection, String(action.id)));
-    } else if (action.type === 'clear') {
-        const snapshot = await getDocs(expensesCollection);
-        const batch = writeBatch(db);
-        snapshot.forEach(item => batch.delete(item.ref));
-        await batch.commit();
     }
     return true;
 }
@@ -286,20 +245,7 @@ async function flushPendingActions(tripId, ledgerToken) {
     }
     pendingActions.push(...retry);
 }
-window.copyLedgerInviteLink = async function () {
-    const button = document.getElementById('share-link-button');
-    try {
-        await navigator.clipboard.writeText(inviteUrl);
-        if (button) button.textContent = 'コピーしました！';
-        window.setTimeout(() => {
-            if (button) button.textContent = '招待リンクをコピー';
-        }, 1800);
-    } catch (error) {
-        window.prompt('このリンクを同行者へ送ってください', inviteUrl);
-    }
-};
-
-window.addEventListener('shikoku-expense-action', event => {
+window.addEventListener('shiori-expense-action', event => {
     const tripId = String(window.currentTripId || '');
     if (!tripId) return;
     const stored = storedAccessForTrip(tripId);
@@ -311,42 +257,32 @@ window.addEventListener('shikoku-expense-action', event => {
         tripId,
         ledgerToken
     };
-    persistAction(action).then(shared => {
-        const note = document.getElementById('expense-sync-note');
-        if (!note) return;
-        if (shared) {
-            note.textContent = action.type === 'remove'
-                ? '共有台帳から削除しました。参加者全員と管理者へ反映されます。'
-                : '共有しました。参加者全員と管理者の台帳へ反映されます。';
-        } else if (/^[A-Za-z0-9_-]{43}$/.test(ledgerToken)) {
-            note.textContent = '端末に保存しました。接続が完了すると参加者全員と管理者へ自動共有します。';
-        } else {
-            note.textContent = 'この端末だけに保存しました。共有するには、しおり棚のADDから配布IDを登録してください。';
-        }
-    }).catch(() => {
+    persistAction(action).catch(() => {
+        window.expensePayerAliases = {};
+        publishLedgerAccess();
         setSyncUi('error', '同期に失敗しました', '通信状態を確認してください。入力内容はこの端末に残っています。');
     });
 });
 
-async function createOrJoinRoom(db, uid, roomId, invite) {
-    const roomRef = doc(db, 'rooms', roomId);
-    const inviteHash = await sha256(invite);
+async function createOrJoinRoom(db, uid, roomId, accessId) {
+    const roomRef = doc(db, "rooms", roomId);
+    const accessIdHash = await sha256(accessId);
     try {
         const currentRoom = await getDoc(roomRef);
         if (currentRoom.exists()) {
             const members = currentRoom.data().members || {};
-            if (members[uid]) return { roomRef, role: 'member' };
+            if (members[uid]) return { roomRef };
         }
     } catch (readError) {
-        // Non-members cannot read a room before proving the invite token.
+        // Non-members cannot read a room before proving the distribution ID.
     }
     await updateDoc(roomRef, {
         [`members.${uid}`]: true,
         joined: true,
-        joinProof: inviteHash,
+        joinProof: accessIdHash,
         updatedAt: serverTimestamp()
     });
-    return { roomRef, role: 'member' };
+    return { roomRef };
 }
 
 export async function redeemAccessId(value) {
@@ -382,10 +318,8 @@ export async function redeemAccessId(value) {
 }
 
 export async function fetchManagedTripConfig(tripId, access) {
-    const accessId = normalizeAccessId(access?.invite);
-    const legacyInvite = /^[A-Za-z0-9_-]{43}$/.test(String(access?.invite || ''));
-    if (!ACCESS_ID_PATTERN.test(accessId) && !legacyInvite) throw accessError('access/invalid', 'Invalid saved access');
-    if (legacyInvite) throw accessError('access/revoked', 'Legacy invite must be replaced with a distribution ID');
+    const accessId = normalizeAccessId(access?.accessId);
+    if (!ACCESS_ID_PATTERN.test(accessId)) throw accessError("access/invalid", "Invalid saved access");
     const grantId = await sha256(accessId);
     if (access?.grantId && access.grantId !== grantId) throw accessError('access/invalid', 'Access grant mismatch');
     const db = await getDbInstance();
@@ -412,7 +346,8 @@ export async function fetchManagedTripConfig(tripId, access) {
 export async function initSyncEngine(tripId) {
     const currentRunId = ++syncRunId;
     syncContext = null;
-    setShareEnabled(false);
+    window.expensePayerAliases = {};
+    publishLedgerAccess();
     if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
     if (unsubscribeExpenses) { unsubscribeExpenses(); unsubscribeExpenses = null; }
     if (unsubscribeParticipants) { unsubscribeParticipants(); unsubscribeParticipants = null; }
@@ -426,7 +361,7 @@ try {
             setSyncUi('local', 'しおり未登録', 'しおり棚のADDへ、管理者から届いた配布IDを入力してください。');
             return;
         }
-        const { roomId, invite, ledgerToken } = roomParameters;
+        const { roomId, accessId, ledgerToken } = roomParameters;
         setSyncUi('connecting', '共有ルームへ接続中…', '参加権限とルーム状態を確認しています。');
         setIdentityControlLocked(true);
         EXPENSE_KEY = `expenses-${tripId}-${ledgerToken}-v2`;
@@ -454,7 +389,7 @@ try {
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Anonymous authentication failed');
 
-        const { roomRef, role } = await createOrJoinRoom(db, uid, roomId, invite);
+        const { roomRef } = await createOrJoinRoom(db, uid, roomId, accessId);
         if (currentRunId !== syncRunId) return;
         const expensesCollection = collection(roomRef, 'expenses');
         syncContext = {
@@ -464,14 +399,16 @@ try {
             uid,
             tripId,
             ledgerToken,
-            role,
             roomReady: false,
             participantsReady: false,
             memberCount: 0,
+            logicalMemberCount: null,
             capacity: 2,
             deviceOwnerInitialized: false,
-            memberIds: []
+            memberIds: [],
+            roomMemberIds: []
         };
+        publishLedgerAccess(uid, true);
 
         // Register participant nickname in Firestore
         const nickname = String(localStorage.getItem('user_nickname') || '名無し').trim().slice(0, 40) || '名無し';
@@ -491,10 +428,13 @@ try {
             }, { merge: true }).catch(() => {});
         }, 60 * 1000);
 
-        // Listen to participant updates for header display and PayPay select options
-        unsubscribeParticipants = onSnapshot(collection(roomRef, 'participants'), (snapshot) => {
-            if (currentRunId !== syncRunId || !syncContext) return;
-            const allParticipants = snapshot.docs
+        // Keep participant options derived only from current room members. This also
+        // lets room.members changes immediately evict stale participant documents.
+        let latestParticipantSnapshot = null;
+        const refreshParticipants = () => {
+            if (currentRunId !== syncRunId || !syncContext || !latestParticipantSnapshot) return;
+            const allowedMemberIds = syncContext.roomReady ? new Set(syncContext.roomMemberIds) : null;
+            const allParticipants = latestParticipantSnapshot.docs
                 .map(item => {
                     const data = item.data();
                     return {
@@ -504,23 +444,47 @@ try {
                         joinedAt: data?.joinedAt?.toMillis?.() || Number.MAX_SAFE_INTEGER
                     };
                 })
+                .filter(person => !allowedMemberIds || allowedMemberIds.has(person.uid))
                 .sort((a, b) => a.joinedAt - b.joinedAt || a.uid.localeCompare(b.uid));
+            const knownParticipantIds = new Set(allParticipants.map(person => person.uid));
+            const missingMemberIds = syncContext.roomReady
+                ? syncContext.roomMemberIds.filter(memberId => !knownParticipantIds.has(memberId))
+                : [];
             const cutoff = Date.now() - PARTICIPANT_ACTIVE_MS;
-            const names = [...new Set(allParticipants
-                .filter(item => item.activeAt >= cutoff)
-                .map(item => item.nickname))];
-            const optionData = allParticipants.map(item => ({ id: item.uid, name: item.nickname }));
-            syncContext.memberIds = optionData.map(member => member.id);
-            window.memberNames = Object.fromEntries(optionData.map(member => [member.id, member.name]));
+            const canonicalByName = new Map();
+            const payerAliases = {};
+            allParticipants.forEach(person => {
+                const nameKey = person.nickname.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('ja-JP');
+                const canonical = canonicalByName.get(nameKey) || person;
+                if (!canonicalByName.has(nameKey)) canonicalByName.set(nameKey, canonical);
+                payerAliases[person.uid] = canonical.uid;
+            });
+            missingMemberIds.forEach(memberId => {
+                payerAliases[memberId] = memberId;
+            });
+            const optionData = [
+                ...[...canonicalByName.values()].map(person => ({ id: person.uid, name: person.nickname })),
+                ...missingMemberIds.map(memberId => ({ id: memberId, name: '端末…' + memberId.slice(-6) }))
+            ];
+            const activeCanonicalIds = new Set(allParticipants
+                .filter(person => person.activeAt >= cutoff)
+                .map(person => payerAliases[person.uid]));
+            const names = optionData.filter(person => activeCanonicalIds.has(person.id)).map(person => person.name);
+            syncContext.memberIds = syncContext.roomReady
+                ? [...syncContext.roomMemberIds]
+                : allParticipants.map(person => person.uid);
+            syncContext.logicalMemberCount = optionData.length;
+            window.expensePayerAliases = payerAliases;
+            window.memberNames = Object.fromEntries(allParticipants.map(person => [person.uid, person.nickname]));
             window.currentTripMembers = optionData;
 
             const pElem = document.getElementById('hero-participants');
             const displayNames = names.length > 0 ? names : [nickname];
-            if (pElem) pElem.textContent = `MEMBERS: ${displayNames.join(', ')}`;
+            if (pElem) pElem.textContent = 'MEMBERS: ' + displayNames.join(', ');
             const participantsWereReady = syncContext.participantsReady;
             syncContext.participantsReady = true;
             renderLiveSyncState();
-            if (!participantsWereReady) {
+            if (!participantsWereReady && syncContext.roomReady) {
                 flushPendingActions(syncContext.tripId, syncContext.ledgerToken).catch(() => {
                     setSyncUi('error', '台帳の送信に失敗しました', '通信状態を確認してください。入力内容はこの端末に残っています。');
                 });
@@ -531,32 +495,42 @@ try {
             if (deviceOwner && expensePayer) {
                 const savedOwner = deviceOwner.value;
                 const savedPayer = expensePayer.value;
-                const deviceOwnerId = uid;
+                const deviceOwnerId = payerAliases[uid] || optionData[0]?.id || uid;
+                const canonicalSavedOwner = payerAliases[savedOwner] || savedOwner;
+                const canonicalSavedPayer = payerAliases[savedPayer] || savedPayer;
                 deviceOwner.replaceChildren(...optionData.map(member => new Option(member.name, member.id)));
                 expensePayer.replaceChildren(...optionData.map(member => new Option(member.name, member.id)));
                 if (!syncContext.deviceOwnerInitialized) {
                     deviceOwner.value = deviceOwnerId;
                     expensePayer.value = deviceOwnerId;
-                    localStorage.setItem('shikoku-drive-device-owner-v1', JSON.stringify(deviceOwnerId));
+                    window.setLedgerDeviceOwner?.(deviceOwnerId);
                     syncContext.deviceOwnerInitialized = true;
                 } else {
                     const optionIds = new Set(optionData.map(member => member.id));
-                    deviceOwner.value = optionIds.has(savedOwner) ? savedOwner : deviceOwnerId;
-                    expensePayer.value = optionIds.has(savedPayer) ? savedPayer : deviceOwner.value;
+                    deviceOwner.value = optionIds.has(canonicalSavedOwner) ? canonicalSavedOwner : deviceOwnerId;
+                    expensePayer.value = optionIds.has(canonicalSavedPayer) ? canonicalSavedPayer : deviceOwner.value;
                 }
             }
 
             if (window.recalculateExpenses) window.recalculateExpenses();
-        }, (error) => {
+        };
+
+        // Listen to participant updates for header display and PayPay select options.
+        unsubscribeParticipants = onSnapshot(collection(roomRef, 'participants'), snapshot => {
+            latestParticipantSnapshot = snapshot;
+            refreshParticipants();
+        }, error => {
             if (currentRunId !== syncRunId || !syncContext) return;
             console.error('Participant sync failed', error);
-            setSyncUi('error', '参加者情報を同期できません', '管理者へ連絡し、Firestoreルールと招待リンクを確認してください。');
-            setShareEnabled(false);
+            window.expensePayerAliases = {};
+            publishLedgerAccess();
+            setIdentityControlLocked(false);
+            setSyncUi('error', '参加者情報を同期できません', '管理者へ連絡し、Firestoreルールと登録リンクを確認してください。');
         });
-
 
         const cached = readCachedExpenses()
             .map(cleanExpense)
+            .filter(expense => expense.pendingSync === true)
             .filter(validExpenseForSync);
         await Promise.all(cached.map(expense => persistAction({
             type: 'upsert',
@@ -570,12 +544,23 @@ try {
             if (currentRunId !== syncRunId || !syncContext) return;
             const roomData = snapshot.data() || {};
             const members = roomData.members || {};
-            syncContext.memberCount = Object.keys(members).length;
+            const roomWasReady = syncContext.roomReady;
+            syncContext.roomMemberIds = Object.keys(members);
+            syncContext.memberCount = syncContext.roomMemberIds.length;
             syncContext.capacity = Number.isInteger(Number(roomData.capacity)) ? Number(roomData.capacity) : 2;
             syncContext.roomReady = true;
+            refreshParticipants();
             renderLiveSyncState();
+            if (!roomWasReady && syncContext.participantsReady) {
+                flushPendingActions(syncContext.tripId, syncContext.ledgerToken).catch(() => {
+                    setSyncUi('error', '台帳の送信に失敗しました', '通信状態を確認してください。入力内容はこの端末に残っています。');
+                });
+            }
         }, () => {
-            setSyncUi('error', '招待ルームが停止されました', '管理者から新しい招待リンクを受け取ってください。');
+            window.expensePayerAliases = {};
+            publishLedgerAccess();
+            setIdentityControlLocked(false);
+            setSyncUi('error', '配布ルームが停止されました', '管理者から新しい登録リンクを受け取ってください。');
         });
 
         unsubscribeExpenses = onSnapshot(expensesCollection, snapshot => {
@@ -585,14 +570,18 @@ try {
                 .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
             emitRemoteExpenses(expenses);
         }, () => {
-            setSyncUi('error', '台帳を同期できません', '通信状態、または招待リンクの有効期限を確認してください。端末内の入力は残っています。');
+            window.expensePayerAliases = {};
+            publishLedgerAccess();
+            setIdentityControlLocked(false);
+            setSyncUi('error', '台帳を同期できません', '通信状態、または登録リンクの有効期限を確認してください。端末内の入力は残っています。');
         });
 
         if (currentRunId !== syncRunId) return;
-        setShareEnabled(true);
         await flushPendingActions(tripId, ledgerToken);
     } catch (error) {
         if (currentRunId !== syncRunId) return;
+        window.expensePayerAliases = {};
+        publishLedgerAccess();
         const code = String(error?.code || '');
         if (code.includes('auth/operation-not-allowed')) {
             setSyncUi('error', '共有機能を利用できません', '管理者へ連絡してください。端末内では引き続き記録できます。');
@@ -602,16 +591,15 @@ try {
             setSyncUi('error', '共有同期を開始できません', '通信状態を確認してください。端末内の入力は残っています。');
         }
         setIdentityControlLocked(false);
-        setShareEnabled(false);
     }
 }
 
 export function stopSyncEngine() {
     syncRunId += 1;
     syncContext = null;
-    inviteUrl = '';
+    window.expensePayerAliases = {};
+    publishLedgerAccess();
     pendingActions.splice(0, pendingActions.length);
-    setShareEnabled(false);
     if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
     if (unsubscribeExpenses) { unsubscribeExpenses(); unsubscribeExpenses = null; }
     if (unsubscribeParticipants) { unsubscribeParticipants(); unsubscribeParticipants = null; }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shikoku-drive-pwa-v43';
+const CACHE_NAME = 'shiori-pwa-v49';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,27 +6,13 @@ const APP_SHELL = [
   './src/enhancements.js',
   './src/firebase-sync.js',
   './manifest.webmanifest',
-  './images/header_shikoku.png',
-  './images/yadon_park.png',
-  './images/udon_baka.png',
-  './images/sakubee_somen.png',
-  './images/shodoshima.png',
-  './images/chichibugahama.png',
-  './images/dogo_onsen.png',
-  './images/shimonada.png',
-  './images/shimanami.png',
-  './images/ana.png',
-  './images/apple_wallet.png',
-  './images/arboliva.png',
-  './images/cocchi.png',
-  './images/google_wallet.png',
+  './images/shiori-icon.svg',
+  './images/shiori-icon-192.png',
+  './images/shiori-icon-512.png',
+  './images/shiori-icon-180.png',
   './images/jalan.png',
   './images/paypay.png',
-  './images/pikachu.png',
-  './images/revavroom.png',
-  './images/slowpoke.png',
   './images/tabelog.png',
-  './images/toyota.png',
   './images/weather.png'
 ];
 
