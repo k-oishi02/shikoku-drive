@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shiori-pwa-v54';
+const CACHE_NAME = 'shiori-pwa-v55';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,10 +6,10 @@ const APP_SHELL = [
   './src/enhancements.js',
   './src/firebase-sync.js',
   './manifest.webmanifest',
-  './images/shiori-icon.svg',
-  './images/shiori-icon-192.png',
-  './images/shiori-icon-512.png',
-  './images/shiori-icon-180.png',
+  './images/shiori-icon-v2.svg',
+  './images/shiori-icon-v2-192.png',
+  './images/shiori-icon-v2-512.png',
+  './images/shiori-icon-v2-180.png',
   './images/jalan.png',
   './images/paypay.png',
   './images/tabelog.png',
