@@ -690,9 +690,9 @@
             webUrl: 'https://rent.toyota.co.jp/cp/18_ser_app01/',
             androidIntent: 'intent://#Intent;scheme=toyotaapp;package=jp.co.toyota.rent.app.android;S.browser_fallback_url=https%3A%2F%2Frent.toyota.co.jp%2Fcp%2F18_ser_app01%2F;end'
         });
-        const ANDROID_APP_LINKS = Object.freeze({
-            jalan: Object.freeze({ hostname: 'www.jalan.net', packageName: 'net.jalan.android' }),
-            helloCycling: Object.freeze({ hostname: 'www.hellocycling.jp', packageName: 'jp.hellocycling.hellocycling' })
+        const ANDROID_APP_TARGETS = Object.freeze({
+            jalan: Object.freeze({ hostname: 'www.jalan.net', packageName: 'net.jalan.android', scheme: 'jalan', intentHost: '' }),
+            helloCycling: Object.freeze({ hostname: 'www.hellocycling.jp', packageName: 'jp.hellocycling.hellocycling', scheme: 'hellocycling', intentHost: 'main' })
         });
         const IS_ANDROID_DEVICE = /Android/i.test(navigator.userAgent);
         let currentTripData = null;
@@ -720,14 +720,14 @@
             }
         }
 
-        function androidHttpsIntent(value, app) {
+        function androidCustomSchemeIntent(value, app) {
             if (!IS_ANDROID_DEVICE || !app) return '';
             const href = safeExternalUrl(value);
             if (!href) return '';
             const url = new URL(href);
             if (url.protocol !== 'https:' || url.hostname !== app.hostname) return '';
-            const deepLinkPath = `${url.pathname}${url.search}`;
-            return `intent://${url.host}${deepLinkPath}#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=${app.packageName};S.browser_fallback_url=${encodeURIComponent(url.href)};end`;
+            const intentAuthority = app.intentHost ? `//${app.intentHost}/` : '//';
+            return `intent:${intentAuthority}#Intent;scheme=${app.scheme};package=${app.packageName};S.browser_fallback_url=${encodeURIComponent(url.href)};end`;
         }
 
         const ACTION_LABELS = Object.freeze({
@@ -1304,7 +1304,7 @@
                     if (jalanUrl) {
                         linksHtml += renderActionLink(jalanUrl, 'じゃらん', {
                             visibleLabel: 'JALAN', className: 'app-accent', ariaLabel: 'じゃらんを開く',
-                            appUrl: androidHttpsIntent(jalanUrl, ANDROID_APP_LINKS.jalan),
+                            appUrl: androidCustomSchemeIntent(jalanUrl, ANDROID_APP_TARGETS.jalan),
                             sameContext: true,
                             iconHtml: `<img src="${APP_ICONS.jalan}" class="j-app-icon" alt="">`
                         });
@@ -1320,7 +1320,7 @@
                         const safeLinkUrl = safeExternalUrl(link.url);
                         const isHelloCyclingLink = link.label === '自転車'
                             && safeLinkUrl
-                            && new URL(safeLinkUrl).hostname === ANDROID_APP_LINKS.helloCycling.hostname;
+                            && new URL(safeLinkUrl).hostname === ANDROID_APP_TARGETS.helloCycling.hostname;
                         const appIcon = link.label === 'ANA'
                             ? APP_ICONS.ana
                             : link.label === 'TOYOTA'
@@ -1333,7 +1333,7 @@
                             && IS_ANDROID_DEVICE
                             ? TOYOTA_RENTAL_APP.androidIntent
                             : isHelloCyclingLink
-                                ? androidHttpsIntent(safeLinkUrl, ANDROID_APP_LINKS.helloCycling)
+                                ? androidCustomSchemeIntent(safeLinkUrl, ANDROID_APP_TARGETS.helloCycling)
                                 : '';
                         linksHtml += renderActionLink(link.url, link.label, {
                             appUrl,
