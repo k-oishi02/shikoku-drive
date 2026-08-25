@@ -727,7 +727,7 @@
             const url = new URL(href);
             if (url.protocol !== 'https:' || url.hostname !== app.hostname) return '';
             const deepLinkPath = `${url.pathname}${url.search}`;
-            return `intent://${url.host}${deepLinkPath}#Intent;scheme=https;package=${app.packageName};S.browser_fallback_url=${encodeURIComponent(url.href)};end`;
+            return `intent://${url.host}${deepLinkPath}#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=${app.packageName};S.browser_fallback_url=${encodeURIComponent(url.href)};end`;
         }
 
         const ACTION_LABELS = Object.freeze({
