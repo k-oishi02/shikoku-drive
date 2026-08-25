@@ -756,10 +756,13 @@
             const visibleLabel = options.visibleLabel || actionLabel(rawLabel, options.fallback || 'INFO');
             const ariaLabel = options.ariaLabel || `${String(rawLabel || visibleLabel).trim()}を開く`;
             const classes = ['j-btn', options.primary ? 'primary' : '', options.className || ''].filter(Boolean).join(' ');
-            const appAttrs = options.appUrl
+            const isAndroidIntent = typeof options.appUrl === 'string' && options.appUrl.startsWith('intent://');
+            const linkHref = isAndroidIntent ? options.appUrl : href;
+            const appAttrs = options.appUrl && !isAndroidIntent
                 ? ` data-app-url="${escapeHtml(options.appUrl)}" onclick="openAppWithFallback(event, this)"`
                 : '';
-            return `<a href="${escapeHtml(href)}"${appAttrs} target="_blank" rel="noopener noreferrer" class="${classes}" aria-label="${escapeHtml(ariaLabel)}" title="${escapeHtml(String(rawLabel || visibleLabel))}">${options.iconHtml || ''}<span class="j-btn-label">${escapeHtml(visibleLabel)}</span><span class="j-btn-mark" aria-hidden="true">↗</span></a>`;
+            const targetAttr = options.sameContext || isAndroidIntent ? '' : ' target="_blank"';
+            return `<a href="${escapeHtml(linkHref)}"${appAttrs}${targetAttr} rel="noopener noreferrer" class="${classes}" aria-label="${escapeHtml(ariaLabel)}" title="${escapeHtml(String(rawLabel || visibleLabel))}">${options.iconHtml || ''}<span class="j-btn-label">${escapeHtml(visibleLabel)}</span><span class="j-btn-mark" aria-hidden="true">↗</span></a>`;
         }
 
         const DATA_KEY_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -1302,6 +1305,7 @@
                         linksHtml += renderActionLink(jalanUrl, 'じゃらん', {
                             visibleLabel: 'JALAN', className: 'app-accent', ariaLabel: 'じゃらんを開く',
                             appUrl: androidHttpsIntent(jalanUrl, ANDROID_APP_LINKS.jalan),
+                            sameContext: true,
                             iconHtml: `<img src="${APP_ICONS.jalan}" class="j-app-icon" alt="">`
                         });
                     }
@@ -1334,6 +1338,7 @@
                         linksHtml += renderActionLink(link.url, link.label, {
                             appUrl,
                             visibleLabel: isHelloCyclingLink ? 'HELLO' : undefined,
+                            sameContext: isHelloCyclingLink,
                             className: appIcon ? 'app-accent' : '',
                             iconHtml: appIcon ? `<img src="${appIcon}" class="j-app-icon" alt="">` : ''
                         });
