@@ -680,8 +680,10 @@
     <!-- MAIN SHIORI ROUTER & BUILDER SCRIPT -->
     <script>
         const APP_ICONS = Object.freeze({
+            ana: 'images/ana-app.jpg',
             tabelog: 'images/tabelog.png',
-            jalan: 'images/jalan.png'
+            jalan: 'images/jalan-app.jpg',
+            toyota: 'images/toyota-rent-app.png'
         });
         const TOYOTA_RENTAL_APP = Object.freeze({
             webUrl: 'https://rent.toyota.co.jp/cp/18_ser_app01/',
@@ -1296,12 +1298,21 @@
                     cardLinks.forEach(link => {
                         if (link === routeLink || !link?.label) return;
                         const safeLinkUrl = safeExternalUrl(link.url);
+                        const appIcon = link.label === 'ANA'
+                            ? APP_ICONS.ana
+                            : link.label === 'TOYOTA'
+                                ? APP_ICONS.toyota
+                                : '';
                         const appUrl = link.label === 'TOYOTA'
                             && safeLinkUrl === TOYOTA_RENTAL_APP.webUrl
                             && IS_ANDROID_DEVICE
                             ? TOYOTA_RENTAL_APP.androidIntent
                             : '';
-                        linksHtml += renderActionLink(link.url, link.label, { appUrl });
+                        linksHtml += renderActionLink(link.url, link.label, {
+                            appUrl,
+                            className: appIcon ? 'app-accent' : '',
+                            iconHtml: appIcon ? `<img src="${appIcon}" class="j-app-icon" alt="">` : ''
+                        });
                     });
                     const btnRowHtml = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
                     cardsHtml += `
