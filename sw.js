@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shiori-pwa-v57';
+const CACHE_NAME = 'shiori-pwa-v58';
 const APP_SHELL = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const APP_SHELL = [
   './images/ana-app.jpg',
   './images/jalan-app.jpg',
   './images/toyota-rent-app.png',
+  './images/hello-cycling-app.png',
   './images/paypay.png',
   './images/tabelog.png',
   './images/weather.png'
