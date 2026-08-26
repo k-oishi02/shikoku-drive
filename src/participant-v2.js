@@ -25,7 +25,9 @@ function effectiveTheme(trip) {
 
 function applyTheme(trip) {
   const root = document.documentElement;
-  root.dataset.tripTheme = effectiveTheme(trip);
+  const theme = effectiveTheme(trip);
+  root.dataset.tripTheme = theme;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f4f1ea' : '#242424');
   root.style.setProperty('--v2-accent', trip.theme?.accent || '#f4d35e');
   root.style.setProperty('--accent', trip.theme?.accent || '#f4d35e');
   const hero = document.querySelector('.j-hero');
