@@ -12,7 +12,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
-    <link rel="stylesheet" href="src/participant-v2.css?v=200">
+    <link rel="stylesheet" href="src/participant-v2.css?v=201">
     <link rel="stylesheet" href="src/enhancements.css">
 
     <style>
@@ -706,6 +706,7 @@
         const IS_IOS_DEVICE = /iPad|iPhone|iPod/i.test(navigator.userAgent)
             || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         let currentTripData = null;
+        let participantV2Runtime = null;
         let tripLoadRunId = 0;
         let portalLoadRunId = 0;
 
@@ -1183,6 +1184,8 @@
         }
 
         function pauseTripRuntime() {
+            participantV2Runtime?.deactivateParticipantV2?.();
+            participantV2Runtime = null;
             if (weatherRefreshInterval) { window.clearInterval(weatherRefreshInterval); weatherRefreshInterval = null; }
             if (window.nowModeInterval) { window.clearInterval(window.nowModeInterval); window.nowModeInterval = null; }
             tripLoadRunId += 1;
@@ -1221,6 +1224,7 @@
                 .then(([rawData, v2Runtime]) => {
                     const data = v2Runtime.migrateParticipantTrip(rawData);
                     if (currentLoadId !== tripLoadRunId || window.currentTripId !== tripId) return;
+                    participantV2Runtime = v2Runtime;
                     currentTripData = data;
                     window.currentTripData = data;
                     window.currentTripTitle = data.subtitle || data.title || '旅行';
@@ -1759,7 +1763,7 @@
     </script>
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
-    <script src="src/enhancements.js?v=200"></script>
+    <script src="src/enhancements.js?v=201"></script>
     <script type="module" src="src/firebase-sync.js"></script>
 </body>
 </html>

@@ -183,15 +183,18 @@ function renderExpenseParticipants() {
   }));
 }
 
+function handleExpenseSplitModeChange() {
+  renderExpenseParticipants();
+}
+
 export function migrateParticipantTrip(raw) {
   activeTrip = migrateTripToV2(raw, raw?.tripId || 'trip');
   window.shioriPreferredMapUrl = preferredMapUrl;
-  window.shioriPlatformAppUrl = platformAppUrl;
   return activeTrip;
 }
 
 export function activateParticipantV2(raw) {
-  activeTrip = migrateParticipantTrip(raw);
+  activeTrip = raw === activeTrip ? activeTrip : migrateParticipantTrip(raw);
   const savedNotifications = safeStorage.get(settingKey('notifications'));
   if (savedNotifications) activeTrip.features.notifications = savedNotifications === '1';
   applyTheme(activeTrip);
@@ -203,10 +206,21 @@ export function activateParticipantV2(raw) {
   refreshNowAssistant();
   nowTimer = setInterval(refreshNowAssistant, 30000);
   scheduleNotifications();
-  document.getElementById('expense-split-mode')?.addEventListener('change', renderExpenseParticipants);
+  document.getElementById('expense-split-mode')?.removeEventListener('change', handleExpenseSplitModeChange);
+  document.getElementById('expense-split-mode')?.addEventListener('change', handleExpenseSplitModeChange);
+  window.removeEventListener('shiori-members-changed', renderExpenseParticipants);
   window.addEventListener('shiori-members-changed', renderExpenseParticipants);
   renderExpenseParticipants();
   return activeTrip;
+}
+
+export function deactivateParticipantV2() {
+  if (nowTimer) clearInterval(nowTimer);
+  nowTimer = null;
+  clearNotificationTimers();
+  document.getElementById('expense-split-mode')?.removeEventListener('change', handleExpenseSplitModeChange);
+  window.removeEventListener('shiori-members-changed', renderExpenseParticipants);
+  activeTrip = null;
 }
 
 export function preferredMapUrl(query, fallbackUrl = '') {
@@ -216,14 +230,5 @@ export function preferredMapUrl(query, fallbackUrl = '') {
     : fallbackUrl;
 }
 
-export function platformAppUrl(link) {
-  const ua = navigator.userAgent || '';
-  const isAndroid = /Android/i.test(ua);
-  const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  return isAndroid ? link?.androidUrl || '' : isIOS ? link?.iosUrl || '' : '';
-}
-
 window.shioriSettlementTransfers = settlementTransfers;
 window.shioriRenderExpenseParticipants = renderExpenseParticipants;
-window.shioriPreferredMapUrl = preferredMapUrl;
-window.shioriPlatformAppUrl = platformAppUrl;
