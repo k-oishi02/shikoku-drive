@@ -12,6 +12,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
+    <link rel="stylesheet" href="src/participant-v2.css?v=200">
     <link rel="stylesheet" href="src/enhancements.css">
 
     <style>
@@ -588,6 +589,11 @@
                                 <option value="その他">その他</option>
                             </select>
                         </label>
+                        <label>
+                            <span>分け方</span>
+                            <select id="expense-split-mode"><option value="equal">全員で均等</option><option value="selected">選んだ人だけ</option></select>
+                        </label>
+                        <div id="expense-participants" class="expense-participants" hidden></div>
                         <label class="expense-note-field">
                             <span>内容</span>
                             <input id="expense-note" type="text" maxlength="120" placeholder="例：五志喜 予約分">
@@ -600,6 +606,7 @@
                         <div class="expense-settlement"><span>精算</span><strong id="expense-settlement">まだ支出はありません</strong></div>
                     </div>
                     <ul id="expense-list" class="expense-list" aria-label="支出一覧"></ul>
+                    <button type="button" class="j-btn" onclick="downloadExpensesCsv()">CSVを書き出す</button>
                 </div>
 
                 <!-- Optional PayPay handoff -->
@@ -1040,7 +1047,7 @@
                 title: data.title,
                 subtitle: data.subtitle || '',
                 date: `${data.startDate} - ${data.endDate}`,
-                isPast: data.endDate ? (data.endDate < todayStr) : false
+                isPast: data.archived === true || (data.endDate ? (data.endDate < todayStr) : false)
             };
         }
 
@@ -1210,8 +1217,9 @@
             const currentLoadId = ++tripLoadRunId;
             window.currentTripId = tripId;
             window.currentTripLedgerToken = storedTripAccess(tripId)?.ledger || '';
-            fetchTripConfig(tripId)
-                .then(data => {
+            Promise.all([fetchTripConfig(tripId), import('./src/participant-v2.js')])
+                .then(([rawData, v2Runtime]) => {
+                    const data = v2Runtime.migrateParticipantTrip(rawData);
                     if (currentLoadId !== tripLoadRunId || window.currentTripId !== tripId) return;
                     currentTripData = data;
                     window.currentTripData = data;
@@ -1231,6 +1239,7 @@
                     if (window.initEnhancements && typeof window.initEnhancements === 'function') {
                         window.initEnhancements();
                     }
+                    v2Runtime.activateParticipantV2(data);
                 })
                 .catch(error => {
                     if (currentLoadId !== tripLoadRunId || window.currentTripId !== tripId) return;
@@ -1274,7 +1283,7 @@
                 tabHeadersHtml += `<button type="button" id="btn-${key}" class="j-tab-btn ${activeClass}" role="tab" aria-selected="${selected}" aria-controls="tab-${key}" onclick="switchTab('tab-${key}', this)">DAY ${String(dayNum).padStart(2, '0')}</button>`;
             });
             tabHeadersHtml += `<button type="button" id="btn-checklist" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" onclick="switchTab('tab-checklist', this)">CHECKLIST</button>`;
-            tabHeadersHtml += `<button type="button" id="btn-expenses" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-expenses" onclick="switchTab('tab-expenses', this)">EXPENSES</button>`;
+            if (data.features?.expenses !== false) tabHeadersHtml += `<button type="button" id="btn-expenses" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-expenses" onclick="switchTab('tab-expenses', this)">EXPENSES</button>`;
             navBar.innerHTML = tabHeadersHtml;
 
             // 4. Day panels & cards
@@ -1287,12 +1296,38 @@
                 const label = data.dayLabels?.[key] || `DAY ${String(idx + 1).padStart(2, '0')}`;
 
                 let cardsHtml = '';
-                (Array.isArray(data.days[key]) ? data.days[key] : []).forEach(card => {
+                (Array.isArray(data.days[key]) ? data.days[key] : []).forEach((card, cardIndex) => {
                     const cardTitle = String(card?.title || '');
                     const cardDescription = String(card?.desc || '');
                     const imagePath = card.image ? `images/${escapeHtml(card.image)}` : '';
                     const imgHtml = imagePath ? `<img class="j-card-img" src="${imagePath}" alt="${escapeHtml(cardTitle)}" loading="lazy">` : '';
                     const mapQuery = String(card.mapQuery || '').trim();
+                    const travelMinutes = Math.max(0, Math.round(Number(card.travelMinutesFromPrevious) || 0));
+                    const startMatch = String(card.time || '').match(/^(\d{2}):(\d{2})/);
+                    const startMinute = startMatch ? Number(startMatch[1]) * 60 + Number(startMatch[2]) : null;
+                    const departureMinute = startMinute == null ? null : startMinute - travelMinutes;
+                    const departureLabel = departureMinute == null ? '' : `${String(Math.floor((departureMinute + 1440) % 1440 / 60)).padStart(2, '0')}:${String((departureMinute + 1440) % 60).padStart(2, '0')}までに出発`;
+                    const travelHintHtml = cardIndex > 0 && travelMinutes
+                        ? `<div class="v2-travel-hint"><strong>移動 約${travelMinutes}分</strong><span>${departureLabel}</span></div>`
+                        : '';
+                    const reservation = card.reservation && typeof card.reservation === 'object' ? card.reservation : null;
+                    let reservationHtml = '';
+                    if (reservation) {
+                        const rows = [
+                            ['予約番号', reservation.number], ['予約名義', reservation.name], ['電話', reservation.phone],
+                            ['キャンセル期限', reservation.deadline], ['メモ', reservation.note]
+                        ].filter(([, value]) => value).map(([label, value]) => `<div class="v2-reservation-row"><span>${label}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+                        const reservationUrl = safeExternalUrl(reservation.url);
+                        const phone = String(reservation.phone || '').replace(/[^0-9+]/g, '');
+                        const qrImage = /^[A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|jpe?g|webp|gif)$/i.test(String(reservation.qrImage || ''))
+                            ? `<img class="j-card-img" src="images/${escapeHtml(reservation.qrImage)}" alt="予約QRコード" loading="lazy">`
+                            : '';
+                        const actions = [
+                            phone ? `<a class="j-btn" href="tel:${escapeHtml(phone)}">電話</a>` : '',
+                            reservationUrl ? `<a class="j-btn" href="${escapeHtml(reservationUrl)}" target="_blank" rel="noopener noreferrer">予約確認 ↗</a>` : ''
+                        ].join('');
+                        reservationHtml = `<details class="v2-reservation"><summary>予約情報</summary><div class="v2-reservation-body">${rows}${qrImage}<div class="v2-reservation-actions">${actions}</div></div></details>`;
+                    }
 
                     const cardLinks = Array.isArray(card.links) ? card.links : [];
                     const routeLink = cardLinks.find(link => (link?.kind === 'route' || link?.label === 'ルート') && safeExternalUrl(link?.url));
@@ -1303,8 +1338,9 @@
                             ariaLabel: `${cardTitle || '目的地'}までのルートを開く`
                         });
                     } else if (mapQuery) {
-                        const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
-                        linksHtml += renderActionLink(mapUrl, card.mapLabel || '地図', {
+                        const defaultMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
+                        const mapUrl = window.shioriPreferredMapUrl ? window.shioriPreferredMapUrl(mapQuery, defaultMapUrl) : defaultMapUrl;
+                        linksHtml += renderActionLink(mapUrl, '地図', {
                             primary: true, visibleLabel: 'MAP',
                             ariaLabel: `${cardTitle || '目的地'}を地図で開く`
                         });
@@ -1337,14 +1373,18 @@
                         const isHelloCyclingLink = link.label === '自転車'
                             && safeLinkUrl
                             && new URL(safeLinkUrl).hostname === MOBILE_APP_TARGETS.helloCycling.hostname;
-                        const appIcon = link.label === 'ANA'
+                        const configuredIcon = typeof link.icon === 'string' && Object.hasOwn(APP_ICONS, link.icon) ? APP_ICONS[link.icon] : '';
+                        const appIcon = configuredIcon || (link.label === 'ANA'
                             ? APP_ICONS.ana
                             : link.label === 'TOYOTA'
                                 ? APP_ICONS.toyota
                                 : isHelloCyclingLink
                                     ? APP_ICONS.helloCycling
-                                    : '';
-                        const appUrl = link.label === 'TOYOTA'
+                                    : '');
+                        const genericAppUrl = link.androidUrl || link.iosUrl
+                            ? (IS_ANDROID_DEVICE ? link.androidUrl || '' : IS_IOS_DEVICE ? link.iosUrl || '' : '')
+                            : '';
+                        const appUrl = genericAppUrl || (link.label === 'TOYOTA'
                             && safeLinkUrl === TOYOTA_RENTAL_APP.webUrl
                             ? IS_ANDROID_DEVICE
                                 ? TOYOTA_RENTAL_APP.androidIntent
@@ -1353,7 +1393,7 @@
                                     : ''
                             : isHelloCyclingLink
                                 ? mobileAppLaunchUrl(safeLinkUrl, MOBILE_APP_TARGETS.helloCycling)
-                                : '';
+                                : '');
                         linksHtml += renderActionLink(link.url, link.label, {
                             appUrl,
                             visibleLabel: isHelloCyclingLink ? 'HELLO' : undefined,
@@ -1364,10 +1404,12 @@
                     });
                     const btnRowHtml = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
                     cardsHtml += `
-                        <div class="j-card" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
+                        ${travelHintHtml}
+                        <div class="j-card" data-card-id="${escapeHtml(card.cardId || '')}" data-map-query="${escapeHtml(mapQuery)}" data-travel-minutes="${travelMinutes}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
                             <span class="j-card-time">${escapeHtml(card.time)}</span>
                             <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span>${escapeHtml(cardTitle)}</div>
                             <div class="j-card-desc">${escapeHtml(cardDescription)}</div>
+                            ${reservationHtml}
                             ${imgHtml}
                             ${btnRowHtml}
                         </div>
@@ -1717,7 +1759,7 @@
     </script>
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
-    <script src="src/enhancements.js"></script>
+    <script src="src/enhancements.js?v=200"></script>
     <script type="module" src="src/firebase-sync.js"></script>
 </body>
 </html>

@@ -151,6 +151,9 @@ function readCachedExpenses() {
 
 function cleanExpense(expense) {
     const note = [expense.note, expense.comment].map(value => String(value || '').trim()).filter(Boolean).join(' — ').slice(0, 120);
+    const participantIds = Array.from(new Set((Array.isArray(expense.participantIds) ? expense.participantIds : [])
+        .map(value => String(value || '').slice(0, 128)).filter(Boolean))).slice(0, 50);
+    const splitMode = ['equal', 'selected', 'custom'].includes(expense.splitMode) ? expense.splitMode : 'equal';
     return {
         id: String(expense.id || '').slice(0, 120),
         amount: Math.max(0, Math.round(Number(expense.amount) || 0)),
@@ -159,6 +162,8 @@ function cleanExpense(expense) {
         note,
         createdAt: String(expense.createdAt || new Date().toISOString()).slice(0, 40),
         creatorUid: String(expense.creatorUid || '').slice(0, 128),
+        splitMode,
+        participantIds: splitMode === 'equal' ? [] : participantIds,
         pendingSync: expense.pendingSync === true
     };
 }
@@ -174,6 +179,10 @@ function expenseForCurrentRoom(expense) {
             || memberIds[0]
             || '';
     }
+    cleaned.participantIds = cleaned.participantIds
+        .map(id => window.expensePayerAliases?.[id] || id)
+        .filter((id, index, values) => memberIds.includes(id) && values.indexOf(id) === index);
+    if (cleaned.splitMode !== 'equal' && !cleaned.participantIds.length) cleaned.splitMode = 'equal';
     const { pendingSync, ...payload } = cleaned;
     return { ...payload, creatorUid: cleaned.creatorUid || syncContext?.uid || '' };
 }
@@ -477,6 +486,7 @@ try {
             window.expensePayerAliases = payerAliases;
             window.memberNames = Object.fromEntries(allParticipants.map(person => [person.uid, person.nickname]));
             window.currentTripMembers = optionData;
+            window.dispatchEvent(new CustomEvent('shiori-members-changed', { detail: optionData }));
 
             const pElem = document.getElementById('hero-participants');
             const displayNames = names.length > 0 ? names : [nickname];

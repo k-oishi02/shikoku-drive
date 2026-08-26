@@ -1,10 +1,15 @@
-const CACHE_NAME = 'shiori-pwa-v63';
+const CACHE_NAME = 'shiori-pwa-v200';
 const APP_SHELL = [
   './',
   './index.html',
   './src/enhancements.css',
   './src/enhancements.js',
   './src/firebase-sync.js',
+  './src/participant-v2.css',
+  './src/participant-v2.js',
+  './src/trip-v2-core.js',
+  './src/trip-v2-analysis.js',
+  './src/trip-v2-index.js',
   './manifest.webmanifest',
   './images/shiori-icon-v2.svg',
   './images/shiori-icon-v2-192.png',
@@ -57,6 +62,7 @@ self.addEventListener('fetch', event => {
   const isAdminAsset = path.endsWith('/admin.html')
     || path.endsWith('/src/admin.js')
     || path.endsWith('/src/admin.css')
+    || path.endsWith('/src/admin-v2.css')
     || path.endsWith('/firestore.rules')
     || path.endsWith('/firebase.json')
     || path.includes('/scripts/');
@@ -103,4 +109,14 @@ self.addEventListener('fetch', event => {
       });
     })
   );
+});
+
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const target = event.notification.data?.url || './';
+  event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(items => {
+    const existing = items.find(client => 'focus' in client);
+    return existing ? existing.focus() : clients.openWindow(target);
+  }));
 });

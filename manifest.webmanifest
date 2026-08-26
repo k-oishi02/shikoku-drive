@@ -27,5 +27,30 @@
       "type": "image/svg+xml",
       "purpose": "any"
     }
+  ],
+  "id": "./",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "categories": [
+    "travel",
+    "lifestyle",
+    "utilities"
+  ],
+  "shortcuts": [
+    {
+      "name": "しおりを開く",
+      "short_name": "しおり",
+      "url": "./?source=shortcut",
+      "icons": [
+        {
+          "src": "images/shiori-icon-v2-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

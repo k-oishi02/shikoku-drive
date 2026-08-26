@@ -331,7 +331,8 @@
     function expenseLabel(expense) {
         const members = expenseMembers();
         const payerId = resolveExpensePayerId(expense.payer, members);
-        return `${expense.category} · ${expenseMemberName(payerId, members)}が支払い`;
+        const targets = Array.isArray(expense.participantIds) && expense.participantIds.length ? ` · ${expense.participantIds.length}人で分担` : '';
+        return `${expense.category} · ${expenseMemberName(payerId, members)}が支払い${targets}`;
     }
 
     function notifyExpenseAction(detail) {
@@ -387,8 +388,10 @@
         if (!total) {
             settlement.textContent = 'まだ支出はありません';
         } else {
-            const transfers = buildExpenseSettlements(members, paidBy, total);
-            settlement.textContent = transfers.length ? transfers.join(' ／ ') : '精算済み';
+            const detailed = typeof window.shioriSettlementTransfers === 'function'
+                ? window.shioriSettlementTransfers(members, expenses).map(item => `${item.fromName} → ${item.toName} ${formatYen(item.amount)}`)
+                : buildExpenseSettlements(members, paidBy, total);
+            settlement.textContent = detailed.length ? detailed.join(' ／ ') : '精算済み';
         }
     }
     window.getMemberName = function(id) {
@@ -397,6 +400,24 @@
         return expenseMemberName(resolvedId, members);
     };
     window.recalculateExpenses = renderExpenses;
+    window.downloadExpensesCsv = function () {
+        const members = expenseMembers();
+        const rows = [['日時', '内容', 'カテゴリ', '金額', '支払者', '分け方', '対象者']];
+        safeLoad(EXPENSE_KEY, []).forEach(expense => {
+            const targets = Array.isArray(expense.participantIds) && expense.participantIds.length
+                ? expense.participantIds.map(id => expenseMemberName(id, members)).join('・')
+                : '全員';
+            rows.push([expense.createdAt, expense.note || '', expense.category || '', expense.amount || 0,
+                expenseMemberName(resolveExpensePayerId(expense.payer, members), members), expense.splitMode || 'equal', targets]);
+        });
+        const csv = '\uFEFF' + rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',')).join('\r\n');
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `${window.currentTripId || 'trip'}-expenses.csv`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+    };
 
     function removeExpense(id) {
         const current = safeLoad(EXPENSE_KEY, []);
@@ -442,6 +463,14 @@
                 if (!Number.isFinite(amount) || amount <= 0) return;
                 const expenses = safeLoad(EXPENSE_KEY, []);
                 const access = currentLedgerAccess();
+                const splitMode = document.getElementById('expense-split-mode')?.value || 'equal';
+                const participantIds = splitMode === 'selected'
+                    ? [...document.querySelectorAll('#expense-participants input:checked')].map(input => input.value)
+                    : [];
+                if (splitMode === 'selected' && !participantIds.length) {
+                    window.alert('費用を分ける参加者を1人以上選んでください。');
+                    return;
+                }
                 const expense = {
                     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
                     amount: Math.round(amount),
@@ -450,11 +479,16 @@
                     note: document.getElementById('expense-note').value.trim().slice(0, 120),
                     createdAt: new Date().toISOString(),
                     creatorUid: access.uid,
+                    splitMode,
+                    participantIds,
                     pendingSync: Boolean(window.currentTripLedgerToken)
                 };
                 expenses.unshift(expense);
                 safeSave(EXPENSE_KEY, expenses);
                 form.reset();
+                const splitModeField = document.getElementById('expense-split-mode');
+                if (splitModeField) splitModeField.value = 'equal';
+                window.shioriRenderExpenseParticipants?.();
                 if (payer) payer.value = deviceOwner?.value || safeLoad(deviceOwnerStorageKey(), '');
                 renderExpenses();
                 notifyExpenseAction({ type: 'upsert', expense });

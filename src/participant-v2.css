@@ -1,0 +1,41 @@
+:root { --v2-accent: #f4d35e; }
+html[data-trip-theme="light"] body { color: #181818; background: #f3f1ec; }
+html[data-trip-theme="light"] .j-card,
+html[data-trip-theme="light"] .now-card,
+html[data-trip-theme="light"] .j-widget,
+html[data-trip-theme="light"] .weather-disclosure { color: #181818; background: #fff; border-color: #d8d3ca; }
+html[data-trip-theme="light"] .j-card-ttl,
+html[data-trip-theme="light"] .now-title { color: #181818; }
+html[data-trip-theme="light"] .j-card-desc { color: #5c5c5c; }
+.j-hero.has-cover { min-height: 18rem; justify-content: end; overflow: hidden; background-position: center; background-size: cover; }
+.j-hero.has-cover::before { position: absolute; inset: 0; content: ''; background: linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.84)); pointer-events: none; }
+.j-hero.has-cover > * { position: relative; z-index: 1; }
+.v2-travel-hint { display: flex; align-items: center; gap: .55rem; margin: -.15rem 0 .75rem; color: #8f98a5; font-size: .68rem; letter-spacing: .04em; }
+.v2-travel-hint::before { width: 1.3rem; height: 1px; content: ''; background: #565e69; }
+.v2-travel-hint strong { color: #d9dee5; font-weight: 750; }
+.v2-reservation { margin: .8rem 0; border: 1px solid #3a3a3a; background: rgba(255,255,255,.025); }
+.v2-reservation summary { padding: .7rem .8rem; color: var(--v2-accent); cursor: pointer; font-size: .72rem; font-weight: 850; letter-spacing: .08em; }
+.v2-reservation-body { display: grid; gap: .55rem; padding: 0 .8rem .8rem; }
+.v2-reservation-row { display: grid; grid-template-columns: 6.5rem minmax(0,1fr); gap: .7rem; font-size: .75rem; }
+.v2-reservation-row span { color: #8d8d8d; }
+.v2-reservation-row strong { overflow-wrap: anywhere; font-weight: 650; }
+.v2-reservation-actions { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .25rem; }
+.now-card.departure-late { border-color: #ffb34d; box-shadow: 0 0 0 1px rgba(255,179,77,.14); }
+.now-card.departure-late #now-countdown { color: #ffd38a; }
+.v2-settings-button { border: 0; color: #aeb7c2; background: transparent; cursor: pointer; font-size: .72rem; }
+.v2-settings-dialog { width: min(92vw, 28rem); padding: 0; border: 1px solid #3b4149; border-radius: 1.1rem; color: #f5f5f5; background: #181b20; }
+.v2-settings-dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(5px); }
+.v2-settings-head { display: flex; align-items: center; justify-content: space-between; padding: 1rem; border-bottom: 1px solid #343942; }
+.v2-settings-head h2 { margin: 0; font-size: 1rem; }
+.v2-settings-body { display: grid; gap: .9rem; padding: 1rem; }
+.v2-settings-body label { display: grid; gap: .35rem; color: #aeb7c2; font-size: .72rem; }
+.v2-settings-body select { min-height: 2.8rem; padding: .6rem; border: 1px solid #424851; color: #fff; background: #20242a; }
+.v2-settings-toggle { display: flex !important; grid-template-columns: auto 1fr; align-items: center; }
+.v2-settings-toggle input { width: 1.1rem; }
+.expense-participants { display: flex; flex-wrap: wrap; gap: .45rem; grid-column: 1 / -1; }
+.expense-participants label { display: inline-flex; min-height: auto; align-items: center; gap: .35rem; padding: .45rem .6rem; border: 1px solid #3c4148; color: #ccd2da; background: rgba(255,255,255,.03); font-size: .7rem; }
+.expense-participants input { width: 1rem; min-height: auto; }
+.expense-participants[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .j-card, .portal-card, .now-card { transition: none !important; }
+}
