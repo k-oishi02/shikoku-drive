@@ -169,8 +169,8 @@ export function settlementTransfers(members, expenses) {
     const amount = Math.max(0, Math.round(Number(expense?.amount) || 0));
     const payer = text(expense?.payer, 128);
     if (!amount || !balance.has(payer)) return;
-    const selected = Array.isArray(expense.participantIds)
-      ? expense.participantIds.map(id => text(id, 128)).filter(id => balance.has(id))
+    const selected = expense.splitMode === 'selected'
+      ? (Array.isArray(expense.participantIds) ? expense.participantIds : []).map(id => text(id, 128)).filter(id => balance.has(id))
       : ids;
     if (!selected.length) return;
     balance.set(payer, balance.get(payer) + amount);
