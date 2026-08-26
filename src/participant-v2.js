@@ -30,15 +30,6 @@ function applyTheme(trip) {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f4f1ea' : '#242424');
   root.style.setProperty('--v2-accent', trip.theme?.accent || '#f4d35e');
   root.style.setProperty('--accent', trip.theme?.accent || '#f4d35e');
-  const hero = document.querySelector('.j-hero');
-  const cover = trip.theme?.coverImage;
-  if (hero && cover && /^[A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|jpe?g|webp|gif)$/i.test(cover)) {
-    hero.classList.add('has-cover');
-    hero.style.backgroundImage = `url("images/${cover}")`;
-  } else if (hero) {
-    hero.classList.remove('has-cover');
-    hero.style.removeProperty('background-image');
-  }
 }
 
 function formatClock(date) {
@@ -120,7 +111,7 @@ function ensureSettingsDialog() {
       <label>表示テーマ<select id="participant-theme"><option value="auto">端末に合わせる</option><option value="dark">ダーク</option><option value="light">ライト</option></select></label>
       <label>地図アプリ<select id="participant-map"><option value="google">Google Maps</option><option value="apple">Apple Maps</option></select></label>
       <label class="v2-settings-toggle"><input id="participant-notifications" type="checkbox"><span>予定前の通知を受け取る</span></label>
-      <small>通知は端末の許可が必要です。PWAを終了した後の通知可否はOSの省電力設定に依存します。</small>
+      <small>無料運用の端末内通知です。通知許可が必要で、しおりを開いている間だけ予定時刻をお知らせします。</small>
     </div>`;
   document.body.append(dialog);
   dialog.querySelector('[data-close]').addEventListener('click', () => dialog.close());
@@ -183,6 +174,35 @@ function renderExpenseParticipants() {
     label.append(input, document.createTextNode(member.name));
     return label;
   }));
+  updateExpenseSplitPreview();
+}
+
+function updateExpenseSplitPreview() {
+  const mode = document.getElementById('expense-split-mode')?.value || 'equal';
+  const amount = Math.max(0, Math.round(Number(document.getElementById('expense-amount')?.value) || 0));
+  const members = Array.isArray(window.currentTripMembers) ? window.currentTripMembers : [];
+  const selected = mode === 'selected'
+    ? [...document.querySelectorAll('#expense-participants input:checked')]
+    : members.map(member => ({ value: member.id }));
+  const names = mode === 'selected'
+    ? [...document.querySelectorAll('#expense-participants input:checked')].map(input => input.parentElement?.textContent?.trim()).filter(Boolean)
+    : members.map(member => member.name);
+  const help = document.getElementById('expense-split-help');
+  const preview = document.getElementById('expense-split-preview');
+  if (help) help.textContent = mode === 'selected'
+    ? 'この支出を負担する人だけにチェックしてください。2人だけの割り勘にも対応しています。'
+    : '登録メンバー全員で同額ずつ負担します。';
+  if (!preview) return;
+  if (!selected.length) {
+    preview.textContent = '負担するメンバーを1人以上選んでください。';
+    preview.dataset.state = 'warning';
+    return;
+  }
+  preview.dataset.state = 'ready';
+  const share = amount ? Math.floor(amount / selected.length) : 0;
+  const remainder = amount ? amount - share * selected.length : 0;
+  const amountText = amount ? `1人あたり約${new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(amount / selected.length)}` : '金額を入力すると1人分を表示します';
+  preview.textContent = `${names.join('・')}の${selected.length}人で負担 · ${amountText}${remainder ? `（端数${remainder}円は精算時に調整）` : ''}`;
 }
 
 function handleExpenseSplitModeChange() {
@@ -210,6 +230,10 @@ export function activateParticipantV2(raw) {
   scheduleNotifications();
   document.getElementById('expense-split-mode')?.removeEventListener('change', handleExpenseSplitModeChange);
   document.getElementById('expense-split-mode')?.addEventListener('change', handleExpenseSplitModeChange);
+  document.getElementById('expense-amount')?.removeEventListener('input', updateExpenseSplitPreview);
+  document.getElementById('expense-amount')?.addEventListener('input', updateExpenseSplitPreview);
+  document.getElementById('expense-participants')?.removeEventListener('change', updateExpenseSplitPreview);
+  document.getElementById('expense-participants')?.addEventListener('change', updateExpenseSplitPreview);
   window.removeEventListener('shiori-members-changed', renderExpenseParticipants);
   window.addEventListener('shiori-members-changed', renderExpenseParticipants);
   renderExpenseParticipants();
@@ -221,6 +245,8 @@ export function deactivateParticipantV2() {
   nowTimer = null;
   clearNotificationTimers();
   document.getElementById('expense-split-mode')?.removeEventListener('change', handleExpenseSplitModeChange);
+  document.getElementById('expense-amount')?.removeEventListener('input', updateExpenseSplitPreview);
+  document.getElementById('expense-participants')?.removeEventListener('change', updateExpenseSplitPreview);
   window.removeEventListener('shiori-members-changed', renderExpenseParticipants);
   activeTrip = null;
 }

@@ -29,8 +29,6 @@ html[data-trip-theme="light"] .portal-card-title,
 html[data-trip-theme="light"] .portal-card-arrow,
 html[data-trip-theme="light"] .welcome-title,
 html[data-trip-theme="light"] .welcome-label span { color: var(--text-main); }
-html[data-trip-theme="light"] .j-hero.has-cover .j-hero-bebas,
-html[data-trip-theme="light"] .j-hero.has-cover .j-hero-ja { color: #fff; }
 html[data-trip-theme="light"] .j-card-desc { color: #595148; }
 html[data-trip-theme="light"] .j-card:hover,
 html[data-trip-theme="light"] .portal-card:hover { border-color: #857b70; }
@@ -125,9 +123,6 @@ html[data-trip-theme="light"] button:focus-visible,
 html[data-trip-theme="light"] input:focus-visible,
 html[data-trip-theme="light"] select:focus-visible,
 html[data-trip-theme="light"] .now-route:focus-visible { outline-color: #795400; }
-.j-hero.has-cover { min-height: 18rem; justify-content: end; overflow: hidden; background-position: center; background-size: cover; }
-.j-hero.has-cover::before { position: absolute; inset: 0; content: ''; background: linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.84)); pointer-events: none; }
-.j-hero.has-cover > * { position: relative; z-index: 1; }
 .v2-travel-hint { display: flex; align-items: center; gap: .55rem; margin: -.15rem 0 .75rem; color: #8f98a5; font-size: .68rem; letter-spacing: .04em; }
 .v2-travel-hint::before { width: 1.3rem; height: 1px; content: ''; background: #565e69; }
 .v2-travel-hint strong { color: #d9dee5; font-weight: 750; }
@@ -154,6 +149,13 @@ html[data-trip-theme="light"] .now-route:focus-visible { outline-color: #795400;
 .expense-participants label { display: inline-flex; min-height: auto; align-items: center; gap: .35rem; padding: .45rem .6rem; border: 1px solid #3c4148; color: #ccd2da; background: rgba(255,255,255,.03); font-size: .7rem; }
 .expense-participants input { width: 1rem; min-height: auto; }
 .expense-participants[hidden] { display: none; }
+.expense-split-help,
+.expense-split-preview { grid-column: 1 / -1; margin: 0; }
+.expense-split-help { color: var(--text-sub); font-size: .7rem; line-height: 1.6; }
+.expense-split-preview { display: block; padding: .75rem .85rem; border-left: 3px solid #f2f0ea; color: #f2f0ea; background: rgba(255,255,255,.045); font-size: .74rem; line-height: 1.6; }
+.expense-split-preview[data-state="warning"] { border-color: #ffbf47; color: #ffd78b; }
+html[data-trip-theme="light"] .expense-split-preview { border-color: #795400; color: #3f3428; background: #f4ecdc; }
+html[data-trip-theme="light"] .expense-split-preview[data-state="warning"] { border-color: #9a5c00; color: #784500; background: #fff3d6; }
 @media (prefers-reduced-motion: reduce) {
   .j-card, .portal-card, .now-card { transition: none !important; }
 }

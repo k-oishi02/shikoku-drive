@@ -331,8 +331,14 @@
     function expenseLabel(expense) {
         const members = expenseMembers();
         const payerId = resolveExpensePayerId(expense.payer, members);
-        const targets = Array.isArray(expense.participantIds) && expense.participantIds.length ? ` · ${expense.participantIds.length}人で分担` : '';
-        return `${expense.category} · ${expenseMemberName(payerId, members)}が支払い${targets}`;
+        const selectedNames = Array.isArray(expense.participantIds) && expense.participantIds.length
+            ? expense.participantIds.map(id => expenseMemberName(id, members)).join('・')
+            : '参加者全員';
+        const count = Array.isArray(expense.participantIds) && expense.participantIds.length
+            ? expense.participantIds.length
+            : members.length;
+        const perPerson = count ? formatYen(Number(expense.amount || 0) / count) : formatYen(0);
+        return `${expense.category} · ${expenseMemberName(payerId, members)}が立替 · ${selectedNames}で負担（1人約${perPerson}）`;
     }
 
     function notifyExpenseAction(detail) {
@@ -381,9 +387,8 @@
         });
 
         const total = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-        const share = members.length ? total / members.length : 0;
         document.getElementById('expense-total').textContent = formatYen(total);
-        document.getElementById('expense-share').textContent = formatYen(share);
+        document.getElementById('expense-share').textContent = `${expenses.length}件`;
         const settlement = document.getElementById('expense-settlement');
         if (!total) {
             settlement.textContent = 'まだ支出はありません';
@@ -391,7 +396,7 @@
             const detailed = typeof window.shioriSettlementTransfers === 'function'
                 ? window.shioriSettlementTransfers(members, expenses).map(item => `${item.fromName} → ${item.toName} ${formatYen(item.amount)}`)
                 : buildExpenseSettlements(members, paidBy, total);
-            settlement.textContent = detailed.length ? detailed.join(' ／ ') : '精算済み';
+            settlement.textContent = detailed.length ? detailed.join(' ／ ') : '受け渡しはありません';
         }
     }
     window.getMemberName = function(id) {

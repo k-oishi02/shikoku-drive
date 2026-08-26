@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="stylesheet" href="src/admin.css">
-    <link rel="stylesheet" href="src/admin-v2.css?v=202">
+    <link rel="stylesheet" href="src/admin-v2.css?v=203">
 </head>
 <body>
     <section id="admin-auth" class="auth-shell" aria-labelledby="auth-title">
@@ -101,14 +101,13 @@
                                 <p class="v2-section-label">DESIGN & FEATURES</p>
                                 <label>表示テーマ<select id="trip-theme-mode"><option value="auto">端末に合わせる</option><option value="dark">ダーク</option><option value="light">ライト</option></select></label>
                                 <label>アクセント色<input id="trip-theme-accent" type="color" value="#f4d35e"></label>
-                                <label>表紙画像ファイル名<input id="trip-cover-image" maxlength="100" placeholder="cover.webp"></label>
                                 <label class="checkbox"><input id="trip-archived" type="checkbox"> 思い出へアーカイブ</label>
                                 <div class="v2-checks span-2">
                                     <label><input id="feature-now" type="checkbox"> NOWモード</label>
-                                    <label><input id="feature-offline" type="checkbox"> オフライン</label>
                                     <label><input id="feature-expenses" type="checkbox"> 共有精算</label>
-                                    <label><input id="feature-notifications" type="checkbox"> 通知</label>
+                                    <label><input id="feature-notifications" type="checkbox"> 端末内通知</label>
                                 </div>
+                                <p class="field-help span-2">表紙は標準デザイン、通貨は日本円、時刻は日本時間で固定されます。通知はしおりを開いている間だけ動作します。</p>
                                 <p class="v2-section-label">TEMPLATE</p>
                                 <label>旅行テンプレート<select id="trip-template"><option value="domestic">国内旅行</option><option value="drive">ドライブ旅行</option><option value="rail">鉄道旅行</option></select></label>
                                 <button id="apply-template" class="button ghost" type="button">持ち物テンプレートを適用</button>
@@ -207,7 +206,6 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
                 <label>キャンセル期限<input id="card-reservation-deadline" maxlength="40"></label>
                 <label class="span-2">予約確認URL<input id="card-reservation-url" type="url" maxlength="2000"></label>
                 <label class="span-2">予約メモ<textarea id="card-reservation-note" rows="2" maxlength="240"></textarea></label>
-                <label class="span-2">予約QR画像ファイル名<input id="card-reservation-qr" maxlength="100" placeholder="reservation-qr.png"></label>
                 <div class="check-field span-2">
                     <label><input id="card-expense" type="checkbox"> ADD COSTボタンを表示</label>
                 </div>
@@ -232,6 +230,6 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
         <div id="history-content" class="v2-dialog-body"></div>
     </dialog>
     <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="src/admin.js?v=202"></script>
+    <script type="module" src="src/admin.js?v=203"></script>
 </body>
 </html>

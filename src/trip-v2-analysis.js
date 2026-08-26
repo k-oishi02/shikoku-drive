@@ -174,12 +174,8 @@ export function settlementTransfers(members, expenses) {
       : ids;
     if (!selected.length) return;
     balance.set(payer, balance.get(payer) + amount);
-    if (expense.splitMode === 'custom' && expense.shares && typeof expense.shares === 'object') {
-      selected.forEach(id => balance.set(id, balance.get(id) - Math.max(0, Number(expense.shares[id]) || 0)));
-    } else {
-      const share = amount / selected.length;
-      selected.forEach(id => balance.set(id, balance.get(id) - share));
-    }
+    const share = amount / selected.length;
+    selected.forEach(id => balance.set(id, balance.get(id) - share));
   });
   const creditors = [...balance].filter(([, value]) => value > 0.5).map(([id, value]) => ({ id, value }));
   const debtors = [...balance].filter(([, value]) => value < -0.5).map(([id, value]) => ({ id, value: -value }));

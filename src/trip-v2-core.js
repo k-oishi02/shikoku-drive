@@ -3,14 +3,13 @@ export const SHIORI_SCHEMA_VERSION = 2;
 const DAY_KEY_PATTERN = /^day\d+$/;
 const TRIP_ID_PATTERN = /^[a-z0-9][a-z0-9_-]{2,39}$/;
 const TIME_PATTERN = /^(\d{2}):(\d{2}) - (\d{2}):(\d{2})$/;
-const IMAGE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|jpe?g|webp|gif|svg)$/i;
 const LEGACY_FIELDS = new Set([
   'OPTIONAL', 'MOVE', 'ferryLegs', 'fixed', 'rigid', 'lat', 'lon', 'mapCenter',
   'mapZoom', 'wallet', 'id', 'map', 'mapLabel', 'optionalRules', 'detourSuggestions'
 ]);
 
-const DEFAULT_THEME = Object.freeze({ mode: 'auto', accent: '#f4d35e', coverImage: '' });
-const DEFAULT_FEATURES = Object.freeze({ nowMode: true, offline: true, expenses: true, notifications: false });
+const DEFAULT_THEME = Object.freeze({ mode: 'auto', accent: '#f4d35e' });
+const DEFAULT_FEATURES = Object.freeze({ nowMode: true, expenses: true, notifications: false });
 
 function copy(value) {
   return value == null ? value : JSON.parse(JSON.stringify(value));
@@ -67,7 +66,7 @@ function cleanUrl(value, { allowAppScheme = false } = {}) {
 function cleanReservation(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   const reservation = {};
-  const fields = { number: 120, name: 120, phone: 40, deadline: 40, note: 240, qrImage: 100 };
+  const fields = { number: 120, name: 120, phone: 40, deadline: 40, note: 240 };
   Object.entries(fields).forEach(([key, max]) => {
     const item = string(value[key], max);
     if (item) reservation[key] = item;
@@ -154,13 +153,8 @@ export function migrateTripToV2(raw, fallbackId = '') {
     startDate: string(source.startDate, 10),
     endDate: string(source.endDate, 10),
     archived: source.archived === true,
-    timezone: string(source.timezone || 'Asia/Tokyo', 64),
     theme: { ...DEFAULT_THEME, ...(source.theme && typeof source.theme === 'object' ? source.theme : {}) },
     features: { ...DEFAULT_FEATURES, ...(source.features && typeof source.features === 'object' ? source.features : {}) },
-    expensePolicy: {
-      currency: string(source.expensePolicy?.currency || 'JPY', 8),
-      defaultSplit: ['equal', 'selected', 'custom'].includes(source.expensePolicy?.defaultSplit) ? source.expensePolicy.defaultSplit : 'equal'
-    },
     dayLabels: {},
     daySettings: cleanDaySettings(source.daySettings),
     days: {},
@@ -169,7 +163,8 @@ export function migrateTripToV2(raw, fallbackId = '') {
   };
   trip.theme.mode = ['auto', 'dark', 'light'].includes(trip.theme.mode) ? trip.theme.mode : 'auto';
   trip.theme.accent = /^#[0-9a-f]{6}$/i.test(string(trip.theme.accent, 7)) ? trip.theme.accent : DEFAULT_THEME.accent;
-  trip.theme.coverImage = IMAGE_PATTERN.test(string(trip.theme.coverImage, 100)) ? string(trip.theme.coverImage, 100) : '';
+  delete trip.theme.coverImage;
+  delete trip.features.offline;
   Object.keys(trip.features).forEach(key => { trip.features[key] = trip.features[key] !== false; });
 
   const days = source.days && typeof source.days === 'object' && !Array.isArray(source.days) ? source.days : { day1: [] };

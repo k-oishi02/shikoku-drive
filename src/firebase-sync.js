@@ -153,7 +153,7 @@ function cleanExpense(expense) {
     const note = [expense.note, expense.comment].map(value => String(value || '').trim()).filter(Boolean).join(' — ').slice(0, 120);
     const participantIds = Array.from(new Set((Array.isArray(expense.participantIds) ? expense.participantIds : [])
         .map(value => String(value || '').slice(0, 128)).filter(Boolean))).slice(0, 50);
-    const splitMode = ['equal', 'selected', 'custom'].includes(expense.splitMode) ? expense.splitMode : 'equal';
+    const splitMode = expense.splitMode === 'selected' ? 'selected' : 'equal';
     return {
         id: String(expense.id || '').slice(0, 120),
         amount: Math.max(0, Math.round(Number(expense.amount) || 0)),

@@ -361,12 +361,10 @@ function readTripBasics() {
   state.activeTrip.archived = $('trip-archived').checked;
   state.activeTrip.theme = {
     mode: $('trip-theme-mode').value,
-    accent: $('trip-theme-accent').value,
-    coverImage: $('trip-cover-image').value.trim()
+    accent: $('trip-theme-accent').value
   };
   state.activeTrip.features = {
     nowMode: $('feature-now').checked,
-    offline: $('feature-offline').checked,
     expenses: $('feature-expenses').checked,
     notifications: $('feature-notifications').checked
   };
@@ -385,9 +383,7 @@ function renderEditor() {
   $('trip-archived').checked = trip.archived === true;
   $('trip-theme-mode').value = trip.theme?.mode || 'auto';
   $('trip-theme-accent').value = trip.theme?.accent || '#f4d35e';
-  $('trip-cover-image').value = trip.theme?.coverImage || '';
   $('feature-now').checked = trip.features?.nowMode !== false;
-  $('feature-offline').checked = trip.features?.offline !== false;
   $('feature-expenses').checked = trip.features?.expenses !== false;
   $('feature-notifications').checked = trip.features?.notifications === true;
   renderDaySelect();
@@ -506,8 +502,7 @@ function cardFieldMap() {
       phone: $('card-reservation-phone').value.trim(),
       deadline: $('card-reservation-deadline').value.trim(),
       url: $('card-reservation-url').value.trim(),
-      note: $('card-reservation-note').value.trim(),
-      qrImage: $('card-reservation-qr').value.trim()
+      note: $('card-reservation-note').value.trim()
     }
   };
 }
@@ -575,7 +570,6 @@ function openCardDialog(index = -1) {
   $('card-reservation-deadline').value = card.reservation?.deadline || '';
   $('card-reservation-url').value = card.reservation?.url || '';
   $('card-reservation-note').value = card.reservation?.note || '';
-  $('card-reservation-qr').value = card.reservation?.qrImage || '';
   $('delete-card').hidden = index < 0;
   $('move-card-up').hidden = index <= 0;
   $('move-card-down').hidden = index < 0 || index >= cards.length - 1;

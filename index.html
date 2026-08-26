@@ -12,7 +12,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
-    <link rel="stylesheet" href="src/participant-v2.css?v=202">
+    <link rel="stylesheet" href="src/participant-v2.css?v=203">
     <link rel="stylesheet" href="src/enhancements.css">
 
     <style>
@@ -541,7 +541,7 @@
                 <section class="j-sec-header">
                     <h2 class="j-sec-en">EXPENSES</h2>
                     <div class="j-sec-ja">
-                        <span>旅費と割り勘</span>
+                        <span>旅費・立替精算</span>
                         <i class="j-sec-line"></i>
                     </div>
                 </section>
@@ -565,7 +565,7 @@
                         <select id="device-owner">
                             <!-- Rendered dynamically -->
                         </select>
-                        <small>配布IDで登録した名前を使います。旅程の「ADD COST」から支出をすぐ追加できます。</small>
+                        <small>この端末を使っている人です。自分が立て替えた支出を登録するときの初期値になります。</small>
                     </label>
                     <form id="expense-form" class="expense-form">
                         <label>
@@ -590,20 +590,22 @@
                             </select>
                         </label>
                         <label>
-                            <span>分け方</span>
-                            <select id="expense-split-mode"><option value="equal">全員で均等</option><option value="selected">選んだ人だけ</option></select>
+                            <span>誰が負担する？</span>
+                            <select id="expense-split-mode"><option value="equal">参加者全員で均等</option><option value="selected">負担するメンバーを選ぶ</option></select>
                         </label>
-                        <div id="expense-participants" class="expense-participants" hidden></div>
+                        <div id="expense-participants" class="expense-participants" hidden aria-label="費用を負担するメンバー"></div>
+                        <p id="expense-split-help" class="expense-split-help">登録メンバー全員で同額ずつ負担します。</p>
+                        <output id="expense-split-preview" class="expense-split-preview" aria-live="polite"></output>
                         <label class="expense-note-field">
                             <span>内容</span>
                             <input id="expense-note" type="text" maxlength="120" placeholder="例：五志喜 予約分">
                         </label>
-                        <button type="submit" class="expense-submit">ADD EXPENSE</button>
+                        <button type="submit" class="expense-submit">この支出を登録</button>
                     </form>
                     <div class="expense-summary" aria-live="polite">
-                        <div><span>TOTAL</span><strong id="expense-total">¥0</strong></div>
-                        <div><span>1人分（目安）</span><strong id="expense-share">¥0</strong></div>
-                        <div class="expense-settlement"><span>精算</span><strong id="expense-settlement">まだ支出はありません</strong></div>
+                        <div><span>登録済み支出合計</span><strong id="expense-total">¥0</strong></div>
+                        <div><span>登録件数</span><strong id="expense-share">0件</strong></div>
+                        <div class="expense-settlement"><span>最終的な受け渡し</span><strong id="expense-settlement">まだ支出はありません</strong></div>
                     </div>
                     <ul id="expense-list" class="expense-list" aria-label="支出一覧"></ul>
                     <button type="button" class="j-btn" onclick="downloadExpensesCsv()">CSVを書き出す</button>
@@ -1323,14 +1325,11 @@
                         ].filter(([, value]) => value).map(([label, value]) => `<div class="v2-reservation-row"><span>${label}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
                         const reservationUrl = safeExternalUrl(reservation.url);
                         const phone = String(reservation.phone || '').replace(/[^0-9+]/g, '');
-                        const qrImage = /^[A-Za-z0-9][A-Za-z0-9._-]*\.(?:png|jpe?g|webp|gif)$/i.test(String(reservation.qrImage || ''))
-                            ? `<img class="j-card-img" src="images/${escapeHtml(reservation.qrImage)}" alt="予約QRコード" loading="lazy">`
-                            : '';
                         const actions = [
                             phone ? `<a class="j-btn" href="tel:${escapeHtml(phone)}">電話</a>` : '',
                             reservationUrl ? `<a class="j-btn" href="${escapeHtml(reservationUrl)}" target="_blank" rel="noopener noreferrer">予約確認 ↗</a>` : ''
                         ].join('');
-                        reservationHtml = `<details class="v2-reservation"><summary>予約情報</summary><div class="v2-reservation-body">${rows}${qrImage}<div class="v2-reservation-actions">${actions}</div></div></details>`;
+                        reservationHtml = `<details class="v2-reservation"><summary>予約情報</summary><div class="v2-reservation-body">${rows}<div class="v2-reservation-actions">${actions}</div></div></details>`;
                     }
 
                     const cardLinks = Array.isArray(card.links) ? card.links : [];
@@ -1763,7 +1762,7 @@
     </script>
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
-    <script src="src/enhancements.js?v=202"></script>
+    <script src="src/enhancements.js?v=203"></script>
     <script type="module" src="src/firebase-sync.js"></script>
 </body>
 </html>
