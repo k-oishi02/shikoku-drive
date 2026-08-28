@@ -1,13 +1,19 @@
-const CACHE_NAME = 'shiori-pwa-v204';
+const CACHE_NAME = 'shiori-pwa-v300';
 const APP_SHELL = [
   './',
   './index.html',
   './src/enhancements.css',
   './src/enhancements.js',
   './src/firebase-sync.js',
+  './src/suggestion-sync.js',
+  './src/suggestion-validation.js',
+  './src/discussion-ui.js',
+  './src/discussion.css',
   './src/participant-v2.css',
   './src/participant-v2.js',
   './src/trip-v2-core.js',
+  './src/map-links.js',
+  './src/draft-validation.js',
   './src/trip-v2-analysis.js',
   './src/trip-v2-index.js',
   './manifest.webmanifest',
@@ -35,7 +41,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        keys.filter(key => key.startsWith('shiori-pwa-') && key !== CACHE_NAME).map(key => caches.delete(key))
       ))
       .then(() => self.clients.claim())
   );
@@ -71,6 +77,8 @@ self.addEventListener('fetch', event => {
   // Caching opaque third-party responses here would grow the cache without a safe limit.
   if (requestUrl.origin !== self.location.origin) return;
   const cacheKey = cacheKeyFor(event.request);
+  // Cache only the public shell, never arbitrary JSON responses or admin modules.
+  if (!APP_SHELL.some(asset => new URL(asset, self.location.href).href === cacheKey)) return;
 
   const isWebAsset = requestUrl.pathname.endsWith('.html') ||
                      requestUrl.pathname.endsWith('.js') ||

@@ -1,4 +1,10 @@
 import { getTripNowState, migrateTripToV2, settlementTransfers } from './trip-v2-index.js';
+import { resolveMapFields, mapHref, mapSearchQuery } from './map-links.js';
+import { createDiscussionPanel } from './discussion-ui.js';
+
+window.shioriMapFields = resolveMapFields;
+window.shioriMapHref = mapHref;
+window.shioriMapSearchQuery = mapSearchQuery;
 
 let activeTrip = null;
 let nowTimer = null;
@@ -132,12 +138,14 @@ function ensureSettingsDialog() {
 
 function applyMapPreference() {
   document.querySelectorAll('.j-card[data-map-query]').forEach(card => {
-    const query = card.dataset.mapQuery || '';
-    if (!query) return;
+    const source = { mapQuery: card.dataset.mapQuery || '', mapUrl: card.dataset.mapUrl || '' };
+    const maps = resolveMapFields(source);
+    const query = maps.mapQuery;
+    if (!query && !maps.mapUrl) return;
     const mapLink = [...card.querySelectorAll('a.j-btn')].find(link => link.querySelector('.j-btn-label')?.textContent === 'MAP');
     if (!mapLink) return;
-    const google = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-    mapLink.href = preferredMapUrl(query, google);
+    const google = mapHref(source);
+    mapLink.href = maps.mapUrl || preferredMapUrl(query, google);
   });
 }
 
@@ -215,6 +223,34 @@ export function migrateParticipantTrip(raw) {
   return activeTrip;
 }
 
+
+let discussionPanel = null;
+function refreshParticipantDiscussion() {
+  if (!discussionPanel || !activeTrip) return;
+  const service = window.suggestionSyncService;
+  const context = service?.getCurrentContext();
+  if (context?.tripId === activeTrip.tripId) discussionPanel.connect({ service, context });
+  else discussionPanel.disconnect('共有の相談には、有効な配布先への接続が必要です。');
+  discussionPanel.setVisible(document.getElementById('tab-talk')?.classList.contains('active') === true);
+}
+function handleDiscussionState(event) {
+  if (!discussionPanel) return;
+  discussionPanel.onConnection(event.detail?.state || 'stopped');
+}
+function activateDiscussion() {
+  if (!discussionPanel) discussionPanel = createDiscussionPanel(document.getElementById('participant-discussion'), {
+    getName: () => safeStorage.get('user_nickname', '参加者'),
+    onReconnect: () => { if (activeTrip?.tripId) window._initSyncEngine?.(activeTrip.tripId); }
+  });
+  window.removeEventListener('shiori-suggestions-ready', refreshParticipantDiscussion);
+  window.removeEventListener('shiori-tab-changed', refreshParticipantDiscussion);
+  window.removeEventListener('shiori-suggestions-state', handleDiscussionState);
+  window.addEventListener('shiori-suggestions-ready', refreshParticipantDiscussion);
+  window.addEventListener('shiori-tab-changed', refreshParticipantDiscussion);
+  window.addEventListener('shiori-suggestions-state', handleDiscussionState);
+  refreshParticipantDiscussion();
+}
+
 export function activateParticipantV2(raw) {
   activeTrip = raw === activeTrip ? activeTrip : migrateParticipantTrip(raw);
   const savedNotifications = safeStorage.get(settingKey('notifications'));
@@ -237,10 +273,16 @@ export function activateParticipantV2(raw) {
   window.removeEventListener('shiori-members-changed', renderExpenseParticipants);
   window.addEventListener('shiori-members-changed', renderExpenseParticipants);
   renderExpenseParticipants();
+  activateDiscussion();
   return activeTrip;
 }
 
 export function deactivateParticipantV2() {
+  window.removeEventListener('shiori-suggestions-ready', refreshParticipantDiscussion);
+  window.removeEventListener('shiori-tab-changed', refreshParticipantDiscussion);
+  window.removeEventListener('shiori-suggestions-state', handleDiscussionState);
+  discussionPanel?.destroy();
+  discussionPanel = null;
   if (nowTimer) clearInterval(nowTimer);
   nowTimer = null;
   clearNotificationTimers();

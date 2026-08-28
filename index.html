@@ -12,8 +12,9 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
-    <link rel="stylesheet" href="src/participant-v2.css?v=204">
+    <link rel="stylesheet" href="src/participant-v2.css?v=300">
     <link rel="stylesheet" href="src/enhancements.css">
+    <link rel="stylesheet" href="src/discussion.css">
 
     <style>
 :root {
@@ -511,6 +512,10 @@
 
             <!-- Day Panels Container -->
             <div id="day-panels-container"></div>
+
+            <section id="tab-talk" class="j-tab-panel j-tab-pnl" role="tabpanel" aria-labelledby="btn-talk" aria-hidden="true">
+                <div id="participant-discussion"></div>
+            </section>
 
             <!-- Packing Checklist Tab Panel -->
             <div id="tab-checklist" class="j-tab-panel j-tab-pnl" role="tabpanel" aria-labelledby="btn-checklist" aria-hidden="true">
@@ -1290,6 +1295,7 @@
             });
             tabHeadersHtml += `<button type="button" id="btn-checklist" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" onclick="switchTab('tab-checklist', this)">CHECKLIST</button>`;
             if (data.features?.expenses !== false) tabHeadersHtml += `<button type="button" id="btn-expenses" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-expenses" onclick="switchTab('tab-expenses', this)">EXPENSES</button>`;
+            tabHeadersHtml += `<button type="button" id="btn-talk" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-talk" onclick="switchTab('tab-talk', this)" aria-label="相談・提案">TALK</button>`;
             navBar.innerHTML = tabHeadersHtml;
 
             // 4. Day panels & cards
@@ -1307,7 +1313,9 @@
                     const cardDescription = String(card?.desc || '');
                     const imagePath = card.image ? `images/${escapeHtml(card.image)}` : '';
                     const imgHtml = imagePath ? `<img class="j-card-img" src="${imagePath}" alt="${escapeHtml(cardTitle)}" loading="lazy">` : '';
-                    const mapQuery = String(card.mapQuery || '').trim();
+                    const mapFields = window.shioriMapFields ? window.shioriMapFields(card) : { mapQuery: '', mapUrl: '' };
+                    const mapQuery = mapFields.mapQuery;
+                    const mapSharedUrl = mapFields.mapUrl;
                     const travelMinutes = Math.max(0, Math.round(Number(card.travelMinutesFromPrevious) || 0));
                     const startMatch = String(card.time || '').match(/^(\d{2}):(\d{2})/);
                     const startMinute = startMatch ? Number(startMatch[1]) * 60 + Number(startMatch[2]) : null;
@@ -1340,9 +1348,9 @@
                             primary: true,
                             ariaLabel: `${cardTitle || '目的地'}までのルートを開く`
                         });
-                    } else if (mapQuery) {
-                        const defaultMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
-                        const mapUrl = window.shioriPreferredMapUrl ? window.shioriPreferredMapUrl(mapQuery, defaultMapUrl) : defaultMapUrl;
+                    } else if (mapQuery || mapSharedUrl) {
+                        const defaultMapUrl = window.shioriMapHref(card);
+                        const mapUrl = mapSharedUrl || (window.shioriPreferredMapUrl ? window.shioriPreferredMapUrl(mapQuery, defaultMapUrl) : defaultMapUrl);
                         linksHtml += renderActionLink(mapUrl, '地図', {
                             primary: true, visibleLabel: 'MAP',
                             ariaLabel: `${cardTitle || '目的地'}を地図で開く`
@@ -1408,7 +1416,7 @@
                     const btnRowHtml = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
                     cardsHtml += `
                         ${travelHintHtml}
-                        <div class="j-card" data-card-id="${escapeHtml(card.cardId || '')}" data-map-query="${escapeHtml(mapQuery)}" data-travel-minutes="${travelMinutes}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
+                        <div class="j-card" data-card-id="${escapeHtml(card.cardId || '')}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-travel-minutes="${travelMinutes}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
                             <span class="j-card-time">${escapeHtml(card.time)}</span>
                             <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span>${escapeHtml(cardTitle)}</div>
                             <div class="j-card-desc">${escapeHtml(cardDescription)}</div>
@@ -1644,6 +1652,7 @@
                 button.setAttribute('aria-selected', String(isTarget));
             });
 
+            window.dispatchEvent(new CustomEvent('shiori-tab-changed', { detail: { panelId } }));
             const navEl = document.getElementById('nav-bar');
             if (navEl) {
                 const y = navEl.getBoundingClientRect().top + window.pageYOffset - 10;
@@ -1688,6 +1697,8 @@
         // ============ PWA STORE-STYLE MANUAL UPDATE MANAGER ============
         let newWorkerWaiting = null;
         let pwaReloading = false;
+        let pwaUpdateRequested = false;
+        let pwaHadController = Boolean(navigator.serviceWorker?.controller);
 
         function showPwaUpdate(worker) {
             newWorkerWaiting = worker;
@@ -1698,6 +1709,8 @@
             if (!('serviceWorker' in navigator)) return;
 
             navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!pwaHadController) { pwaHadController = true; return; }
+                if (!pwaUpdateRequested) { showPwaUpdate(null); return; }
                 if (pwaReloading) return;
                 pwaReloading = true;
                 window.location.reload();
@@ -1721,6 +1734,8 @@
         }
 
         async function triggerPwaUpdate() {
+            if (!window.confirm('更新するとこの画面を再読み込みします。未保存の入力を保存してから更新してください。続けますか？')) return;
+            pwaUpdateRequested = true;
             if (!('serviceWorker' in navigator)) {
                 window.location.reload();
                 return;
@@ -1762,7 +1777,7 @@
     </script>
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
-    <script src="src/enhancements.js?v=204"></script>
+    <script src="src/enhancements.js?v=300"></script>
     <script type="module" src="src/firebase-sync.js"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -17,9 +18,36 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
-  writeBatch
+  writeBatch, query, orderBy, limit, startAfter, documentId, FieldPath, deleteField, getDocsFromServer
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { analyzeTrip, migrateTripToV2 } from './trip-v2-index.js';
+import {
+  analyzeTrip,
+  cleanCandidate,
+  cleanPlanning,
+  formatMinute,
+  migrateTripToV2,
+  parseTimeRange,
+  stripPlanningForPublication,
+  validateTripDraft
+} from './trip-v2-index.js';
+import { validatePlacement } from './admin-placement.js';
+import { createSuggestionSyncService } from './suggestion-sync.js';
+import { createDiscussionPanel } from './discussion-ui.js';
+import { reconcileAssignments, inspectAssignment, unassignCandidate } from './admin-candidate-state.js';
+import { createEditorSession, draftVersion } from './admin-save-state.js';
+import {
+  commitTripRecord,
+  cleanupRoomSuggestionsAndComments,
+  adoptSuggestionTransaction,
+  unadoptSuggestionTransaction,
+  changeSuggestionStatusTransaction
+} from './admin-trip-store.js';
+import { buildTripExport, buildAdminBackup, parseTripImport } from './admin-transfer.js';
+import { resolveMapFields, validateMapFields, mapHref, mapSearchQuery, mapRouteHref } from './map-links.js';
+import { validateCandidateInput, validateTripInput, validateStoredDraftSize } from './draft-validation.js';
+import { decodeDraftRecord } from './admin-draft-record.js';
+import { planCardReorder, planCardMoveDay, planCascadeTimeAdjustment, compareScheduleChanges, applyDayPlan, undoDayPlan } from './admin-day-planner.js';
+
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCOh5MtRbplm-46FETshOQAGHqyQ4fD4tA',
@@ -40,6 +68,10 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 const state = {
+  currentView: 'overview',
+  tripWriteBusy: false,
+  dirtyDialogs: new Set(),
+  editorInputRevision: 0,
   currentUser: null,
   currentRole: 'editor',
   adminProfiles: [],
@@ -47,7 +79,11 @@ const state = {
   publishedIds: new Set(),
   publishedTrips: new Map(),
   activeTrip: null,
+  activePlanning: null,
   activeDayKey: '',
+  candidateFilterStatus: 'all',
+  candidateFilterCategory: 'all',
+  activeCandidateForAdopt: null,
   distributions: [],
   participantUnsubscribers: new Map(),
   roomUnsubscribers: new Map(),
@@ -56,7 +92,9 @@ const state = {
   toastTimer: null
 };
 
+
 const $ = id => document.getElementById(id);
+const editorSession = createEditorSession();
 const deepClone = value => typeof structuredClone === 'function'
   ? structuredClone(value)
   : JSON.parse(JSON.stringify(value));
@@ -180,6 +218,7 @@ async function enterAdmin(user, profile) {
 }
 
 function stopLiveListeners() {
+  stopAdminDiscussion();
   state.distributionsUnsubscribe?.();
   state.distributionsUnsubscribe = null;
   state.participantUnsubscribers.forEach(unsubscribe => unsubscribe());
@@ -225,6 +264,14 @@ function normalizeTrip(raw, fallbackId = '') {
   return migrateTripToV2(raw, fallbackId);
 }
 
+function blankPlanning() {
+  return cleanPlanning({
+    schemaVersion: 3,
+    candidates: [],
+    notes: ''
+  });
+}
+
 async function loadCloudTrips() {
   const [drafts, published] = await Promise.all([
     getDocs(collection(db, 'adminTrips')),
@@ -236,7 +283,7 @@ async function loadCloudTrips() {
     try {
       const trip = normalizeTrip(JSON.parse(data.payloadJson), item.id);
       state.publishedTrips.set(item.id, deepClone(trip));
-      state.trips.set(item.id, { trip, source: 'published', updatedAt: data.publishedAt || null });
+      state.trips.set(item.id, { trip, planning: blankPlanning(), source: 'published', updatedAt: data.publishedAt || null });
     } catch (error) {
       console.warn(`Invalid publishedTrips/${item.id}`, error);
     }
@@ -244,9 +291,11 @@ async function loadCloudTrips() {
   drafts.forEach(item => {
     const data = item.data();
     try {
-      const trip = normalizeTrip(JSON.parse(data.payloadJson), item.id);
-      state.trips.set(item.id, { trip, source: 'cloud', updatedAt: data.updatedAt || null });
+      const { trip, planning } = decodeDraftRecord(data, item.id);
+      state.trips.set(item.id, { trip, planning, source: 'cloud', version: draftVersion(data), updatedAt: data.updatedAt || null });
     } catch (error) {
+      const trip = state.trips.get(item.id)?.trip || normalizeTrip({ tripId: item.id, title: data.title || item.id });
+      state.trips.set(item.id, { trip, planning: null, source: 'cloud-error', version: draftVersion(data), loadError: error.message, rawDraft: { tripId: item.id, payloadJson: data.payloadJson, ...(data.planningJson !== undefined ? { planningJson: data.planningJson } : {}) } });
       console.warn(`Invalid adminTrips/${item.id}`, error);
     }
   });
@@ -287,6 +336,7 @@ function renderTripLibrary() {
   }
   entries.forEach(([tripId, record]) => {
     const trip = record.trip;
+    const candidateCount = record.planning?.candidates?.length || 0;
     const card = makeElement('article', 'trip-card');
     const header = makeElement('div', 'distribution-head');
     header.append(makeElement('span', `pill ${state.publishedIds.has(tripId) ? '' : 'draft'}`, state.publishedIds.has(tripId) ? '公開中' : '下書き'));
@@ -296,6 +346,9 @@ function renderTripLibrary() {
     const meta = makeElement('div', 'trip-meta');
     meta.append(makeElement('span', '', `${trip.startDate || '未定'} → ${trip.endDate || '未定'}`));
     meta.append(makeElement('span', '', `${Object.keys(trip.days).length} DAYS`));
+    if (candidateCount > 0) {
+      meta.append(makeElement('span', '', `候補 ${candidateCount}件`));
+    }
     const actions = makeElement('div', 'trip-actions');
     const edit = makeElement('button', 'compact', '編集');
     edit.type = 'button';
@@ -311,12 +364,82 @@ function renderTripLibrary() {
     archive.addEventListener('click', () => toggleTripArchive(tripId));
     card.classList.toggle('archived', trip.archived === true);
     actions.append(edit, distribute, duplicate, archive);
+    if (record.loadError) {
+      edit.disabled = true;
+      duplicate.disabled = true;
+      archive.disabled = true;
+      card.append(makeElement('p', 'field-help', `下書きの読込を停止しました。元データを保管し、JSONを修正して読み込んでください。公開済み内容は変更していません。\n${record.loadError}`));
+      const recover = makeElement('button', 'compact ghost', '元データを保管');
+      recover.type = 'button';
+      recover.addEventListener('click', () => downloadDraftRecovery(tripId));
+      actions.append(recover);
+    }
     card.append(header, title, description, meta, actions);
     list.append(card);
   });
 }
 
+function syncEditorInputs() {
+  if (!state.activeTrip) return;
+  readTripBasics();
+  readTripPlanning();
+  readDaySettings();
+}
+
+function hasUnsavedChanges() {
+  if (!state.activeTrip) return false;
+  syncEditorInputs();
+  return state.dirtyDialogs.size > 0 || editorSession.isDirty(state.activeTrip, state.activePlanning);
+}
+
+function updateSaveStatus() {
+  const status = $('editor-save-status');
+  if (status) status.textContent = state.tripWriteBusy ? '保存中…' : hasUnsavedChanges() ? '未保存の変更があります' : '下書きに変更はありません';
+  $('save-draft').disabled = state.tripWriteBusy;
+  $('publish-trip').disabled = state.tripWriteBusy;
+  $('reload-draft').disabled = state.tripWriteBusy;
+}
+
+function confirmEditorLeave() {
+  if (state.tripWriteBusy || editorSession.saving) {
+    showToast('保存が終わるまでお待ちください。', true);
+    return false;
+  }
+  return !hasUnsavedChanges() || window.confirm('未保存の変更があります。保存せずに進みますか？');
+}
+
+function startEditorSession(saved = true, version = null) {
+  state.dirtyDialogs.clear();
+  editorSession.open({ trip: state.activeTrip, planning: state.activePlanning, version, saved });
+  updateSaveStatus();
+}
+
+function handleEditorInput(event) {
+  if (!state.activeTrip) return;
+  const dialog = event.target.closest?.('#card-dialog, #candidate-dialog, #candidate-adopt-dialog');
+  if (dialog) state.dirtyDialogs.add(dialog.id);
+  if (dialog || event.target.closest?.('#view-editor')) {
+    state.editorInputRevision += 1;
+    updateSaveStatus();
+  }
+}
+
+function closeEditingDialog(id) {
+  if (state.dirtyDialogs.has(id) && !window.confirm('この画面の未反映の入力を破棄しますか？')) return;
+  $(id).close();
+}
+
+function handleEditorUnload(event) {
+  if (state.tripWriteBusy || hasUnsavedChanges()) {
+    event.preventDefault();
+    event.returnValue = '';
+  }
+}
+
 function showView(viewName) {
+  if (state.currentView === 'editor' && viewName !== 'editor' && !confirmEditorLeave()) return false;
+  state.currentView = viewName;
+  refreshAdminDiscussionRooms();
   document.querySelectorAll('[data-view]').forEach(section => {
     const active = section.dataset.view === viewName;
     section.hidden = !active;
@@ -342,12 +465,20 @@ function blankTrip() {
 }
 
 function openTripEditor(tripId = '') {
+  if (state.trips.get(tripId)?.loadError) return showToast('下書きに読込エラーがあります。元データを保管して修復してください。', true);
+  if (!confirmEditorLeave()) return;
+  state.lastDayPlanUndo = null;
+  if ($('undo-day-plan')) $('undo-day-plan').hidden = true;
   state.activeTrip = tripId && state.trips.has(tripId)
     ? deepClone(state.trips.get(tripId).trip)
     : blankTrip();
+  state.activePlanning = tripId && state.trips.has(tripId) && state.trips.get(tripId).planning
+    ? deepClone(state.trips.get(tripId).planning)
+    : blankPlanning();
   state.activeDayKey = Object.keys(state.activeTrip.days)[0] || 'day1';
   renderEditor();
   showView('editor');
+  startEditorSession(Boolean(tripId), state.trips.get(tripId)?.version ?? null);
 }
 
 function readTripBasics() {
@@ -371,9 +502,17 @@ function readTripBasics() {
   if (state.activeDayKey) state.activeTrip.dayLabels[state.activeDayKey] = $('editor-day-label').value.trim();
 }
 
+function readTripPlanning() {
+  if (!state.activePlanning) state.activePlanning = blankPlanning();
+  const notesInput = $('trip-planning-notes');
+  if (notesInput) state.activePlanning.notes = notesInput.value.trim();
+}
+
 function renderEditor() {
   const trip = state.activeTrip;
   if (!trip) return;
+  state.activePlanning = reconcileAssignments(trip, state.activePlanning || blankPlanning());
+  state.activeCandidateForAdopt = null;
   $('trip-id').value = trip.tripId;
   $('trip-title').value = trip.title;
   $('trip-subtitle').value = trip.subtitle;
@@ -386,11 +525,415 @@ function renderEditor() {
   $('feature-now').checked = trip.features?.nowMode !== false;
   $('feature-expenses').checked = trip.features?.expenses !== false;
   $('feature-notifications').checked = trip.features?.notifications === true;
+  if ($('trip-planning-notes')) {
+    $('trip-planning-notes').value = state.activePlanning?.notes || '';
+  }
   renderDaySelect();
   renderEditorCards();
+  renderCandidateList();
   hideEditorErrors();
   renderTripAudit();
+  refreshAdminDiscussionRooms();
 }
+
+const CATEGORY_NAMES = {
+  gourmet: '食事',
+  sightseeing: '観光',
+  hotel: '宿泊',
+  transport: '交通',
+  other: 'その他'
+};
+
+const CATEGORY_BADGES = {
+  gourmet: 'GOURMET',
+  sightseeing: 'SPOT',
+  hotel: 'HOTEL',
+  transport: 'TRANSPORT',
+  other: 'OTHER'
+};
+
+const PRIORITY_NAMES = {
+  high: '行きたい',
+  normal: 'できれば',
+  low: '時間があれば'
+};
+
+function renderCandidateList() {
+  const list = $('editor-candidate-list');
+  if (!list) return;
+  list.replaceChildren();
+  const candidates = state.activePlanning?.candidates || [];
+  const filterStatus = state.candidateFilterStatus || 'all';
+  const filterCategory = state.candidateFilterCategory || 'all';
+
+  const filtered = candidates.filter(item => {
+    if (filterStatus === 'draft' && item.status !== 'draft') return false;
+    if (filterStatus === 'assigned' && item.status !== 'assigned') return false;
+    if (filterCategory !== 'all' && item.category !== filterCategory) return false;
+    return true;
+  });
+
+  if (!filtered.length) {
+    const emptyMsg = candidates.length === 0
+      ? '候補スポットはまだありません。「＋ 候補を追加」から行きたい場所やお店を登録できます。'
+      : '条件に一致する候補スポットがありません。';
+    list.append(makeElement('div', 'empty-state', emptyMsg));
+    return;
+  }
+
+  filtered.forEach(candidate => {
+    const card = makeElement('article', `candidate-card ${candidate.status === 'assigned' ? 'is-assigned' : ''}`);
+    const header = makeElement('div', 'candidate-header');
+    const titleWrap = makeElement('div', 'candidate-title-wrap');
+    titleWrap.append(makeElement('strong', '', candidate.title));
+
+    const badges = makeElement('div', 'candidate-badges');
+    const catBadge = makeElement('span', 'candidate-badge', CATEGORY_NAMES[candidate.category] || candidate.category);
+    catBadge.dataset.cat = candidate.category;
+    badges.append(catBadge);
+
+    const priBadge = makeElement('span', `candidate-priority-tag priority-${candidate.priority}`, PRIORITY_NAMES[candidate.priority] || candidate.priority);
+    badges.append(priBadge);
+
+    if (candidate.durationMinutes) {
+      badges.append(makeElement('span', 'candidate-badge', `滞在 ${candidate.durationMinutes}分`));
+    }
+
+    const isAssigned = candidate.status === 'assigned';
+    const statusTag = makeElement(
+      'span',
+      `candidate-status-tag ${isAssigned ? 'status-assigned' : 'status-draft'}`,
+      isAssigned ? `${(candidate.assignedDay || '').toUpperCase()} に追加済` : '未配置'
+    );
+    badges.append(statusTag);
+    titleWrap.append(badges);
+    header.append(titleWrap);
+    card.append(header);
+
+    if (candidate.notes) {
+      card.append(makeElement('p', 'candidate-notes-preview', candidate.notes));
+    }
+
+    const actions = makeElement('div', 'candidate-card-actions');
+    const adoptBtn = makeElement('button', 'compact primary', isAssigned ? '日程に追加済み' : '日程に入れる');
+    adoptBtn.disabled = isAssigned;
+    adoptBtn.type = 'button';
+    adoptBtn.addEventListener('click', () => openCandidateAdoptDialog(candidate.id));
+    actions.append(adoptBtn);
+
+    const editBtn = makeElement('button', 'compact ghost', '編集');
+    editBtn.type = 'button';
+    editBtn.addEventListener('click', () => openCandidateDialog(candidate.id));
+    actions.append(editBtn);
+
+    if (isAssigned) {
+      const resetBtn = makeElement('button', 'compact ghost', '日程への追加を取り消す');
+      resetBtn.type = 'button';
+      resetBtn.addEventListener('click', () => resetCandidateStatus(candidate.id));
+      actions.append(resetBtn);
+    }
+
+    const mapsUrl = mapHref(candidate);
+    if (mapsUrl) {
+      const mapsLink = makeElement('a', 'button compact ghost', 'MAP ↗');
+      mapsLink.href = mapsUrl;
+      mapsLink.target = '_blank';
+      mapsLink.rel = 'noopener noreferrer';
+      actions.append(mapsLink);
+    }
+
+    const deleteBtn = makeElement('button', 'compact danger', '削除');
+    deleteBtn.type = 'button';
+    deleteBtn.addEventListener('click', () => deleteCandidate(candidate.id));
+    actions.append(deleteBtn);
+
+    card.append(actions);
+    list.append(card);
+  });
+}
+
+function openCandidateDialog(candidateId = '') {
+  if (!state.activePlanning) state.activePlanning = blankPlanning();
+  const candidates = state.activePlanning.candidates;
+  const candidate = candidateId ? candidates.find(c => c.id === candidateId) : null;
+
+  $('candidate-id').value = candidate?.id || '';
+  $('candidate-dialog-title').textContent = candidate ? '候補を編集' : '候補を追加';
+  $('candidate-title').value = text(candidate?.title);
+  $('candidate-category').value = candidate?.category || 'sightseeing';
+  $('candidate-priority').value = candidate?.priority || 'normal';
+  $('candidate-duration').value = String(candidate?.durationMinutes ?? 60);
+  const maps = resolveMapFields(candidate);
+  $('candidate-map-query').value = maps.mapQuery;
+  $('candidate-map-url').value = maps.mapUrl;
+  $('candidate-official').value = text(candidate?.official);
+  $('candidate-official-label').value = text(candidate?.officialLabel);
+  $('candidate-tabelog').value = text(candidate?.tabelog);
+  $('candidate-jalan').value = text(candidate?.jalan);
+  $('candidate-notes').value = text(candidate?.notes);
+
+  $('delete-candidate').hidden = !candidate;
+  $('reset-candidate-status').hidden = !(candidate && candidate.status === 'assigned');
+
+  $('candidate-dialog').showModal();
+}
+
+function saveCandidate(event) {
+  event.preventDefault();
+  if (!state.activePlanning) state.activePlanning = blankPlanning();
+  const candidateId = $('candidate-id').value.trim();
+  const candidates = state.activePlanning.candidates;
+  const existing = candidateId ? candidates.find(c => c.id === candidateId) : null;
+  if (candidateId && !existing) return showToast('候補が見つかりません。開き直してください。', true);
+
+  const raw = {
+    ...existing,
+    id: candidateId || `cand-${crypto.randomUUID()}`,
+    title: $('candidate-title').value.trim(),
+    category: $('candidate-category').value,
+    priority: $('candidate-priority').value,
+    durationMinutes: $('candidate-duration').value.trim() === '' ? NaN : Number($('candidate-duration').value),
+    mapQuery: $('candidate-map-query').value.trim(),
+    mapUrl: $('candidate-map-url').value.trim(),
+    official: $('candidate-official').value.trim(),
+    officialLabel: $('candidate-official-label').value.trim(),
+    tabelog: $('candidate-tabelog').value.trim(),
+    jalan: $('candidate-jalan').value.trim(),
+    notes: $('candidate-notes').value.trim(),
+    status: existing?.status || 'draft',
+    assignedDay: existing?.assignedDay,
+    assignedCardId: existing?.assignedCardId,
+    createdAt: existing?.createdAt,
+    updatedAt: new Date().toISOString()
+  };
+
+  const mapErrors = [...validateCandidateInput(raw), ...validateMapFields(raw, { allowLegacy: false })];
+  if (mapErrors.length) return showToast(mapErrors.join('\n'), true);
+  const cleaned = cleanCandidate(raw, candidates.length);
+  if (!cleaned || !cleaned.title) {
+    showToast('場所名・スポット名を入力してください。', true);
+    return;
+  }
+
+  if (existing) {
+    const index = candidates.findIndex(c => c.id === candidateId);
+    if (index >= 0) candidates[index] = cleaned;
+  } else {
+    candidates.push(cleaned);
+  }
+
+  $('candidate-dialog').close();
+  renderCandidateList();
+  showToast('候補を反映しました。下書き保存でクラウドに保存してください。');
+}
+
+function deleteCandidate(candidateId) {
+  if (!state.activePlanning) return;
+  const candidates = state.activePlanning.candidates;
+  const index = candidates.findIndex(c => c.id === candidateId);
+  if (index < 0) return;
+  const target = candidates[index];
+  const msg = target.status === 'assigned'
+    ? `「${target.title}」は日程に組み込まれています。候補リストから削除しますか？（日程のカードは残ります）`
+    : `「${target.title}」を候補から削除しますか？`;
+  if (!window.confirm(msg)) return;
+  candidates.splice(index, 1);
+  if ($('candidate-dialog').open) $('candidate-dialog').close();
+  renderCandidateList();
+  showToast('候補スポットを削除しました。');
+}
+
+function resetCandidateStatus(candidateId) {
+  const assignment = inspectAssignment(state.activeTrip, state.activePlanning, candidateId);
+  if (assignment.error) return showToast(`${assignment.error}日程カードを確認してください。`, true);
+  if (!window.confirm(`「${assignment.card.title}」のカードを日程から取り除き、候補に戻しますか？`)) return;
+  const result = unassignCandidate(state.activeTrip, state.activePlanning, candidateId);
+  if (result.error) return showToast(result.error, true);
+  state.activeTrip = result.trip;
+  state.activePlanning = result.planning;
+  if ($('candidate-dialog').open) $('candidate-dialog').close();
+  renderEditor();
+  showToast(result.warnings.join(' ') || '日程への追加を取り消しました。下書き保存してください。');
+}
+
+function calculateNextAvailableTime(dayKey, travelMinutes = 0) {
+  const cards = state.activeTrip?.days?.[dayKey] || [];
+  if (!cards.length) {
+    const dep = state.activeTrip?.daySettings?.[dayKey]?.departureTime;
+    return dep || '09:00';
+  }
+  const lastCard = cards[cards.length - 1];
+  const range = parseTimeRange(lastCard.time);
+  if (!range) return '09:00';
+  const startMinute = range.end + travelMinutes;
+  return formatMinute(startMinute);
+}
+
+function openCandidateAdoptDialog(candidateId) {
+  if (!state.activePlanning) return;
+  const candidate = state.activePlanning.candidates.find(c => c.id === candidateId);
+  if (!candidate) return;
+  if (candidate.status === 'assigned') return showToast('この候補は追加済みです。変更する場合は日程カードを編集してください。', true);
+  state.activeCandidateForAdopt = candidate;
+
+  $('adopt-candidate-id').value = candidate.id;
+  const summaryBox = $('adopt-candidate-summary');
+  summaryBox.replaceChildren();
+  summaryBox.append(makeElement('strong', '', `候補: ${candidate.title}`));
+  const detailText = `分類: ${CATEGORY_NAMES[candidate.category] || candidate.category} · 想定滞在時間: ${candidate.durationMinutes || 60}分${candidate.priority ? ` · 優先度: ${PRIORITY_NAMES[candidate.priority]}` : ''}`;
+  summaryBox.append(makeElement('p', '', detailText));
+
+  const daySelect = $('adopt-day-select');
+  daySelect.replaceChildren();
+  const dayKeys = Object.keys(state.activeTrip.days);
+  dayKeys.forEach((dayKey, index) => {
+    const option = document.createElement('option');
+    option.value = dayKey;
+    option.textContent = `${dayKey.toUpperCase()} · ${state.activeTrip.dayLabels[dayKey] || `DAY ${index + 1}`}`;
+    if (dayKey === (candidate.assignedDay || state.activeDayKey || dayKeys[0])) option.selected = true;
+    daySelect.append(option);
+  });
+
+  updateAdoptPositionOptions();
+
+  const duration = candidate.durationMinutes || 60;
+  $('adopt-duration-minutes').value = String(duration);
+  $('adopt-travel-minutes').value = '0';
+  $('adopt-card-desc').value = '';
+
+  const initialDay = daySelect.value;
+  const initialStartTime = calculateNextAvailableTime(initialDay, 0);
+  $('adopt-start-time').value = initialStartTime;
+
+  updateAdoptPreview();
+  $('candidate-adopt-dialog').showModal();
+}
+
+function updateAdoptPositionOptions() {
+  const dayKey = $('adopt-day-select').value;
+  const posSelect = $('adopt-position-select');
+  posSelect.replaceChildren();
+  const cards = state.activeTrip?.days?.[dayKey] || [];
+
+  if (!cards.length) {
+    const opt = document.createElement('option');
+    opt.value = 'end';
+    opt.textContent = '先頭に追加（1番目のカード）';
+    posSelect.append(opt);
+    return;
+  }
+
+  const startOpt = document.createElement('option');
+  startOpt.value = 'start';
+  startOpt.textContent = '先頭に追加';
+  posSelect.append(startOpt);
+
+  cards.forEach((card, index) => {
+    const opt = document.createElement('option');
+    opt.value = String(index + 1);
+    opt.textContent = `${index + 1}. 「${card.title || '無題'}」の後に追加`;
+    posSelect.append(opt);
+  });
+
+  const endOpt = document.createElement('option');
+  endOpt.value = 'end';
+  endOpt.textContent = `末尾に追加（${cards.length + 1}番目）`;
+  endOpt.selected = true;
+  posSelect.append(endOpt);
+}
+
+function readAdoptPlacement() {
+  const dayKey = $('adopt-day-select').value;
+  return validatePlacement({
+    cards: state.activeTrip?.days?.[dayKey],
+    position: $('adopt-position-select').value,
+    startTime: $('adopt-start-time').value,
+    durationMinutes: $('adopt-duration-minutes').value,
+    travelMinutes: $('adopt-travel-minutes').value
+  });
+}
+
+function updateAdoptPreview() {
+  const candidate = state.activeCandidateForAdopt;
+  const result = readAdoptPlacement();
+  const previewBox = $('adopt-preview');
+  previewBox.replaceChildren();
+  if (!candidate) result.errors.push('候補を選び直してください。');
+  if (candidate?.status === 'assigned') result.errors.push('この候補は日程に追加済みです。');
+  $('adopt-end-time').value = result.time ? result.time.slice(-5) : '';
+  $('confirm-adopt').disabled = result.errors.length > 0;
+  const addRow = (time, title) => {
+    const row = makeElement('div', 'adopt-preview-item');
+    row.append(makeElement('span', 'adopt-preview-time', time || '未定'));
+    row.append(makeElement('span', 'adopt-preview-title', title));
+    previewBox.append(row);
+  };
+  if (result.prevCard) addRow(result.prevCard.time, `前: ${result.prevCard.title}`);
+  addRow(result.time, `追加: ${candidate?.title || '未選択'}`);
+  if (result.nextCard) addRow(result.nextCard.time, `次: ${result.nextCard.title}`);
+  result.errors.forEach(message => previewBox.append(makeElement('div', 'adopt-preview-alert error', message)));
+  result.warnings.forEach(message => previewBox.append(makeElement('div', 'adopt-preview-alert warning', message)));
+  previewBox.classList.toggle('has-conflict', result.errors.length > 0);
+  previewBox.classList.toggle('is-valid', result.errors.length === 0 && result.warnings.length === 0);
+  if (!result.errors.length && !result.warnings.length) previewBox.append(makeElement('div', 'adopt-preview-alert is-ok', '前後の予定との重複はありません。'));
+  const routeLink = $('adopt-maps-route-link');
+  const routeUrl = mapRouteHref(result.prevCard, candidate);
+  routeLink.hidden = !routeUrl;
+  routeLink.href = routeUrl || '#';
+  return result;
+}
+
+function confirmAdoptCandidate(event) {
+  event.preventDefault();
+  const candidate = state.activeCandidateForAdopt;
+  if (!candidate || !state.activePlanning?.candidates.includes(candidate)) return;
+  // Revalidate actual current inputs, even when submit bypasses the button.
+  const result = updateAdoptPreview();
+  if (result.errors.length) return showToast(result.errors[0], true);
+  const desc = $('adopt-card-desc').value.trim();
+  if (!desc) return showToast('参加者向けの説明文を入力してください。', true);
+  if (result.warnings.length && !window.confirm(`${result.warnings.join('\n')}\n内容を確認して追加しますか？`)) return;
+  const dayKey = $('adopt-day-select').value;
+  const newCard = cleanCard({
+    cardId: `card-${crypto.randomUUID()}`,
+    time: result.time,
+    badge: CATEGORY_BADGES[candidate.category] || 'SPOT',
+    title: candidate.title,
+    desc,
+    mapQuery: mapSearchQuery(candidate),
+    mapUrl: resolveMapFields(candidate).mapUrl,
+    official: candidate.official,
+    officialLabel: candidate.officialLabel,
+    tabelog: candidate.tabelog,
+    jalan: candidate.jalan,
+    travelMinutesFromPrevious: Number($('adopt-travel-minutes').value) || undefined
+  });
+  // Keep private undo metadata; public cards never include this snapshot.
+  if (result.nextCard) {
+    const nextBefore = deepClone(result.nextCard);
+    delete result.nextCard.travelMinutesFromPrevious;
+    candidate.placementUndo = {
+      dayKey,
+      previousCardId: result.prevCard?.cardId || null,
+      nextCardId: result.nextCard.cardId,
+      nextBefore,
+      nextAfter: deepClone(result.nextCard)
+    };
+  } else delete candidate.placementUndo;
+  state.activeTrip.days[dayKey].splice(result.insertIndex, 0, newCard);
+  candidate.status = 'assigned';
+  candidate.assignedDay = dayKey;
+  candidate.assignedCardId = newCard.cardId;
+  if (typeof readDaySettings === 'function') readDaySettings();
+  $('candidate-adopt-dialog').close();
+  state.activeDayKey = dayKey;
+  renderDaySelect();
+  renderEditorCards();
+  renderCandidateList();
+  renderTripAudit();
+  showToast(`「${candidate.title}」を日程に追加しました。下書き保存で確定してください。`);
+}
+
 
 function renderDaySelect() {
   const select = $('editor-day-select');
@@ -426,14 +969,15 @@ function renderEditorCards() {
       event.preventDefault();
       const from = Number(event.dataTransfer.getData('text/plain'));
       if (!Number.isInteger(from) || from === index) return;
-      const [moved] = cards.splice(from, 1);
-      cards.splice(index, 0, moved);
-      renderEditorCards();
+      previewCardReorder(from, index);
     });
     row.append(makeElement('div', 'editor-card-time', card.time || '—'));
     const copy = makeElement('div');
     copy.append(makeElement('strong', '', card.title || 'タイトル未設定'));
-    copy.append(makeElement('span', '', `${card.badge || 'CARD'}${card.expenseShortcut ? ' · 割り勘' : ''}`));
+    const meta = makeElement('div', 'card-meta-line');
+    meta.append(makeElement('span', '', `${card.badge || 'CARD'}${card.expenseShortcut ? ' · 割り勘' : ''}`));
+    if (card.timeLocked) meta.append(makeElement('span', 'time-locked-indicator', ' 🔒 固定予定'));
+    copy.append(meta);
     const actions = makeElement('div', 'actions');
     const edit = makeElement('button', 'compact', '編集');
     edit.type = 'button';
@@ -446,6 +990,7 @@ function renderEditorCards() {
 
 function addDay() {
   readTripBasics();
+  if (typeof readDaySettings === 'function') readDaySettings();
   const numbers = Object.keys(state.activeTrip.days).map(key => Number((key.match(/\d+/) || [0])[0]));
   const next = Math.max(0, ...numbers) + 1;
   const dayKey = `day${next}`;
@@ -472,6 +1017,22 @@ function formatCardLinks(links) {
   return (Array.isArray(links) ? links : []).map(link => [link?.label, link?.url, link?.androidUrl, link?.iosUrl, link?.icon].map(value => text(value).trim()).join(' | ').replace(/(?:\s*\|\s*)+$/, '')).join('\n');
 }
 
+const BUTTON_PRESETS = {
+  route: 'ルート | https://www.google.com/maps/dir/?api=1',
+  ana: 'ANA | https://www.ana.co.jp/ | intent://#Intent;scheme=https;package=jp.co.ana.android.travel;end | anaapp:// | ana',
+  toyota: 'TOYOTA | https://rent.toyota.co.jp/cp/18_ser_app01/ | intent://#Intent;scheme=toyotaapp;package=jp.co.toyota.rent.app.android;S.browser_fallback_url=https%3A%2F%2Frent.toyota.co.jp%2Fcp%2F18_ser_app01%2F;end | toyotaapp:// | toyota',
+  jalan: 'じゃらん | https://www.jalan.net/ | intent://#Intent;scheme=jalan;package=net.jalan.android;S.browser_fallback_url=https%3A%2F%2Fwww.jalan.net%2F;end | https://www.jalan.net/ | jalan',
+  'hello-cycling': '自転車 | https://www.hellocycling.jp/ | intent://main/#Intent;scheme=hellocycling;package=jp.hellocycling.hellocycling;S.browser_fallback_url=https%3A%2F%2Fwww.hellocycling.jp%2F;end | hellocycling://main | helloCycling'
+};
+
+function addPresetLink(presetKey) {
+  const preset = BUTTON_PRESETS[presetKey];
+  if (!preset) return;
+  const current = $('card-links').value.trim();
+  $('card-links').value = current ? `${current}\n${preset}` : preset;
+  $('card-links').dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 function cardFieldMap() {
   return {
     time: $('card-time').value.trim(),
@@ -479,22 +1040,24 @@ function cardFieldMap() {
     title: $('card-title').value.trim(),
     desc: $('card-desc').value.trim(),
     mapQuery: $('card-map-query').value.trim(),
+    mapUrl: $('card-map-url').value.trim(),
     official: $('card-official').value.trim(),
     officialLabel: $('card-official-label').value.trim(),
     tabelog: $('card-tabelog').value.trim(),
     jalan: $('card-jalan').value.trim(),
     image: $('card-image').value.trim(),
     links: parseCardLinks($('card-links').value),
+    timeLocked: $('card-time-locked').checked,
     expenseShortcut: $('card-expense').checked,
-    travelMinutesFromPrevious: Number($('card-travel-minutes').value) || 0,
-    notifyBeforeMinutes: $('card-notify').value.split(',').map(value => Number(value.trim())).filter(Number.isFinite),
+    travelMinutesFromPrevious: Number($('card-travel-minutes').value),
+    notifyBeforeMinutes: $('card-notify').value.split(',').filter(value => value.trim() !== '').map(value => Number(value.trim())),
     constraints: {
       opensAt: $('card-opens-at').value,
       closesAt: $('card-closes-at').value,
       reservationAt: $('card-reservation-at').value,
       lastEntryAt: $('card-last-entry-at').value,
       departureBy: $('card-departure-by').value,
-      arrivalBufferMinutes: Number($('card-arrival-buffer').value) || 0
+      arrivalBufferMinutes: Number($('card-arrival-buffer').value)
     },
     reservation: {
       number: $('card-reservation-number').value.trim(),
@@ -513,13 +1076,20 @@ function cleanCard(card) {
     const value = text(card?.[key]).trim();
     if (value) cleaned[key] = value;
   });
+  delete cleaned.mapQuery;
+  const mapFields = resolveMapFields(card);
+  if (mapFields.mapQuery) cleaned.mapQuery = mapFields.mapQuery;
+  if (mapFields.mapUrl) cleaned.mapUrl = mapFields.mapUrl;
   const links = (Array.isArray(card?.links) ? card.links : []).map(link => {
     const label = text(link?.label).trim();
     const url = text(link?.url).trim();
     if (!label && !url) return null;
-    return link?.kind === 'route' || label === 'ルート' ? { label, url, kind: 'route' } : { label, url };
+    const result = link?.kind === 'route' || label === 'ルート' ? { label, url, kind: 'route' } : { label, url };
+    for (const key of ['androidUrl', 'iosUrl', 'icon']) if (link[key]) result[key] = link[key];
+    return result;
   }).filter(Boolean);
   if (links.length) cleaned.links = links;
+  if (card?.timeLocked === true) cleaned.timeLocked = true;
   if (card?.expenseShortcut === true) cleaned.expenseShortcut = true;
   const travelMinutes = Math.max(0, Math.min(1440, Math.round(Number(card?.travelMinutesFromPrevious) || 0)));
   if (travelMinutes) cleaned.travelMinutesFromPrevious = travelMinutes;
@@ -549,12 +1119,14 @@ function openCardDialog(index = -1) {
   $('card-title').value = text(card.title);
   $('card-desc').value = text(card.desc);
   $('card-map-query').value = text(card.mapQuery);
+  $('card-map-url').value = text(card.mapUrl);
   $('card-official').value = text(card.official);
   $('card-official-label').value = text(card.officialLabel);
   $('card-tabelog').value = text(card.tabelog);
   $('card-jalan').value = text(card.jalan);
   $('card-image').value = text(card.image);
   $('card-links').value = formatCardLinks(card.links);
+  $('card-time-locked').checked = card.timeLocked === true;
   $('card-expense').checked = card.expenseShortcut === true;
   $('card-travel-minutes').value = card.travelMinutesFromPrevious || '';
   $('card-notify').value = (card.notifyBeforeMinutes || []).join(', ');
@@ -573,6 +1145,8 @@ function openCardDialog(index = -1) {
   $('delete-card').hidden = index < 0;
   $('move-card-up').hidden = index <= 0;
   $('move-card-down').hidden = index < 0 || index >= cards.length - 1;
+  $('open-move-day').hidden = index < 0;
+  $('open-cascade-adjust').hidden = index < 0;
   $('card-dialog').showModal();
 }
 
@@ -581,10 +1155,23 @@ function saveCard(event) {
   const index = Number($('card-index').value);
   const cards = state.activeTrip.days[state.activeDayKey];
   const base = index >= 0 ? cards[index] : {};
-  const next = cleanCard({ ...base, ...cardFieldMap() });
+  const raw = { ...base, ...cardFieldMap(), cardId: base.cardId || `card-${crypto.randomUUID()}` };
+  const mapErrors = [...validateTripInput({ tripId: state.activeTrip.tripId, title: state.activeTrip.title, days: { day1: [raw] } }), ...validateMapFields(raw, { allowLegacy: false })];
+  if (mapErrors.length) return showToast(mapErrors.join('\n'), true);
+  const next = cleanCard(raw);
   if (!next.title || !next.desc) {
     showToast('タイトルと説明を入力してください。', true);
     return;
+  }
+  const beforeTime = base.time || '';
+  const afterTime = next.time || '';
+  if (index >= 0 && base.timeLocked === true && beforeTime !== afterTime) {
+    const msg = afterTime
+      ? `「${base.title || 'この予定'}」は固定予定（timeLocked）です。時刻を「${beforeTime || '未定'}」から「${afterTime}」へ変更しますか？`
+      : `「${base.title || 'この予定'}」は固定予定（timeLocked）です。設定時刻（${beforeTime}）を削除して未定にしますか？`;
+    if (!window.confirm(msg)) {
+      return;
+    }
   }
   if (index >= 0) cards[index] = next;
   else cards.push(next);
@@ -595,23 +1182,327 @@ function saveCard(event) {
 
 function deleteCard() {
   const index = Number($('card-index').value);
-  if (index < 0) return;
+  const cards = state.activeTrip?.days?.[state.activeDayKey];
+  if (!Array.isArray(cards) || !Number.isInteger(index) || index < 0 || index >= cards.length) return;
   if (!window.confirm('このカードを削除しますか？')) return;
-  state.activeTrip.days[state.activeDayKey].splice(index, 1);
+  const target = cards[index];
+  const candidate = target.cardId && state.activePlanning?.candidates.find(item => item.assignedCardId === target.cardId);
+  const result = candidate ? unassignCandidate(state.activeTrip, state.activePlanning, candidate.id) : null;
+  if (result && !result.error) {
+    state.activeTrip = result.trip;
+    state.activePlanning = result.planning;
+  } else {
+    cards.splice(index, 1);
+    if (cards[index]) delete cards[index].travelMinutesFromPrevious;
+    state.activePlanning = reconcileAssignments(state.activeTrip, state.activePlanning);
+  }
+  state.activeCandidateForAdopt = null;
   $('card-dialog').close();
+  renderCandidateList();
   renderEditorCards();
+  renderTripAudit();
+  if (result?.warnings.length) showToast(result.warnings.join(' '));
 }
 
 function moveCard(direction) {
   const index = Number($('card-index').value);
-  const cards = state.activeTrip.days[state.activeDayKey];
+  const cards = state.activeTrip?.days?.[state.activeDayKey] || [];
   const destination = index + direction;
   if (index < 0 || destination < 0 || destination >= cards.length) return;
-  [cards[index], cards[destination]] = [cards[destination], cards[index]];
   $('card-dialog').close();
-  renderEditorCards();
-  openCardDialog(destination);
+  previewCardReorder(index, destination);
 }
+
+function previewCardReorder(fromIndex, toIndex, options = {}) {
+  const dayKey = state.activeDayKey;
+  const cards = state.activeTrip?.days?.[dayKey] || [];
+  const plan = planCardReorder(cards, fromIndex, toIndex, { ...options, dayKey });
+
+  const updatedTrip = structuredClone(state.activeTrip);
+  updatedTrip.days[dayKey] = plan.updatedCards;
+
+  openPlannerCompareDialog({
+    title: `並べ替えの確認 (${dayKey.toUpperCase()})`,
+    planResult: plan,
+    updatedTrip,
+    dayKey,
+    isReorder: true,
+    fromIndex,
+    toIndex
+  });
+}
+
+function autoAdjustAndReplan() {
+  if (!state.activePendingPlan?.isReorder) return;
+  const { fromIndex, toIndex } = state.activePendingPlan;
+  previewCardReorder(fromIndex, toIndex, { autoAdjustCascade: true });
+}
+
+function openMoveDayDialog(cardIndex) {
+  const cards = state.activeTrip?.days?.[state.activeDayKey] || [];
+  const card = cards[cardIndex];
+  if (!card) return;
+
+  $('move-day-card-index').value = String(cardIndex);
+  $('move-day-card-summary').textContent = `対象: 「${card.title}」 (${card.time || '時刻未定'})${card.timeLocked ? ' 🔒 固定予定' : ''}`;
+  $('move-day-allow-locked').checked = false;
+
+  const targetSelect = $('move-day-target-select');
+  targetSelect.replaceChildren();
+  Object.keys(state.activeTrip.days).forEach((dk, i) => {
+    if (dk !== state.activeDayKey) {
+      const opt = document.createElement('option');
+      opt.value = dk;
+      opt.textContent = `${dk.toUpperCase()} · ${state.activeTrip.dayLabels[dk] || `DAY ${i + 1}`}`;
+      targetSelect.append(opt);
+    }
+  });
+
+  if (!targetSelect.options.length) {
+    showToast('移動先となる他の日がありません。「+ 日を追加」してください。', true);
+    return;
+  }
+
+  updateMoveDayPositionOptions();
+
+  const range = parseTimeRange(card.time);
+  $('move-day-start-time').value = range ? formatMinute(range.start) : '09:00';
+  $('move-day-duration-minutes').value = range ? String(range.end - range.start) : '60';
+  $('move-day-travel-minutes').value = card.travelMinutesFromPrevious ? String(card.travelMinutesFromPrevious) : '0';
+
+  $('card-dialog').close();
+  $('move-day-dialog').showModal();
+}
+
+function updateMoveDayPositionOptions() {
+  const toDay = $('move-day-target-select').value;
+  const targetCards = state.activeTrip?.days?.[toDay] || [];
+  const posSelect = $('move-day-position-select');
+  posSelect.replaceChildren();
+
+  const optStart = document.createElement('option');
+  optStart.value = 'start';
+  optStart.textContent = '日の先頭（1番目）';
+  posSelect.append(optStart);
+
+  targetCards.forEach((c, idx) => {
+    const opt = document.createElement('option');
+    opt.value = String(idx + 1);
+    opt.textContent = `${idx + 1}. 「${c.title}」の後`;
+    posSelect.append(opt);
+  });
+
+  const optEnd = document.createElement('option');
+  optEnd.value = 'end';
+  optEnd.textContent = '日の末尾に追加';
+  optEnd.selected = true;
+  posSelect.append(optEnd);
+}
+
+function previewMoveDay(event) {
+  event.preventDefault();
+  const fromIndex = Number($('move-day-card-index').value);
+  const fromDayKey = state.activeDayKey;
+  const toDayKey = $('move-day-target-select').value;
+  const toPosition = $('move-day-position-select').value;
+  const startTime = $('move-day-start-time').value;
+  const durationMinutes = Number($('move-day-duration-minutes').value);
+  const travelMinutes = Number($('move-day-travel-minutes').value);
+  const allowTimeLockedMove = $('move-day-allow-locked').checked;
+
+  const plan = planCardMoveDay(state.activeTrip, fromDayKey, fromIndex, toDayKey, toPosition, {
+    startTime,
+    durationMinutes,
+    travelMinutes,
+    allowTimeLockedMove
+  });
+
+  $('move-day-dialog').close();
+
+  openPlannerCompareDialog({
+    title: `別日移動の確認 (${fromDayKey.toUpperCase()} → ${toDayKey.toUpperCase()})`,
+    planResult: plan,
+    updatedTrip: plan.updatedTrip,
+    dayKey: toDayKey
+  });
+}
+
+function openCascadeAdjustDialog(cardIndex) {
+  const cards = state.activeTrip?.days?.[state.activeDayKey] || [];
+  const card = cards[cardIndex];
+  if (!card) return;
+
+  $('cascade-card-index').value = String(cardIndex);
+  $('cascade-card-summary').textContent = `起点: 「${card.title}」 (${card.time || '時刻未定'})${card.timeLocked ? ' 🔒 固定予定' : ''}`;
+
+  const range = parseTimeRange(card.time);
+  $('cascade-start-time').value = range ? formatMinute(range.start) : '09:00';
+  $('cascade-duration-minutes').value = range ? String(range.end - range.start) : '60';
+
+  $('card-dialog').close();
+  $('cascade-adjust-dialog').showModal();
+}
+
+function previewCascadeAdjust(event) {
+  event.preventDefault();
+  const cardIndex = Number($('cascade-card-index').value);
+  const dayKey = state.activeDayKey;
+  const cards = state.activeTrip?.days?.[dayKey] || [];
+  const startTime = $('cascade-start-time').value;
+  const durationMinutes = Number($('cascade-duration-minutes').value);
+
+  const plan = planCascadeTimeAdjustment(cards, cardIndex, startTime, durationMinutes, { dayKey });
+
+  const updatedTrip = structuredClone(state.activeTrip);
+  updatedTrip.days[dayKey] = plan.updatedCards;
+
+  $('cascade-adjust-dialog').close();
+
+  openPlannerCompareDialog({
+    title: `後続時刻調整の確認 (${dayKey.toUpperCase()})`,
+    planResult: plan,
+    updatedTrip,
+    dayKey
+  });
+}
+
+function renderDiffList(diffs = [], container) {
+  if (diffs.length === 0) {
+    container.append(makeElement('div', 'empty-state', '差分はありません。'));
+    return;
+  }
+  diffs.forEach(item => {
+    const row = makeElement('div', `planner-diff-item ${item.type}`);
+    const badge = makeElement('span', 'planner-diff-badge',
+      item.type === 'added' ? '+ 追加' :
+      item.type === 'modified' ? '~ 変更' :
+      item.type === 'removed' ? '- 除外' : '= 変更なし'
+    );
+    const label = makeElement('span', '', item.title);
+    const timeInfo = makeElement('small', 'muted',
+      item.beforeTime && item.afterTime && item.beforeTime !== item.afterTime
+        ? `${item.beforeTime} → ${item.afterTime}`
+        : item.afterTime || item.beforeTime || '—'
+    );
+    row.append(badge, label, timeInfo);
+    if (item.timeLocked) row.append(makeElement('span', 'time-locked-indicator', ' 🔒'));
+    container.append(row);
+  });
+}
+
+function openPlannerCompareDialog({ title, planResult, updatedTrip, dayKey, isReorder = false, fromIndex = -1, toIndex = -1 }) {
+  state.activePendingPlan = {
+    updatedTrip,
+    planResult,
+    dayKey,
+    expectedBaseTrip: structuredClone(state.activeTrip),
+    isReorder,
+    fromIndex,
+    toIndex
+  };
+
+  $('planner-compare-title').textContent = title;
+  $('planner-compare-summary').textContent = planResult.fromDayKey && planResult.toDayKey
+    ? `移動元: ${planResult.fromDayKey.toUpperCase()} ➔ 移動先: ${planResult.toDayKey.toUpperCase()}`
+    : `対象日: ${dayKey.toUpperCase()}`;
+
+  const diffContainer = $('planner-compare-diff');
+  diffContainer.replaceChildren();
+
+  if (planResult.fromDiff && planResult.toDiff) {
+    // 別日移動：移動元と移動先を分けて表示
+    const fromHead = makeElement('h4', 'planner-diff-section-head', `【移動元】${planResult.fromDayKey.toUpperCase()}`);
+    diffContainer.append(fromHead);
+    renderDiffList(planResult.fromDiff.diffs, diffContainer);
+
+    const toHead = makeElement('h4', 'planner-diff-section-head', `【移動先】${planResult.toDayKey.toUpperCase()}`);
+    diffContainer.append(toHead);
+    renderDiffList(planResult.toDiff.diffs, diffContainer);
+  } else {
+    const diffs = planResult.diff?.diffs || [];
+    renderDiffList(diffs, diffContainer);
+  }
+
+  const alertContainer = $('planner-compare-alerts');
+  alertContainer.replaceChildren();
+
+  const errors = planResult.errors || [];
+  const warnings = planResult.warnings || [];
+
+  if (errors.length > 0) {
+    alertContainer.className = 'adopt-preview-box has-conflict';
+    errors.forEach(msg => {
+      alertContainer.append(makeElement('div', 'adopt-preview-alert error', `⛔ ${msg}`));
+    });
+  } else if (warnings.length > 0) {
+    alertContainer.className = 'adopt-preview-box has-conflict';
+    warnings.forEach(msg => {
+      alertContainer.append(makeElement('div', 'adopt-preview-alert warning', `⚠️ ${msg}`));
+    });
+  } else {
+    alertContainer.className = 'adopt-preview-box is-valid';
+    alertContainer.append(makeElement('div', 'adopt-preview-alert', '✅ 時間重複や制限エラーはありません。'));
+  }
+
+  $('planner-compare-auto-adjust').hidden = !(isReorder && planResult.canAutoAdjust);
+  $('confirm-planner-compare').disabled = errors.length > 0;
+  $('planner-compare-dialog').showModal();
+}
+
+function confirmPlannerCompare(event) {
+  event.preventDefault();
+  if (!state.activePendingPlan?.planResult) return;
+
+  const res = applyDayPlan({
+    currentTrip: state.activeTrip,
+    currentPlanning: state.activePlanning,
+    planResult: state.activePendingPlan.planResult,
+    expectedBaseTrip: state.activePendingPlan.expectedBaseTrip,
+    dayKey: state.activePendingPlan.dayKey
+  });
+
+  if (res.error) {
+    showToast(`変更を適用できません: ${res.error}`, true);
+    return;
+  }
+
+  state.activeTrip = res.trip;
+  state.activePlanning = res.planning;
+  state.lastDayPlanUndo = res.undoSnapshot;
+  state.activePendingPlan = null;
+
+  $('undo-day-plan').hidden = false;
+  $('planner-compare-dialog').close();
+  renderEditorCards();
+  renderCandidateList();
+  renderTripAudit();
+  showToast('日程の変更案を適用しました。内容を確認して下書き保存してください。');
+}
+
+function undoLastDayPlan() {
+  if (!state.lastDayPlanUndo) return;
+  const res = undoDayPlan({
+    currentTrip: state.activeTrip,
+    currentPlanning: state.activePlanning,
+    undoSnapshot: state.lastDayPlanUndo
+  });
+
+  if (res.error) {
+    showToast(`取り消しできません: ${res.error}`, true);
+    return;
+  }
+
+  state.activeTrip = res.trip;
+  state.activePlanning = res.planning;
+  state.lastDayPlanUndo = null;
+  $('undo-day-plan').hidden = true;
+
+  renderEditorCards();
+  renderCandidateList();
+  renderTripAudit();
+  showToast('直前の日程変更を取り消しました。');
+}
+
 
 function validateTrip(trip) {
   const errors = [];
@@ -679,6 +1570,7 @@ function validateTrip(trip) {
   }
   return errors;
 }
+
 function hideEditorErrors() {
   $('editor-errors').hidden = true;
   $('editor-errors').textContent = '';
@@ -691,120 +1583,177 @@ function showEditorErrors(errors) {
 }
 
 async function persistTrip(publish = false) {
-  readTripBasics();
-  let errors;
-  let report;
-  try {
-    report = analyzeTrip(state.activeTrip);
-    state.activeTrip = report.trip;
+  if (state.tripWriteBusy || editorSession.saving) return showToast('保存処理が実行中です。', true);
+  syncEditorInputs();
+  const draftErrors = validateTripDraft(state.activeTrip, state.activePlanning);
+  if (draftErrors.length) return showEditorErrors(draftErrors);
+  let cleanTrip = stripPlanningForPublication(state.activeTrip);
+  if (publish) {
+    const report = analyzeTrip(state.activeTrip);
     renderTripAudit(report);
-    errors = report.errors.map(item => item.message);
-  } catch (error) {
-    console.error(error);
-    showToast(`公開前の確認に失敗しました: ${error.message}`, true);
-    return;
+    if (report.errors.length) return showEditorErrors(report.errors.map(item => item.message));
+    if (report.warnings.length && !window.confirm('警告が' + report.warnings.length + '件あります。確認済みとして公開しますか？')) return;
+    cleanTrip = report.trip;
   }
-  if (errors.length) {
-    showEditorErrors(errors);
-    return;
-  }
-  hideEditorErrors();
-  if (publish && report.warnings.length && !window.confirm(`公開を止めるエラーはありません。\nただし警告が${report.warnings.length}件あります。内容を確認済みとして公開しますか？`)) return;
   const button = publish ? $('publish-trip') : $('save-draft');
-  setBusy(button, true, publish ? '公開中…' : '保存中…');
-  const tripId = state.activeTrip.tripId;
-  const payloadJson = JSON.stringify(state.activeTrip);
+  let ticket;
   try {
+    ticket = editorSession.beginSave(state.activeTrip, state.activePlanning);
+    state.tripWriteBusy = true;
+    hideEditorErrors();
+    setBusy(button, true, publish ? '公開中…' : '保存中…');
+    updateSaveStatus();
+    const tripId = ticket.tripId;
+    const planning = cleanPlanning(ticket.planning);
+    const payloadJson = JSON.stringify(cleanTrip);
+    const planningJson = JSON.stringify(planning);
+    const sizeErrors = validateStoredDraftSize({ payloadJson, planningJson });
+    if (sizeErrors.length) throw new Error(sizeErrors.join('\n'));
+    const data = {
+      tripId, title: cleanTrip.title,
+      status: publish || state.publishedIds.has(tripId) ? 'published' : 'draft',
+      payloadJson, planningJson, revision: crypto.randomUUID(),
+      updatedAt: serverTimestamp(), updatedBy: state.currentUser.uid
+    };
+    const writes = [];
+    const checks = [];
     if (publish) {
-      const distributionSnapshot = await getDocs(collection(db, 'adminDistributions'));
-      const activeDistributions = distributionSnapshot.docs
-        .map(item => ({ id: item.id, ...item.data() }))
-        .filter(distribution => distribution.tripId === tripId && distribution.status === 'active' && distribution.grantId);
-      const batch = writeBatch(db);
-      batch.set(doc(db, 'adminTrips', tripId), {
-        tripId,
-        title: state.activeTrip.title,
-        status: 'published',
-        payloadJson,
-        updatedAt: serverTimestamp(),
-        updatedBy: state.currentUser.uid
-      }, { merge: true });
-      const historyRef = doc(collection(db, 'tripHistories', tripId, 'versions'));
-      batch.set(historyRef, {
-        tripId,
-        title: state.activeTrip.title,
-        payloadJson,
-        schemaVersion: 2,
-        publishedAt: serverTimestamp(),
-        publishedBy: state.currentUser.uid
-      });
-      batch.set(doc(db, 'publishedTrips', tripId), {
-        tripId,
-        title: state.activeTrip.title,
-        published: true,
-        payloadJson,
-        publishedAt: serverTimestamp(),
-        updatedBy: state.currentUser.uid
-      });
-      activeDistributions.slice(0, 450).forEach(distribution => batch.set(doc(db, 'accessGrants', distribution.grantId), {
-        title: state.activeTrip.title,
-        payloadJson,
-        updatedAt: serverTimestamp()
-      }, { merge: true }));
-      await batch.commit();
-      for (let offset = 450; offset < activeDistributions.length; offset += 450) {
-        const grantBatch = writeBatch(db);
-        activeDistributions.slice(offset, offset + 450).forEach(distribution => grantBatch.set(doc(db, 'accessGrants', distribution.grantId), {
-          title: state.activeTrip.title,
-          payloadJson,
-          updatedAt: serverTimestamp()
-        }, { merge: true }));
-        await grantBatch.commit();
+      const snapshot = await getDocs(collection(db, 'adminDistributions'));
+      const distributions = snapshot.docs.map(item => ({ ...item.data(), id: item.id }))
+        .filter(item => item.tripId === tripId && item.status === 'active' && item.grantId);
+      const grants = new Set();
+      for (const distribution of distributions) {
+        checks.push({ reference: doc(db, 'adminDistributions', distribution.id), fields: {
+          tripId, status: 'active', grantId: distribution.grantId
+        } });
+        if (grants.has(distribution.grantId)) continue;
+        grants.add(distribution.grantId);
+        writes.push({ reference: doc(db, 'accessGrants', distribution.grantId), merge: true,
+          data: { title: cleanTrip.title, payloadJson, publishedRevision: data.revision, updatedAt: serverTimestamp() } });
       }
-      state.publishedIds.add(tripId);
-      state.publishedTrips.set(tripId, deepClone(state.activeTrip));
-      showToast('参加者ページへ公開しました。');
-    } else {
-      await setDoc(doc(db, 'adminTrips', tripId), {
-        tripId,
-        title: state.activeTrip.title,
-        status: state.publishedIds.has(tripId) ? 'published' : 'draft',
-        payloadJson,
-        updatedAt: serverTimestamp(),
-        updatedBy: state.currentUser.uid
-      }, { merge: true });
-      showToast('下書きを保存しました。参加者ページは変わっていません。');
+      writes.push({ reference: doc(collection(db, 'tripHistories', tripId, 'versions')), data: {
+        tripId, title: cleanTrip.title, payloadJson, schemaVersion: 2,
+        revision: data.revision, publishedAt: serverTimestamp(), publishedBy: data.updatedBy
+      } });
+      writes.push({ reference: doc(db, 'publishedTrips', tripId), data: {
+        tripId, title: cleanTrip.title, published: true, payloadJson,
+        revision: data.revision, publishedAt: serverTimestamp(), updatedBy: data.updatedBy
+      } });
     }
-    state.trips.set(tripId, { trip: deepClone(state.activeTrip), source: 'cloud', updatedAt: new Date() });
+    const version = await commitTripRecord({ db, runTransaction,
+      reference: doc(db, 'adminTrips', tripId), expectedVersion: ticket.expectedVersion,
+      data, writes, checks });
+    // Post-save records always use the submitted snapshot, never the active editor.
+    state.trips.set(tripId, { trip: deepClone(cleanTrip), planning: deepClone(planning), source: 'cloud', version, updatedAt: new Date() });
+    if (publish) {
+      state.publishedIds.add(tripId);
+      state.publishedTrips.set(tripId, deepClone(cleanTrip));
+    }
+    editorSession.finishSave(ticket, version);
     renderTripLibrary();
     populateTripSelects();
+    showToast(publish ? '参加者ページへ公開しました。' : '下書きを保存しました。参加者ページは変わっていません。');
   } catch (error) {
+    if (ticket) editorSession.failSave(ticket);
     console.error(error);
-    showToast(`保存に失敗しました: ${error.message}`, true);
+    showToast((publish ? '公開' : '保存') + 'できませんでした: ' + error.message, true);
   } finally {
+    state.tripWriteBusy = false;
     setBusy(button, false);
+    updateSaveStatus();
   }
 }
 
-function downloadActiveTrip() {
-  if (!state.activeTrip) return;
-  readTripBasics();
-  const blob = new Blob([`${JSON.stringify(state.activeTrip, null, 2)}\n`], { type: 'application/json' });
+function downloadDraftRecovery(tripId) {
+  const raw = state.trips.get(tripId)?.rawDraft;
+  if (!raw || !window.confirm('元データには非公開メモが含まれます。共有せず保管し、JSONを修復してから読み込んでください。書き出しますか？')) return;
+  const blob = new Blob([JSON.stringify({ format: 'shiori-draft-recovery', version: 1, ...raw }, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `${state.activeTrip.tripId || 'trip'}.json`;
-  anchor.click();
-  URL.revokeObjectURL(url);
+  try {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${tripId.replace(/[^a-zA-Z0-9_-]/g, '_')}.draft-recovery.json`;
+    anchor.click();
+  } finally { URL.revokeObjectURL(url); }
+}
+
+function downloadActiveTrip(adminBackup = false) {
+  if (!state.activeTrip) return;
+  if (state.dirtyDialogs.size) return showToast('開いている編集画面の入力を反映してから書き出してください。', true);
+  if (adminBackup && !window.confirm('管理者専用バックアップには候補・非公開メモが含まれます。参加者などへ共有しないでください。書き出しますか？')) return;
+  try {
+    syncEditorInputs();
+    const exportData = adminBackup ? buildAdminBackup(state.activeTrip, state.activePlanning) : buildTripExport(state.activeTrip);
+    const blob = new Blob([`${JSON.stringify(exportData, null, 2)}\n`], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    try {
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      const fileId = state.activeTrip.tripId.replace(/[^a-zA-Z0-9_-]/g, '_');
+      anchor.download = `${fileId}${adminBackup ? '.admin-backup' : ''}.json`;
+      anchor.click();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  } catch (error) {
+    showToast(`書き出せません: ${error.message}`, true);
+  }
+}
+
+async function reloadActiveDraft() {
+  if (!state.activeTrip?.tripId || !confirmEditorLeave()) return;
+  syncEditorInputs();
+  const tripId = state.activeTrip.tripId;
+  const generation = editorSession.generation;
+  const inputRevision = state.editorInputRevision;
+  const before = JSON.stringify({ trip: state.activeTrip, planning: state.activePlanning, dialogs: [...state.dirtyDialogs] });
+  state.tripWriteBusy = true;
+  updateSaveStatus();
+  try {
+    const snapshot = await getDoc(doc(db, 'adminTrips', tripId));
+    if (!snapshot.exists()) throw new Error('クラウドに下書きがありません。現在の入力は保持しています。');
+    const data = snapshot.data();
+    const { trip, planning } = decodeDraftRecord(data, tripId);
+    syncEditorInputs();
+    const now = JSON.stringify({ trip: state.activeTrip, planning: state.activePlanning, dialogs: [...state.dirtyDialogs] });
+    if (editorSession.generation !== generation || state.editorInputRevision !== inputRevision || now !== before) throw new Error('読込中に編集されたため中止しました。現在の入力は保持しています。');
+    const version = draftVersion(data);
+    state.trips.set(tripId, { trip: deepClone(trip), planning: deepClone(planning), version, source: 'cloud', updatedAt: data.updatedAt || null });
+    state.activeTrip = trip;
+    state.activePlanning = planning;
+    state.activeDayKey = Object.keys(trip.days)[0] || 'day1';
+    renderEditor();
+    startEditorSession(true, version);
+    renderTripLibrary();
+    showToast('最新の下書きを読み込みました。');
+  } catch (error) {
+    showToast(`読み込めませんでした: ${error.message}`, true);
+  } finally {
+    state.tripWriteBusy = false;
+    updateSaveStatus();
+  }
 }
 
 async function importTrip(file) {
   if (!file) return;
+  const generation = editorSession.generation;
   try {
-    const parsed = JSON.parse(await file.text());
-    state.activeTrip = normalizeTrip(parsed);
+    const imported = parseTripImport(JSON.parse(await file.text()));
+    const parsed = imported.trip;
+    const inputErrors = validateTripDraft(parsed, imported.planning || blankPlanning());
+    if (inputErrors.length) throw new Error(inputErrors.join('\n'));
+    if (editorSession.generation !== generation) return showToast('編集対象が変わったため、JSON読込を中止しました。', true);
+    if (!confirmEditorLeave()) return;
+    if (imported.kind !== 'participant' && !window.confirm('管理者用データです。非公開の候補・メモもこの旅行の下書きへ読み込みます。続けますか？')) return;
+    if (parsed.tripId !== state.activeTrip?.tripId && state.trips.has(parsed.tripId)
+      && !window.confirm('同じIDの旅行が既にあります。その旅行の下書きとして読み込みますか？')) return;
+    const trip = normalizeTrip(parsed);
+    const planning = imported.planning || blankPlanning();
+    state.activeTrip = trip;
+    state.activePlanning = planning;
     state.activeDayKey = Object.keys(state.activeTrip.days)[0] || 'day1';
     renderEditor();
+    startEditorSession(false, state.trips.get(state.activeTrip.tripId)?.version ?? null);
     showToast('JSONを読み込みました。内容を確認して保存してください。');
   } catch (error) {
     showToast(`JSONを読み込めません: ${error.message}`, true);
@@ -812,6 +1761,7 @@ async function importTrip(file) {
     $('import-trip-file').value = '';
   }
 }
+
 
 function populateTripSelects() {
   const options = [...state.trips.entries()].sort((a, b) => text(a[1].trip.startDate).localeCompare(text(b[1].trip.startDate)));
@@ -828,7 +1778,7 @@ function populateTripSelects() {
 }
 
 function openDistribution(tripId = '') {
-  showView('distribution');
+  if (showView('distribution') === false) return;
   if (tripId && state.trips.has(tripId)) $('distribution-trip').value = tripId;
 }
 
@@ -1266,7 +2216,7 @@ async function deleteDistribution(distribution, button) {
     ]);
     const label = initialData.label || distribution.label || '名称未設定';
     const confirmed = window.confirm(
-      '「' + label + '」を完全削除しますか？\n\n参加者 ' + participantsSnapshot.size + '名、共有支出 ' + expensesSnapshot.size + '件、配布ID・同期ルームを削除します。元に戻せません。'
+      '「' + label + '」を完全削除しますか？\n\n参加者 ' + participantsSnapshot.size + '名、共有支出 ' + expensesSnapshot.size + '件、提案やコメント、配布ID・同期ルームを削除します。元に戻せません。'
     );
     if (!confirmed) return;
     setBusy(button, true, '削除中…');
@@ -1283,6 +2233,9 @@ async function deleteDistribution(distribution, button) {
       transaction.update(initialDistributionRef, { status: 'deleting', updatedAt: serverTimestamp() });
       if (latestRoom.exists()) transaction.update(roomRef, { status: 'deleting', updatedAt: serverTimestamp() });
     });
+
+    // 提案とコメントを全件削除（コメントを先に全削除してから提案を削除）
+    await cleanupRoomSuggestionsAndComments({ db, roomId, getDocs, collection, deleteDoc, writeBatch, query, limit });
 
     const [participantsToDelete, expensesToDelete] = await Promise.all([
       getDocs(collection(roomRef, 'participants')),
@@ -1305,6 +2258,7 @@ async function deleteDistribution(distribution, button) {
 }
 
 function renderDistributions() {
+  refreshAdminDiscussionRooms();
   const list = $('distribution-list');
   list.replaceChildren();
   const activeCount = state.distributions.filter(item => item.status === 'active').length;
@@ -1568,6 +2522,7 @@ function showTripPreview() {
 
 async function showPublishHistory() {
   if (!state.activeTrip?.tripId) return showToast('旅行IDを保存してから履歴を確認してください。', true);
+  const generation = editorSession.generation;
   const content = $('history-content');
   content.textContent = '公開履歴を読み込んでいます…';
   $('history-dialog').showModal();
@@ -1586,10 +2541,13 @@ async function showPublishHistory() {
       restore.type = 'button';
       restore.addEventListener('click', () => {
         try {
+          if (editorSession.generation !== generation) return showToast('編集対象が変わっています。履歴を開き直してください。', true);
+          if (!confirmEditorLeave()) return;
           state.activeTrip = normalizeTrip(JSON.parse(version.payloadJson), state.activeTrip.tripId);
           state.activeDayKey = Object.keys(state.activeTrip.days)[0] || 'day1';
           renderEditor();
           $('history-dialog').close();
+          updateSaveStatus();
           showToast('選択した公開版を下書きへ復元しました。保存するまで参加者ページは変わりません。');
         } catch (error) {
           showToast('履歴を復元できません。', true);
@@ -1605,39 +2563,75 @@ async function showPublishHistory() {
 }
 
 function duplicateTrip(tripId) {
-  const source = state.trips.get(tripId)?.trip;
+  if (state.trips.get(tripId)?.loadError) return showToast('壊れた下書きは複製できません。元データを保管して修復してください。', true);
+  if (!confirmEditorLeave()) return;
+  const record = state.trips.get(tripId);
+  const source = record?.trip;
   if (!source) return;
   const duplicate = migrateTripToV2(source);
-  const suffix = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+  const suffix = crypto.randomUUID().slice(0, 8);
   duplicate.tripId = `${tripId.slice(0, 30)}-${suffix}`.slice(0, 40);
   duplicate.title = `${source.title} コピー`.slice(0, 120);
   duplicate.archived = false;
+
+  let duplicatePlanning = blankPlanning();
+  if (record.planning) {
+    const cloned = deepClone(record.planning);
+    cloned.candidates = (cloned.candidates || []).map((cand, i) => {
+      const newCand = cleanCandidate(cand, i);
+      newCand.id = `cand-${crypto.randomUUID()}`;
+      return newCand;
+    });
+    duplicatePlanning = reconcileAssignments(duplicate, cleanPlanning(cloned));
+  }
+
   state.activeTrip = duplicate;
+  state.activePlanning = duplicatePlanning;
+  state.lastDayPlanUndo = null;
+  if ($('undo-day-plan')) $('undo-day-plan').hidden = true;
   state.activeDayKey = Object.keys(duplicate.days)[0] || 'day1';
   renderEditor();
   showView('editor');
+  startEditorSession(false);
   showToast('旅行を複製しました。日付と旅行IDを確認して下書き保存してください。');
 }
 
 async function toggleTripArchive(tripId) {
+  if (state.tripWriteBusy || editorSession.saving) return showToast('保存が終わるまでお待ちください。', true);
   const record = state.trips.get(tripId);
   if (!record) return;
+  if (record.loadError) return showToast('壊れた下書きは保管状態を変更できません。元データを保管して修復してください。', true);
+  const errors = validateTripDraft(record.trip, record.planning || blankPlanning());
+  if (errors.length) return showToast(errors.join('\n'), true);
+  if (state.activeTrip?.tripId === tripId && hasUnsavedChanges()) return showToast('この旅行の未保存変更を先に保存してください。', true);
+  const generation = editorSession.generation;
   const trip = migrateTripToV2(record.trip);
+  const planning = cleanPlanning(record.planning || blankPlanning());
   trip.archived = !trip.archived;
+  state.tripWriteBusy = true;
+  updateSaveStatus();
   try {
-    await setDoc(doc(db, 'adminTrips', tripId), {
-      tripId,
-      title: trip.title,
-      status: state.publishedIds.has(tripId) ? 'published' : 'draft',
-      payloadJson: JSON.stringify(trip),
-      updatedAt: serverTimestamp(),
-      updatedBy: state.currentUser.uid
-    }, { merge: true });
-    state.trips.set(tripId, { ...record, trip });
+    const data = {
+      tripId, title: trip.title, status: state.publishedIds.has(tripId) ? 'published' : 'draft',
+      payloadJson: JSON.stringify(stripPlanningForPublication(trip)), planningJson: JSON.stringify(planning),
+      revision: crypto.randomUUID(), updatedAt: serverTimestamp(), updatedBy: state.currentUser.uid
+    };
+    const version = await commitTripRecord({ db, runTransaction, reference: doc(db, 'adminTrips', tripId),
+      expectedVersion: record.version ?? null, data });
+    state.trips.set(tripId, { trip, planning, version, source: 'cloud', updatedAt: new Date() });
+    if (state.activeTrip?.tripId === tripId && editorSession.generation === generation && !hasUnsavedChanges()) {
+      state.activeTrip = deepClone(trip);
+      state.activePlanning = deepClone(planning);
+      renderEditor();
+      startEditorSession(true, version);
+    }
     renderTripLibrary();
     showToast(trip.archived ? '思い出へアーカイブしました。' : '旅行一覧へ戻しました。');
   } catch (error) {
     showToast(`変更できません: ${error.message}`, true);
+  } finally {
+    state.tripWriteBusy = false;
+    updateSaveStatus();
   }
 }
 
@@ -1718,6 +2712,7 @@ async function toggleAdminProfile(profile) {
 }
 
 function bindEvents() {
+  $('admin-discussion-room').addEventListener('change', connectAdminDiscussion);
   $('admin-sign-in').addEventListener('click', async () => {
     setBusy($('admin-sign-in'), true, 'ログイン中…');
     try {
@@ -1728,15 +2723,18 @@ function bindEvents() {
       setBusy($('admin-sign-in'), false);
     }
   });
-  $('admin-sign-out').addEventListener('click', () => signOut(auth));
+  $('admin-sign-out').addEventListener('click', () => { if (confirmEditorLeave()) signOut(auth); });
   $('copy-admin-uid').addEventListener('click', () => copyText($('admin-uid').textContent, 'UIDをコピーしました。'));
-  document.querySelectorAll('[data-admin-view]').forEach(button => button.addEventListener('click', () => { showView(button.dataset.adminView); if (button.dataset.adminView === 'roles') loadAdminRoles(); }));
+  document.querySelectorAll('[data-admin-view]').forEach(button => button.addEventListener('click', () => { if (showView(button.dataset.adminView) === false) return; if (button.dataset.adminView === 'roles') loadAdminRoles(); }));
   $('save-role').addEventListener('click', saveAdminRole);
   $('overview-new-trip').addEventListener('click', () => openTripEditor());
   $('editor-day-select').addEventListener('change', event => {
     readTripBasics();
+    readDaySettings();
     state.activeDayKey = event.target.value;
-    $('editor-day-label').value = state.activeTrip.dayLabels[state.activeDayKey] || '';
+    $('editor-day-label').value = state.activeTrip.dayLabels?.[state.activeDayKey] || '';
+    $('editor-day-departure').value = state.activeTrip.daySettings?.[state.activeDayKey]?.departureTime || '';
+    $('editor-day-note').value = state.activeTrip.daySettings?.[state.activeDayKey]?.note || '';
     renderEditorCards();
   });
   $('editor-day-departure').addEventListener('input', readDaySettings);
@@ -1747,22 +2745,259 @@ function bindEvents() {
   $('add-day').addEventListener('click', addDay);
   $('apply-template').addEventListener('click', applyTripTemplate);
   $('add-card').addEventListener('click', () => openCardDialog(-1));
-  $('close-card-dialog').addEventListener('click', () => $('card-dialog').close());
+  $('undo-day-plan').addEventListener('click', undoLastDayPlan);
+  $('close-card-dialog').addEventListener('click', () => closeEditingDialog('card-dialog'));
   $('card-form').addEventListener('submit', saveCard);
   $('delete-card').addEventListener('click', deleteCard);
   $('move-card-up').addEventListener('click', () => moveCard(-1));
   $('move-card-down').addEventListener('click', () => moveCard(1));
+  $('open-move-day').addEventListener('click', () => openMoveDayDialog(Number($('card-index').value)));
+  $('open-cascade-adjust').addEventListener('click', () => openCascadeAdjustDialog(Number($('card-index').value)));
   $('save-draft').addEventListener('click', () => persistTrip(false));
+  $('reload-draft').addEventListener('click', reloadActiveDraft);
   $('publish-trip').addEventListener('click', () => persistTrip(true));
   $('preview-trip').addEventListener('click', showTripPreview);
   $('history-trip').addEventListener('click', showPublishHistory);
   $('close-preview').addEventListener('click', () => $('preview-dialog').close());
   $('close-history').addEventListener('click', () => $('history-dialog').close());
-  $('download-trip').addEventListener('click', downloadActiveTrip);
+  $('download-trip').addEventListener('click', () => downloadActiveTrip(false));
+  $('download-admin-backup').addEventListener('click', () => downloadActiveTrip(true));
   $('import-trip-file').addEventListener('change', event => importTrip(event.target.files?.[0]));
   $('create-distribution').addEventListener('click', createDistribution);
-  window.addEventListener('beforeunload', stopLiveListeners);
+
+  // Button Presets
+  document.querySelectorAll('[data-add-preset]').forEach(btn => {
+    btn.addEventListener('click', () => addPresetLink(btn.dataset.addPreset));
+  });
+
+  // Day Planner Move-Day Dialog events
+  $('close-move-day-dialog').addEventListener('click', () => $('move-day-dialog').close());
+  $('cancel-move-day').addEventListener('click', () => $('move-day-dialog').close());
+  $('move-day-form').addEventListener('submit', previewMoveDay);
+  $('move-day-target-select').addEventListener('change', updateMoveDayPositionOptions);
+
+  // Day Planner Cascade Time Adjustment Dialog events
+  $('close-cascade-dialog').addEventListener('click', () => $('cascade-adjust-dialog').close());
+  $('cancel-cascade').addEventListener('click', () => $('cascade-adjust-dialog').close());
+  $('cascade-adjust-form').addEventListener('submit', previewCascadeAdjust);
+
+  // Day Planner Comparison Dialog events
+  $('planner-compare-auto-adjust').addEventListener('click', autoAdjustAndReplan);
+  $('close-planner-compare').addEventListener('click', () => $('planner-compare-dialog').close());
+  $('cancel-planner-compare').addEventListener('click', () => $('planner-compare-dialog').close());
+  $('planner-compare-form').addEventListener('submit', confirmPlannerCompare);
+
+  // Candidate Shelf events
+  $('add-candidate').addEventListener('click', () => openCandidateDialog(''));
+  $('close-candidate-dialog').addEventListener('click', () => closeEditingDialog('candidate-dialog'));
+  $('candidate-form').addEventListener('submit', saveCandidate);
+  $('delete-candidate').addEventListener('click', () => deleteCandidate($('candidate-id').value));
+  $('reset-candidate-status').addEventListener('click', () => resetCandidateStatus($('candidate-id').value));
+  $('candidate-filter-status').addEventListener('change', event => {
+    state.candidateFilterStatus = event.target.value;
+    renderCandidateList();
+  });
+  $('candidate-filter-category').addEventListener('change', event => {
+    state.candidateFilterCategory = event.target.value;
+    renderCandidateList();
+  });
+  $('trip-planning-notes').addEventListener('input', readTripPlanning);
+  document.querySelectorAll('[data-set-duration]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $('candidate-duration').value = btn.dataset.setDuration;
+      $('candidate-duration').dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  });
+
+  // Candidate Adopt Dialog events
+  $('close-adopt-dialog').addEventListener('click', () => closeEditingDialog('candidate-adopt-dialog'));
+  $('cancel-adopt').addEventListener('click', () => closeEditingDialog('candidate-adopt-dialog'));
+  $('candidate-adopt-form').addEventListener('submit', confirmAdoptCandidate);
+  $('adopt-day-select').addEventListener('change', () => {
+    updateAdoptPositionOptions();
+    updateAdoptPreview();
+  });
+  $('adopt-position-select').addEventListener('change', updateAdoptPreview);
+  $('adopt-start-time').addEventListener('input', updateAdoptPreview);
+  $('adopt-duration-minutes').addEventListener('input', updateAdoptPreview);
+  $('adopt-travel-minutes').addEventListener('input', updateAdoptPreview);
+
+  document.addEventListener('input', handleEditorInput);
+  document.addEventListener('change', handleEditorInput);
+  document.addEventListener('click', event => {
+    if (event.target.closest?.('#view-editor, #card-dialog, #candidate-dialog, #candidate-adopt-dialog, #move-day-dialog, #cascade-adjust-dialog, #planner-compare-dialog')) queueMicrotask(updateSaveStatus);
+  });
+  for (const id of ['card-dialog', 'candidate-dialog', 'candidate-adopt-dialog', 'move-day-dialog', 'cascade-adjust-dialog', 'planner-compare-dialog']) {
+    $(id).addEventListener('cancel', event => {
+      if (state.dirtyDialogs.has(id) && !window.confirm('未反映の入力を破棄しますか？')) event.preventDefault();
+    });
+    $(id).addEventListener('close', () => { state.dirtyDialogs.delete(id); updateSaveStatus(); });
+  }
+  window.addEventListener('beforeunload', handleEditorUnload);
+  window.addEventListener('pagehide', stopLiveListeners);
 }
+
+async function executeAdminSuggestionChange(mode, { roomId, suggestionId, candidateId }) {
+  let ticket = null;
+  try {
+    if (state.tripWriteBusy || editorSession.saving) throw new Error('保存処理が実行中です。');
+    if (!state.currentUser || !editorSession.isOpenSession() || !state.activeTrip?.tripId) throw new Error('旅行が開かれていません。');
+    if (hasUnsavedChanges()) throw new Error('未保存の変更があります。先に下書き保存してください。');
+    const tripId = state.activeTrip.tripId;
+    let expectedCandidate;
+    if (mode === 'unadopt') {
+      expectedCandidate = state.activePlanning.candidates.find(c => c.id === candidateId);
+      if (!expectedCandidate) throw new Error('候補が見つかりません。');
+      expectedCandidate = structuredClone(expectedCandidate);
+      if (!window.confirm(`「${expectedCandidate.title}」を候補棚から削除し、採用を取り消しますか？候補のメモも削除されます。`)) return { ok: false, cancelled: true };
+    }
+    const inputRevision = state.editorInputRevision;
+    const uid = state.currentUser.uid;
+    ticket = editorSession.beginSave(state.activeTrip, state.activePlanning, { tripId });
+    state.tripWriteBusy = true;
+    updateSaveStatus();
+    const operation = mode === 'adopt' ? adoptSuggestionTransaction : unadoptSuggestionTransaction;
+    const result = await operation({
+      db, doc, runTransaction, adminTripRef: doc(db, 'adminTrips', tripId),
+      expectedVersion: ticket.expectedVersion, roomId,
+      roomRef: doc(db, 'rooms', roomId),
+      suggestionRef: doc(db, 'rooms', roomId, 'suggestions', suggestionId),
+      candidateId, confirmed: mode === 'unadopt', expectedCandidate
+    });
+    if (state.currentUser?.uid !== uid) {
+      editorSession.failSave(ticket);
+      return { ok: true, sessionSwitched: true };
+    }
+    // Keep the cloud cache coherent even when the active editor has changed.
+    state.trips.set(tripId, { trip: result.trip, planning: result.planning, version: result.newVersion, source: 'cloud', updatedAt: new Date() });
+    const sameSession = editorSession.generation === ticket.generation && state.activeTrip?.tripId === tripId;
+    if (sameSession) syncEditorInputs();
+    const completion = editorSession.finishExternalSave(ticket, result, state.activeTrip, state.activePlanning,
+      sameSession && inputRevision === state.editorInputRevision && state.dirtyDialogs.size === 0);
+    if (completion.applied) {
+      state.activeTrip = structuredClone(result.trip);
+      state.activePlanning = structuredClone(result.planning);
+      renderEditor();
+      showToast(mode === 'adopt' ? '候補棚に採用しました。旅程はまだ公開されません。' : '採用を取り消しました。');
+    } else if (completion.localEditsPreserved) {
+      showToast('サーバーの処理は完了しました。処理中の入力は保持しています。入力をバックアップしてから下書きを再読込してください。', true);
+    }
+    return { ok: true, result, ...completion };
+  } catch (error) {
+    if (ticket) editorSession.failSave(ticket);
+    showToast(error.message, true);
+    return { ok: false, error: error.message };
+  } finally {
+    if (ticket) {
+      state.tripWriteBusy = false;
+      updateSaveStatus();
+    }
+  }
+}
+
+export async function executeAdminAdoptSuggestion(args) {
+  return executeAdminSuggestionChange('adopt', args);
+}
+
+export async function executeAdminUnadoptSuggestion(args) {
+  return executeAdminSuggestionChange('unadopt', args);
+}
+
+export async function executeAdminChangeSuggestionStatus({ roomId, suggestionId, nextStatus }) {
+  if (state.tripWriteBusy || editorSession.saving || !state.currentUser || !state.activeTrip?.tripId) {
+    return { ok: false, error: '旅行を開き、処理の完了を待ってください。' };
+  }
+  const generation = editorSession.generation;
+  try {
+    state.tripWriteBusy = true;
+    const result = await changeSuggestionStatusTransaction({
+      db, doc, runTransaction, tripId: state.activeTrip.tripId, roomId,
+      suggestionRef: doc(db, 'rooms', roomId, 'suggestions', suggestionId),
+      roomRef: doc(db, 'rooms', roomId), nextStatus
+    });
+    if (generation !== editorSession.generation) return { ok: true, sessionSwitched: true };
+    showToast(nextStatus === 'declined' ? '提案を見送りにしました。' : '提案を検討中に戻しました。');
+    return { ok: true, result };
+  } catch (error) {
+    showToast(error.message, true);
+    return { ok: false, error: error.message };
+  } finally {
+    state.tripWriteBusy = false;
+    updateSaveStatus();
+  }
+}
+
+
+let adminDiscussionPanel = null;
+let adminDiscussionService = null;
+let adminDiscussionRoomStop = null;
+let adminDiscussionBinding = '';
+
+function stopAdminDiscussion(message = '') {
+  adminDiscussionBinding = '';
+  adminDiscussionRoomStop?.(); adminDiscussionRoomStop = null;
+  adminDiscussionPanel?.disconnect(message);
+  adminDiscussionService?.destroy(); adminDiscussionService = null;
+}
+function connectAdminDiscussion() {
+  const roomId = $('admin-discussion-room').value;
+  const distribution = state.distributions.find(d => (d.roomId || d.id) === roomId && d.tripId === state.activeTrip?.tripId && d.status === 'active');
+  if (!distribution || !state.currentUser || state.currentView !== 'editor') { stopAdminDiscussion(); return; }
+  const key = JSON.stringify([state.currentUser.uid, distribution.tripId, roomId]);
+  if (key === adminDiscussionBinding) { adminDiscussionPanel?.refresh(); return; }
+  stopAdminDiscussion();
+  adminDiscussionBinding = key;
+  adminDiscussionService = createSuggestionSyncService({
+    db, doc, collection, query, orderBy, limit, startAfter, documentId, FieldPath, deleteField, runTransaction,
+    getDocs: getDocsFromServer, onSnapshot, getAuthUid: () => auth.currentUser?.uid,
+    onState: ({ state: connection }) => { if (adminDiscussionBinding === key) adminDiscussionPanel?.onConnection(connection); }
+  });
+  const context = adminDiscussionService.setContext({ tripId: distribution.tripId, roomId, authUid: state.currentUser.uid });
+  adminDiscussionPanel.connect({ service: adminDiscussionService, context });
+  adminDiscussionPanel.setVisible(true);
+  const failed = message => {
+    if (adminDiscussionBinding !== key) return;
+    adminDiscussionPanel.disconnect(message);
+    adminDiscussionService?.destroy();
+    // Keep the refused binding until an explicit retry/selection change.
+  };
+  adminDiscussionRoomStop = onSnapshot(doc(db, 'rooms', roomId), { includeMetadataChanges: true }, snapshot => {
+    if (adminDiscussionBinding !== key) return;
+    if (snapshot.metadata.fromCache) return;
+    const room = snapshot.data();
+    if (!snapshot.exists() || room.status !== 'active' || room.tripId !== distribution.tripId) failed('この配布先の相談は停止されています。');
+  }, () => failed('配布先の確認に失敗しました。権限または通信状態を確認してください。'));
+}
+function refreshAdminDiscussionRooms() {
+  const select = $('admin-discussion-room');
+  if (!select) return;
+  if (!adminDiscussionPanel) adminDiscussionPanel = createDiscussionPanel($('admin-discussion'), {
+    role: 'admin',
+    getName: () => state.currentUser?.displayName || '管理者',
+    getCandidate: (suggestionId, roomId) => state.activePlanning?.candidates?.find(c => c.sourceSuggestion?.roomId === roomId && c.sourceSuggestion?.suggestionId === suggestionId),
+    onAdminAction: (action, args) => action === 'adopt' ? executeAdminAdoptSuggestion(args) :
+      action === 'unadopt' ? executeAdminUnadoptSuggestion(args) : executeAdminChangeSuggestionStatus(args),
+    onReconnect: () => { stopAdminDiscussion(); connectAdminDiscussion(); }
+  });
+  const previous = select.value;
+  const available = state.distributions.filter(d => d.tripId === state.activeTrip?.tripId && d.status === 'active');
+  select.replaceChildren();
+  const empty = document.createElement('option');
+  empty.value = ''; empty.textContent = available.length ? '配布先を選択' : 'この旅行の有効な配布先はありません';
+  select.append(empty);
+  for (const distribution of available) {
+    const option = document.createElement('option');
+    option.value = distribution.roomId || distribution.id; option.textContent = distribution.label || '名称未設定の配布先';
+    select.append(option);
+  }
+  select.value = available.some(d => (d.roomId || d.id) === previous) ? previous : available.length === 1 ? available[0].roomId || available[0].id : '';
+  if (state.currentView === 'editor') connectAdminDiscussion();
+  else stopAdminDiscussion();
+}
+
+window._executeAdminAdoptSuggestion = executeAdminAdoptSuggestion;
+window._executeAdminUnadoptSuggestion = executeAdminUnadoptSuggestion;
+window._executeAdminChangeSuggestionStatus = executeAdminChangeSuggestionStatus;
 
 bindEvents();
 onAuthStateChanged(auth, handleAuthState);

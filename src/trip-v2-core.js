@@ -1,3 +1,6 @@
+import { resolveMapFields } from './map-links.js';
+import { validateTripInput, validatePlanningInput, validateStoredDraftSize } from './draft-validation.js';
+
 export const SHIORI_SCHEMA_VERSION = 2;
 
 const DAY_KEY_PATTERN = /^day\d+$/;
@@ -92,7 +95,7 @@ function cleanLink(link) {
   return cleaned;
 }
 
-function cleanCard(card, dayKey, index) {
+export function cleanCard(card, dayKey = 'day1', index = 0) {
   const source = card && typeof card === 'object' && !Array.isArray(card) ? card : {};
   const cleaned = {};
   ['time', 'badge', 'title', 'desc', 'mapQuery', 'official', 'officialLabel', 'tabelog', 'jalan', 'image'].forEach(key => {
@@ -101,6 +104,10 @@ function cleanCard(card, dayKey, index) {
     if (value) cleaned[key] = value;
   });
   const existingId = string(source.cardId, 80);
+  delete cleaned.mapQuery;
+  const mapFields = resolveMapFields(source);
+  if (mapFields.mapQuery) cleaned.mapQuery = mapFields.mapQuery;
+  if (mapFields.mapUrl) cleaned.mapUrl = mapFields.mapUrl;
   cleaned.cardId = /^[a-z0-9][a-z0-9_-]{5,79}$/i.test(existingId)
     ? existingId
     : `${dayKey}-${String(index + 1).padStart(2, '0')}-${stableHash(`${dayKey}|${cleaned.time}|${cleaned.title}`)}`;
@@ -124,6 +131,7 @@ function cleanCard(card, dayKey, index) {
     if (buffer != null) constraints.arrivalBufferMinutes = buffer;
     if (Object.keys(constraints).length) cleaned.constraints = constraints;
   }
+  if (source.timeLocked === true) cleaned.timeLocked = true;
   return cleaned;
 }
 
@@ -178,4 +186,106 @@ export function migrateTripToV2(raw, fallbackId = '') {
     trip.dayLabels.day1 = 'DAY 1';
   }
   return trip;
+}
+
+export const PLANNING_SCHEMA_VERSION = 3;
+
+const VALID_CATEGORIES = new Set(['gourmet', 'sightseeing', 'hotel', 'transport', 'other']);
+const VALID_PRIORITIES = new Set(['high', 'normal', 'low']);
+const VALID_STATUSES = new Set(['draft', 'assigned']);
+
+export function cleanCandidate(source, index = 0) {
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
+  const title = string(source.title, 120);
+  if (!title) return null;
+  const existingId = string(source.id || source.candidateId, 80);
+  const id = /^[a-z0-9][a-z0-9_-]{3,79}$/i.test(existingId)
+    ? existingId
+    : `cand-${globalThis.crypto.randomUUID()}`;
+
+  const category = VALID_CATEGORIES.has(source.category) ? source.category : 'sightseeing';
+  const priority = VALID_PRIORITIES.has(source.priority) ? source.priority : 'normal';
+  const status = VALID_STATUSES.has(source.status) ? source.status : 'draft';
+  const durationMinutes = integer(source.durationMinutes, 0, 1440) ?? 60;
+  const { mapQuery, mapUrl } = resolveMapFields(source);
+  const official = cleanUrl(source.official);
+  const officialLabel = string(source.officialLabel, 40);
+  const tabelog = cleanUrl(source.tabelog);
+  const jalan = cleanUrl(source.jalan);
+  const notes = string(source.notes, 2000);
+  const assignedDay = string(source.assignedDay, 20);
+  const assignedCardId = string(source.assignedCardId, 80);
+  const createdAt = string(source.createdAt, 40) || new Date().toISOString();
+  const updatedAt = string(source.updatedAt, 40) || createdAt;
+
+  const cleaned = {
+    id,
+    title,
+    category,
+    priority,
+    durationMinutes,
+    status,
+    createdAt,
+    updatedAt
+  };
+
+  if (mapQuery) cleaned.mapQuery = mapQuery;
+  if (mapUrl) cleaned.mapUrl = mapUrl;
+  if (official) cleaned.official = official;
+  if (officialLabel) cleaned.officialLabel = officialLabel;
+  if (tabelog) cleaned.tabelog = tabelog;
+  if (jalan) cleaned.jalan = jalan;
+  if (notes) cleaned.notes = notes;
+  if (status === 'assigned' || assignedCardId) {
+    if (assignedDay) cleaned.assignedDay = assignedDay;
+    if (assignedCardId) cleaned.assignedCardId = assignedCardId;
+    if (source.placementUndo && typeof source.placementUndo === 'object' && !Array.isArray(source.placementUndo)) cleaned.placementUndo = copy(source.placementUndo);
+  }
+  if (source.sourceSuggestion && typeof source.sourceSuggestion === 'object' && !Array.isArray(source.sourceSuggestion)) {
+    const roomId = string(source.sourceSuggestion.roomId, 160);
+    const suggestionId = string(source.sourceSuggestion.suggestionId, 80);
+    const adoptedAt = string(source.sourceSuggestion.adoptedAt, 40) || new Date().toISOString();
+    if (roomId && suggestionId) {
+      cleaned.sourceSuggestion = { roomId, suggestionId, adoptedAt };
+    }
+  }
+
+  return cleaned;
+}
+
+export function cleanPlanning(raw) {
+  const source = copy(raw) || {};
+  const candidates = Array.isArray(source.candidates)
+    ? source.candidates.map((item, index) => cleanCandidate(item, index)).filter(Boolean)
+    : [];
+  return {
+    schemaVersion: PLANNING_SCHEMA_VERSION,
+    candidates,
+    notes: string(source.notes, 5000),
+    lastSavedAt: string(source.lastSavedAt, 40) || new Date().toISOString()
+  };
+}
+
+export function stripPlanningForPublication(trip) {
+  const clean = migrateTripToV2(trip);
+  delete clean.planning;
+  delete clean.candidates;
+  delete clean.planningJson;
+  return clean;
+}
+
+export function validateTripDraft(trip, planning) {
+  const errors = [...validateTripInput(trip), ...validatePlanningInput(planning)];
+  if (errors.length) return errors;
+  try {
+    errors.push(...validateStoredDraftSize({
+      payloadJson: JSON.stringify(stripPlanningForPublication(trip)),
+      planningJson: JSON.stringify(cleanPlanning(planning))
+    }));
+    // Also reject oversized raw input before normalization removes legacy fields.
+    errors.push(...validateStoredDraftSize({ payloadJson: JSON.stringify(trip), planningJson: JSON.stringify(planning) }));
+  } catch {
+    errors.push('下書きデータをJSONへ変換できません。');
+  }
+  return [...new Set(errors)];
 }

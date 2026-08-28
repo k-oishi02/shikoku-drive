@@ -10,7 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="stylesheet" href="src/admin.css">
-    <link rel="stylesheet" href="src/admin-v2.css?v=204">
+    <link rel="stylesheet" href="src/admin-v2.css?v=300">
+    <link rel="stylesheet" href="src/discussion.css">
 </head>
 <body>
     <section id="admin-auth" class="auth-shell" aria-labelledby="auth-title">
@@ -78,15 +79,18 @@
                         <div class="button-group">
                             <label class="button ghost" for="import-trip-file">JSON読込</label>
                             <input id="import-trip-file" type="file" accept="application/json,.json" hidden>
-                            <button id="download-trip" class="button ghost" type="button">JSON書出</button>
+                            <button id="download-trip" class="button ghost" type="button">参加者用JSON</button>
+                            <button id="download-admin-backup" class="button ghost" type="button" title="管理者専用・非公開メモを含むため共有注意">管理者バックアップ</button>
                             <button id="preview-trip" class="button ghost" type="button">スマホ確認</button>
                             <button id="history-trip" class="button ghost" type="button">公開履歴</button>
                             <button id="save-draft" class="button" type="button">下書き保存</button>
+                            <button id="reload-draft" class="button ghost" type="button">最新の下書き</button>
                             <button id="publish-trip" class="button primary" type="button">参加者へ公開</button>
                         </div>
                     </div>
 
                     <div id="editor-errors" class="error-panel" role="alert" hidden></div>
+                    <p id="editor-save-status" class="field-help" role="status" aria-live="polite"></p>
                     <section id="trip-audit" class="v2-audit" aria-live="polite"></section>
                     <div class="editor-grid">
                         <section class="panel basics-panel">
@@ -114,13 +118,38 @@
                             </div>
                         </section>
 
+                        <section class="panel candidate-panel">
+                            <div class="panel-title responsive-title">
+                                <div><span>02</span><h3>候補スポット</h3></div>
+                                <div class="day-actions">
+                                    <button id="add-candidate" class="button primary compact" type="button">＋ 候補を追加</button>
+                                </div>
+                            </div>
+                            <div class="candidate-filter-bar">
+                                <label>状態<select id="candidate-filter-status"><option value="all">すべての候補</option><option value="draft">未配置のみ</option><option value="assigned">日程追加済み</option></select></label>
+                                <label>分類<select id="candidate-filter-category"><option value="all">すべての分類</option><option value="sightseeing">観光 (SPOT)</option><option value="gourmet">食事 (GOURMET)</option><option value="hotel">宿泊 (HOTEL)</option><option value="transport">交通 (TRANSPORT)</option><option value="other">その他 (OTHER)</option></select></label>
+                            </div>
+                            <div class="form-grid candidate-notes-field">
+                                <label class="span-2">企画・相談メモ（非公開）<textarea id="trip-planning-notes" rows="2" maxlength="2000" placeholder="旅行全体の相談メモや検討事項（参加者には公開されません）"></textarea></label>
+                            </div>
+                            <div id="editor-candidate-list" class="editor-candidate-list" aria-live="polite"></div>
+                        </section>
+
+                        <section class="panel admin-talk-panel" aria-label="参加者の相談">
+                            <div class="panel-title"><span>TALK</span><h3>参加者の相談</h3></div>
+                            <label class="admin-talk-selector">相談する配布先<select id="admin-discussion-room"><option value="">配布先を選択</option></select></label>
+                            <p class="field-help">同じ旅行でも配布先ごとに相談は別です。非公開の企画メモはここには表示しません。</p>
+                            <div id="admin-discussion"></div>
+                        </section>
+
                         <section class="panel itinerary-panel">
                             <div class="panel-title responsive-title">
-                                <div><span>02</span><h3>日程とカード</h3></div>
+                                <div><span>03</span><h3>日程とカード</h3></div>
                                 <div class="day-actions">
                                     <select id="editor-day-select" aria-label="編集する日"></select>
                                     <button id="add-day" class="button compact" type="button">＋ DAY</button>
                                     <button id="add-card" class="button primary compact" type="button">＋ カード</button>
+                                    <button id="undo-day-plan" class="button compact ghost" type="button" hidden>↩ 直前の変更を取り消す</button>
                                 </div>
                             </div>
                             <div class="form-grid day-label-field">
@@ -170,6 +199,89 @@
         </div>
     </div>
 
+    <dialog id="candidate-dialog" class="card-dialog">
+        <form id="candidate-form" method="dialog">
+            <div class="dialog-heading">
+                <div><p class="eyebrow">CANDIDATE SPOT</p><h2 id="candidate-dialog-title">候補を追加</h2></div>
+                <button id="close-candidate-dialog" class="icon-button" type="button" aria-label="閉じる">×</button>
+            </div>
+            <input id="candidate-id" type="hidden">
+            <div class="form-grid card-form-grid">
+                <label class="span-2">場所名・スポット名<input id="candidate-title" maxlength="120" placeholder="例: 道後温泉本館 / 讃岐うどん" required></label>
+                <label>分類<select id="candidate-category">
+                    <option value="sightseeing">観光 (SPOT)</option>
+                    <option value="gourmet">食事 (GOURMET)</option>
+                    <option value="hotel">宿泊 (HOTEL)</option>
+                    <option value="transport">交通 (TRANSPORT)</option>
+                    <option value="other">その他 (OTHER)</option>
+                </select></label>
+                <label>優先度<select id="candidate-priority">
+                    <option value="high">行きたい（優先）</option>
+                    <option value="normal" selected>できれば（標準）</option>
+                    <option value="low">時間があれば（控えめ）</option>
+                </select></label>
+                <label class="span-2">想定滞在時間（分）
+                    <div class="duration-input-group">
+                        <input id="candidate-duration" type="number" min="0" max="1440" step="5" value="60" placeholder="60">
+                        <div class="quick-duration-buttons">
+                            <button type="button" class="button compact ghost" data-set-duration="15">15分</button>
+                            <button type="button" class="button compact ghost" data-set-duration="30">30分</button>
+                            <button type="button" class="button compact ghost" data-set-duration="60">60分</button>
+                            <button type="button" class="button compact ghost" data-set-duration="90">90分</button>
+                            <button type="button" class="button compact ghost" data-set-duration="120">120分</button>
+                        </div>
+                    </div>
+                </label>
+                <label class="span-2">地図の検索語・住所<input id="candidate-map-query" maxlength="300" placeholder="空欄ならスポット名で検索"></label>
+                <label class="span-2">Google Maps共有URL（任意）<input id="candidate-map-url" type="url" maxlength="2048" placeholder="https://maps.app.goo.gl/..."></label>
+                <p class="field-help span-2">共有URLはそのまま開きます。経路は検索語・住所（空欄ならスポット名）で検索します。所要時間は地図で確認してください。</p>
+                <label>公式URL<input id="candidate-official" type="url" maxlength="2000" placeholder="https://..."></label>
+                <label>公式ボタン名<input id="candidate-official-label" maxlength="40" placeholder="公式サイト"></label>
+                <label>食べログURL<input id="candidate-tabelog" type="url" maxlength="2000" placeholder="https://tabelog.com/..."></label>
+                <label>じゃらんURL<input id="candidate-jalan" type="url" maxlength="2000" placeholder="https://www.jalan.net/..."></label>
+                <label class="span-2">相談用メモ（非公開）<textarea id="candidate-notes" rows="3" maxlength="2000" placeholder="定休日、混雑時間、同行者からの要望など（参加者には公開されません）"></textarea></label>
+            </div>
+            <div class="dialog-actions">
+                <div>
+                    <button id="delete-candidate" class="button danger" type="button" hidden>削除</button>
+                    <button id="reset-candidate-status" class="button compact ghost" type="button" hidden>日程への追加を取り消す</button>
+                </div>
+                <button id="save-candidate" class="button primary" type="submit">候補を保存</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="candidate-adopt-dialog" class="card-dialog">
+        <form id="candidate-adopt-form" method="dialog">
+            <div class="dialog-heading">
+                <div><p class="eyebrow">ADOPT TO ITINERARY</p><h2 id="adopt-dialog-title">候補を日程に入れる</h2></div>
+                <button id="close-adopt-dialog" class="icon-button" type="button" aria-label="閉じる">×</button>
+            </div>
+            <input id="adopt-candidate-id" type="hidden">
+            <div id="adopt-candidate-summary" class="adopt-target-summary"></div>
+            <div class="form-grid card-form-grid">
+                <label>組み込み先の日<select id="adopt-day-select"></select></label>
+                <label>挿入位置<select id="adopt-position-select"></select></label>
+                <label class="span-2">前の場所からの移動時間（分）
+                    <input id="adopt-travel-minutes" type="number" min="0" max="1440" value="0">
+                    <p class="field-help">※ 移動時間は Google Maps で確認して入力してください。</p>
+                    <div class="adopt-maps-actions">
+                        <a id="adopt-maps-route-link" class="button compact ghost" target="_blank" rel="noopener noreferrer" href="#">Google Mapsで前後の経路を確認 ↗</a>
+                    </div>
+                </label>
+                <label>開始時刻<input id="adopt-start-time" type="time" required></label>
+                <label>滞在時間（分）<input id="adopt-duration-minutes" type="number" min="1" max="1440" value="60" required></label>
+                <label class="span-2">終了時刻（自動算出）<input id="adopt-end-time" type="time" readonly></label>
+                <label class="span-2">参加者向け説明（公開用）<textarea id="adopt-card-desc" rows="3" maxlength="240" required placeholder="参加者しおりに掲載する説明文（相談用メモとは別に入力）"></textarea></label>
+            </div>
+            <div id="adopt-preview" class="adopt-preview-box" role="status" aria-live="polite"></div>
+            <div class="dialog-actions">
+                <button id="cancel-adopt" class="button ghost" type="button">キャンセル</button>
+                <button id="confirm-adopt" class="button primary" type="submit">この内容で日程に追加</button>
+            </div>
+        </form>
+    </dialog>
+
     <dialog id="card-dialog" class="card-dialog">
         <form id="card-form" method="dialog">
             <div class="dialog-heading">
@@ -182,12 +294,24 @@
                 <label>バッジ<input id="card-badge" maxlength="30" placeholder="GOURMET"></label>
                 <label class="span-2">タイトル<input id="card-title" maxlength="120" required></label>
                 <label class="span-2">説明<textarea id="card-desc" rows="4" maxlength="240" required></textarea></label>
-                <label class="span-2">Google Maps検索語（空欄ならMAP非表示）<input id="card-map-query" maxlength="300"></label>
+                <label class="span-2">地図の検索語・住所<input id="card-map-query" maxlength="300"></label>
+                <label class="span-2">Google Maps共有URL<input id="card-map-url" type="url" maxlength="2048"></label>
+                <p class="field-help span-2">両方空欄ならMAPを表示しません。共有URLがあればGoogle Mapsでその場所を開きます。</p>
                 <label>公式URL<input id="card-official" type="url" maxlength="2000"></label>
                 <label>公式ボタン名<input id="card-official-label" maxlength="40"></label>
                 <label>食べログURL<input id="card-tabelog" type="url" maxlength="2000"></label>
                 <label>じゃらんURL<input id="card-jalan" type="url" maxlength="2000"></label>
                 <label>画像ファイル名<input id="card-image" maxlength="100" placeholder="example.png"></label>
+                <div class="preset-buttons-group span-2">
+                    <span class="muted small">アプリ・経路ボタンのプリセット追加:</span>
+                    <div class="preset-chips">
+                        <button type="button" class="button compact ghost" data-add-preset="route">🚗 Maps経路</button>
+                        <button type="button" class="button compact ghost" data-add-preset="ana">✈️ ANA</button>
+                        <button type="button" class="button compact ghost" data-add-preset="toyota">🚙 トヨタレンタカー</button>
+                        <button type="button" class="button compact ghost" data-add-preset="jalan">🏨 じゃらん</button>
+                        <button type="button" class="button compact ghost" data-add-preset="hello-cycling">🚲 HELLO CYCLING</button>
+                    </div>
+                </div>
                 <label class="span-2">追加リンク（名前 | Web | Android | iPhone | アイコン）<textarea id="card-links" rows="5" maxlength="12000" placeholder="ルート | https://www.google.com/maps/dir/...
 ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
                 <p class="v2-section-label">TRAVEL & CHECK</p>
@@ -207,6 +331,9 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
                 <label class="span-2">予約確認URL<input id="card-reservation-url" type="url" maxlength="2000"></label>
                 <label class="span-2">予約メモ<textarea id="card-reservation-note" rows="2" maxlength="240"></textarea></label>
                 <div class="check-field span-2">
+                    <label><input id="card-time-locked" type="checkbox"> 🔒 固定予定（timeLocked: 自動時刻調整で変更しない）</label>
+                </div>
+                <div class="check-field span-2">
                     <label><input id="card-expense" type="checkbox"> ADD COSTボタンを表示</label>
                 </div>
             </div>
@@ -215,8 +342,72 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
                     <button id="delete-card" class="button danger" type="button">削除</button>
                     <button id="move-card-up" class="button compact" type="button">↑ 上へ</button>
                     <button id="move-card-down" class="button compact" type="button">↓ 下へ</button>
+                    <button id="open-move-day" class="button compact ghost" type="button">別日へ移動</button>
+                    <button id="open-cascade-adjust" class="button compact ghost" type="button">後続時刻を調整</button>
                 </div>
                 <button id="save-card" class="button primary" type="submit">カードを保存</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="move-day-dialog" class="card-dialog">
+        <form id="move-day-form" method="dialog">
+            <div class="dialog-heading">
+                <div><p class="eyebrow">MOVE TO ANOTHER DAY</p><h2>カードを別日へ移動</h2></div>
+                <button id="close-move-day-dialog" class="icon-button" type="button" aria-label="閉じる">×</button>
+            </div>
+            <input id="move-day-card-index" type="hidden">
+            <div id="move-day-card-summary" class="adopt-target-summary"></div>
+            <div class="form-grid card-form-grid">
+                <label>移動先の日<select id="move-day-target-select"></select></label>
+                <label>挿入位置<select id="move-day-position-select"></select></label>
+                <label class="span-2">前の場所からの移動時間（分）
+                    <input id="move-day-travel-minutes" type="number" min="0" max="1440" value="0">
+                </label>
+                <label>移動先での開始時刻<input id="move-day-start-time" type="time" required></label>
+                <label>滞在時間（分）<input id="move-day-duration-minutes" type="number" min="1" max="1440" value="60" required></label>
+                <label class="span-2 inline-checkbox"><input id="move-day-allow-locked" type="checkbox"><span>固定予定（timeLocked）の日時変更を許可する</span></label>
+            </div>
+            <div class="dialog-actions">
+                <button id="cancel-move-day" class="button ghost" type="button">キャンセル</button>
+                <button id="preview-move-day" class="button primary" type="submit">移動案を確認</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="cascade-adjust-dialog" class="card-dialog">
+        <form id="cascade-adjust-form" method="dialog">
+            <div class="dialog-heading">
+                <div><p class="eyebrow">CASCADE TIME ADJUSTMENT</p><h2>後続の時刻を自動調整</h2></div>
+                <button id="close-cascade-dialog" class="icon-button" type="button" aria-label="閉じる">×</button>
+            </div>
+            <input id="cascade-card-index" type="hidden">
+            <div id="cascade-card-summary" class="adopt-target-summary"></div>
+            <div class="form-grid card-form-grid">
+                <label>新しい開始時刻<input id="cascade-start-time" type="time" required></label>
+                <label>新しい滞在時間（分）<input id="cascade-duration-minutes" type="number" min="1" max="1440" required></label>
+                <p class="field-help span-2">※ 🔒固定予定（timeLocked）に到達した場合は時刻を動かさず停止します。</p>
+            </div>
+            <div class="dialog-actions">
+                <button id="cancel-cascade" class="button ghost" type="button">キャンセル</button>
+                <button id="preview-cascade" class="button primary" type="submit">調整案を確認</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="planner-compare-dialog" class="card-dialog">
+        <form id="planner-compare-form" method="dialog">
+            <div class="dialog-heading">
+                <div><p class="eyebrow">SCHEDULE PLANNER</p><h2 id="planner-compare-title">日程変更の確認</h2></div>
+                <button id="close-planner-compare" class="icon-button" type="button" aria-label="閉じる">×</button>
+            </div>
+            <div id="planner-compare-summary" class="adopt-target-summary"></div>
+            <div id="planner-compare-diff" class="planner-diff-list" aria-live="polite"></div>
+            <div id="planner-compare-alerts" class="adopt-preview-box" role="status" aria-live="polite"></div>
+            <div class="dialog-actions">
+                <button id="planner-compare-auto-adjust" class="button compact ghost" type="button" hidden>⚡ 時刻を自動調整して解決</button>
+                <button id="cancel-planner-compare" class="button ghost" type="button">キャンセル</button>
+                <button id="confirm-planner-compare" class="button primary" type="submit">変更を適用</button>
             </div>
         </form>
     </dialog>
@@ -230,6 +421,6 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
         <div id="history-content" class="v2-dialog-body"></div>
     </dialog>
     <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="src/admin.js?v=204"></script>
+    <script type="module" src="src/admin.js?v=300"></script>
 </body>
 </html>

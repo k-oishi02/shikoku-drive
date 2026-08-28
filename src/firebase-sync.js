@@ -1,3 +1,4 @@
+
 import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
 import {
     getAuth,
@@ -12,11 +13,21 @@ import {
     serverTimestamp,
     setDoc,
     updateDoc,
+    runTransaction,
+    query,
+    orderBy,
+    limit,
+    startAfter,
+    documentId,
+    FieldPath,
+    deleteField,
+    getDocsFromServer,
     initializeFirestore,
     getFirestore,
     persistentLocalCache,
     persistentMultipleTabManager
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { createSuggestionSyncService } from './suggestion-sync.js';
 
 const firebaseConfig = {
     apiKey: 'AIzaSyCOh5MtRbplm-46FETshOQAGHqyQ4fD4tA',
@@ -31,6 +42,7 @@ const firebaseConfig = {
 let EXPENSE_KEY = 'shiori-expenses-local-v2';
 const pendingActions = [];
 let syncContext = null;
+let suggestionSyncService = null;
 let unsubscribeRoom = null;
 let unsubscribeExpenses = null;
 let unsubscribeParticipants = null;
@@ -187,7 +199,6 @@ function expenseForCurrentRoom(expense) {
     return { ...payload, creatorUid: cleaned.creatorUid || syncContext?.uid || '' };
 }
 
-
 function validExpenseForSync(expense) {
     return Boolean(
         expense &&
@@ -254,6 +265,7 @@ async function flushPendingActions(tripId, ledgerToken) {
     }
     pendingActions.push(...retry);
 }
+
 window.addEventListener('shiori-expense-action', event => {
     const tripId = String(window.currentTripId || '');
     if (!tripId) return;
@@ -355,13 +367,18 @@ export async function fetchManagedTripConfig(tripId, access) {
 export async function initSyncEngine(tripId) {
     const currentRunId = ++syncRunId;
     syncContext = null;
+    if (suggestionSyncService) {
+        suggestionSyncService.destroy();
+        suggestionSyncService = null;
+    }
+    window.suggestionSyncService = null;
     window.expensePayerAliases = {};
     publishLedgerAccess();
     if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
     if (unsubscribeExpenses) { unsubscribeExpenses(); unsubscribeExpenses = null; }
     if (unsubscribeParticipants) { unsubscribeParticipants(); unsubscribeParticipants = null; }
     if (participantHeartbeat) { window.clearInterval(participantHeartbeat); participantHeartbeat = null; }
-try {
+    try {
         const roomParameters = ensureRoomParameters(tripId);
         if (!roomParameters) {
             setIdentityControlLocked(false);
@@ -566,7 +583,16 @@ try {
                     setSyncUi('error', '台帳の送信に失敗しました', '通信状態を確認してください。入力内容はこの端末に残っています。');
                 });
             }
-        }, () => {
+        }, error => {
+            if (currentRunId !== syncRunId) return;
+            if (suggestionSyncService) {
+                suggestionSyncService.destroy();
+                suggestionSyncService = null;
+            }
+            window.suggestionSyncService = null;
+            window.dispatchEvent(new CustomEvent('shiori-suggestions-state', { detail: {
+                state: /permission-denied|unauthenticated/.test(String(error?.code)) ? 'revoked' : 'offline'
+            } }));
             window.expensePayerAliases = {};
             publishLedgerAccess();
             setIdentityControlLocked(false);
@@ -580,43 +606,88 @@ try {
                 .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
             emitRemoteExpenses(expenses);
         }, () => {
+            if (currentRunId !== syncRunId) return;
             window.expensePayerAliases = {};
             publishLedgerAccess();
             setIdentityControlLocked(false);
             setSyncUi('error', '台帳を同期できません', '通信状態、または登録リンクの有効期限を確認してください。端末内の入力は残っています。');
         });
 
+        if (!suggestionSyncService) {
+            suggestionSyncService = createSuggestionSyncService({
+                db,
+                collection,
+                doc,
+                query,
+                orderBy,
+                limit,
+                startAfter,
+                documentId,
+                FieldPath,
+                deleteField,
+                getDocs: getDocsFromServer,
+                getAuthUid: () => auth.currentUser?.uid,
+                onState: detail => window.dispatchEvent(new CustomEvent('shiori-suggestions-state', { detail })),
+                onSnapshot,
+                getDoc,
+                setDoc,
+                updateDoc,
+                deleteDoc,
+                runTransaction,
+                serverTimestamp
+            });
+        }
+        suggestionSyncService.setContext({
+            tripId,
+            roomId,
+            authUid: uid
+        });
+        window.suggestionSyncService = suggestionSyncService;
+        window.dispatchEvent(new CustomEvent('shiori-suggestions-ready'));
+
         if (currentRunId !== syncRunId) return;
         await flushPendingActions(tripId, ledgerToken);
     } catch (error) {
         if (currentRunId !== syncRunId) return;
+        if (suggestionSyncService) {
+            suggestionSyncService.destroy();
+            suggestionSyncService = null;
+        }
+        window.suggestionSyncService = null;
         window.expensePayerAliases = {};
         publishLedgerAccess();
         const code = String(error?.code || '');
         if (code.includes('auth/operation-not-allowed')) {
             setSyncUi('error', '共有機能を利用できません', '管理者へ連絡してください。端末内では引き続き記録できます。');
-        } else if (code.includes('permission-denied') || code.includes('not-found')) {
-            setSyncUi('error', '配布IDが無効です', '配布が停止された可能性があります。管理者から新しい配布IDを受け取ってください。');
+        } else if (code.includes('permission-denied')) {
+            setIdentityControlLocked(false);
+            setSyncUi('error', '配布ルームが停止されました', '管理者から新しい登録リンクを受け取ってください。');
         } else {
-            setSyncUi('error', '共有同期を開始できません', '通信状態を確認してください。端末内の入力は残っています。');
+            setIdentityControlLocked(false);
+            setSyncUi('error', '台帳を同期できません', '通信状態を確認してください。端末内の入力は残っています。');
         }
-        setIdentityControlLocked(false);
     }
 }
 
 export function stopSyncEngine() {
-    syncRunId += 1;
+    syncRunId++;
     syncContext = null;
-    window.expensePayerAliases = {};
-    publishLedgerAccess();
     pendingActions.splice(0, pendingActions.length);
     if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
     if (unsubscribeExpenses) { unsubscribeExpenses(); unsubscribeExpenses = null; }
     if (unsubscribeParticipants) { unsubscribeParticipants(); unsubscribeParticipants = null; }
     if (participantHeartbeat) { window.clearInterval(participantHeartbeat); participantHeartbeat = null; }
+    if (suggestionSyncService) {
+        suggestionSyncService.destroy();
+        suggestionSyncService = null;
+    }
+    window.suggestionSyncService = null;
+    window.expensePayerAliases = {};
+    publishLedgerAccess();
+    setIdentityControlLocked(false);
 }
 
-export async function getDbInstance() {
+async function getDbInstance() {
     try {
         let app;
         if (getApps().length === 0) {
