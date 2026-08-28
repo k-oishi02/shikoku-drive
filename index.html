@@ -76,7 +76,11 @@
         }
 
         /* Collapsible weather */
-        .weather-disclosure { margin: 24px 0; border: 1px solid var(--border-line); background: #202020; }
+        .weather-disclosure { margin: 12px 0; border: 1px solid var(--border-line); background: #202020; border-radius: 12px; overflow: hidden; }
+        .weather-disclosure > summary { gap: 12px; }
+        #weather-summary { font-size: .75rem; letter-spacing: 0; line-height: 1.6; text-align: right; }
+        .weather-tabs { flex-wrap: wrap; }
+        .weather-header { flex-wrap: wrap; gap: 12px; }
         .weather-disclosure > summary {
             min-height: 48px; padding: 0 18px; cursor: pointer; list-style: none;
             display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -632,7 +636,7 @@
             </div>
             <!-- Weather details -->
             <details class="weather-disclosure">
-                <summary><span>WEATHER</span><span>FORECAST</span></summary>
+                <summary><span>WEATHER</span><span id="weather-summary" aria-live="polite">天気を取得中…</span></summary>
             <div class="weather-card">
                 <div class="weather-header">
                     <span class="weather-title">WEATHER CHECK</span>
@@ -666,7 +670,8 @@
                         <div id="w-cond" class="w-detail-val">--</div>
                     </div>
                 </div>
-                <p class="weather-note">※Open-Meteoから自動更新します。</p>
+                <p class="weather-note">旅行日の予報です。30分ごと・画面復帰時に再取得します（Open-Meteo）。</p>
+                <button type="button" class="j-btn" onclick="refreshWeather()" aria-label="天気を再取得">↻ 更新</button>
 
                 <div class="weather-footer">
                     <span class="weather-status">
@@ -1259,6 +1264,11 @@
         }
 
         function buildShioriUI(data) {
+            weatherRequestId++;
+            if (weatherAbort) weatherAbort.abort();
+            const weatherPanel = document.querySelector('.weather-disclosure');
+            const itineraryNav = document.getElementById('nav-bar');
+            if (weatherPanel && itineraryNav) itineraryNav.before(weatherPanel);
             weatherCache = {};
             activeWeatherKey = '';
             // 1. Hero visual
@@ -1283,6 +1293,7 @@
                 ? Object.keys(data.weatherLocations).filter(isValidDataKey)[0]
                 : null;
             if (firstWeatherKey) updateWeather(firstWeatherKey, wNav.querySelector('.w-tab'));
+            if (weatherPanel) weatherPanel.hidden = !firstWeatherKey;
             // 3. Tab headers (nav-bar)
             const navBar = document.getElementById('nav-bar');
             let tabHeadersHtml = '';
@@ -1493,6 +1504,12 @@
         let weatherCache = {};
         let weatherRefreshInterval = null;
         let activeWeatherKey = '';
+        let weatherRequestId = 0;
+        let weatherAbort = null;
+        window.addEventListener('online', () => refreshWeather());
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') refreshWeather();
+        });
 
         function updateWeather(locKey, btnEl) {
             if (!isValidDataKey(locKey) || !currentTripData?.weatherLocations) return;
@@ -1525,6 +1542,14 @@
         }
 
         function fetchWeather(locKey, latitude, longitude, targetDate) {
+            const requestId = ++weatherRequestId;
+            const trip = currentTripData;
+            if (weatherAbort) weatherAbort.abort();
+            weatherAbort = new AbortController();
+            const controller = weatherAbort;
+            const isCurrent = () => requestId === weatherRequestId && trip === currentTripData && activeWeatherKey === locKey;
+            const updatedEl = document.getElementById('w-updated');
+            if (updatedEl) updatedEl.textContent = '更新中…';
             const lat = Number(latitude);
             const lon = Number(longitude);
             if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
@@ -1544,28 +1569,35 @@
                 timezone: 'Asia/Tokyo',
                 forecast_days: '16'
             });
-            fetch(`https://api.open-meteo.com/v1/forecast?${query}`, { cache: 'no-store' })
+            const timeout = window.setTimeout(() => controller.abort(), 12000);
+            return fetch(`https://api.open-meteo.com/v1/forecast?${query}`, { cache: 'no-store', signal: controller.signal })
                 .then(response => {
                     if (!response.ok) throw new Error(`Weather request failed: ${response.status}`);
                     return response.json();
                 })
                 .then(data => {
+                    if (!isCurrent()) return;
                     const wData = parseWeatherData(data, targetDate);
                     weatherCache[locKey] = { timestamp: Date.now(), data: wData };
                     if (activeWeatherKey === locKey) renderWeather(wData);
                 })
                 .catch(() => {
-                    if (activeWeatherKey !== locKey) return;
+                    if (!isCurrent()) return;
+                    const previous = weatherCache[locKey]?.data;
+                    if (previous) {
+                        renderWeather({ ...previous, updated: `${previous.updated}取得分・更新失敗（再試行できます）` });
+                        return;
+                    }
                     renderWeather({
                         temp: '—',
                         range: '予報を取得できません',
                         pop: '—',
-                        cond: 'オフライン',
+                        cond: '取得失敗',
                         icon: '⚠️',
                         sunset: '—',
-                        updated: 'オフライン（接続時に自動再取得）'
+                        updated: '通信状態を確認し「更新」を押してください'
                     });
-                });
+                }).finally(() => window.clearTimeout(timeout));
         }
         function parseWeatherData(apiData, targetDate) {
             const dates = Array.isArray(apiData?.daily?.time) ? apiData.daily.time : [];
@@ -1587,13 +1619,14 @@
             const tempMin = apiData.daily.temperature_2m_min[index];
             const weatherCode = apiData.daily.weather_code?.[index] ?? apiData.daily.weathercode?.[index];
             const sunsetValue = apiData.daily.sunset?.[index];
-            const pop = apiData.daily.precipitation_probability_max[index];
+            const pop = apiData.daily.precipitation_probability_max?.[index];
             const { cond, icon } = getWeatherCondition(weatherCode);
 
             return {
+                forecastDate: dates[index],
                 temp: `${Math.round(tempMax)}°C`,
                 range: `${Math.round(tempMin)}°C / ${Math.round(tempMax)}°C`,
-                pop: `${Math.round(pop ?? 0)}%`,
+                pop: Number.isFinite(pop) ? `${Math.round(pop)}%` : '—',
                 cond,
                 icon,
                 sunset: sunsetValue ? String(sunsetValue).slice(11, 16) : '—',
@@ -1615,6 +1648,9 @@
         }
 
         function renderWeather(w) {
+            const summary = document.getElementById('weather-summary');
+            const location = currentTripData?.weatherLocations?.[activeWeatherKey];
+            if (summary) summary.textContent = `${location?.label || ''} ${w.forecastDate ? w.forecastDate.slice(5).replace('-', '/') : ''} · ${w.unavailable ? w.range : `${w.cond} ${w.temp} / 雨 ${w.pop}`}`;
             const wTemp = document.getElementById('w-temp');
             const wRange = document.getElementById('w-range');
             const wPop = document.getElementById('w-pop');
