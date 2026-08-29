@@ -1,55 +1,4 @@
-/* SHIORI v3.1 — quiet travel editorial system */
-@font-face {
-  font-family: "Libre Franklin";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url("../fonts/libre-franklin-latin-400-600.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-:root {
-  --sh-bg: #f3f2ed;
-  --sh-surface: #fffefa;
-  --sh-surface-soft: #e9eeeb;
-  --sh-ink: #242a28;
-  --sh-muted: #69716d;
-  --sh-line: #d8ddd9;
-  --sh-accent: #356b68;
-  --sh-accent-strong: #275552;
-  --sh-accent-soft: #dce9e5;
-  --sh-on-accent: #ffffff;
-  --sh-danger: #a94e46;
-  --sh-danger-soft: #fff1ef;
-  --sh-radius-sm: 10px;
-  --sh-radius: 16px;
-  --sh-radius-lg: 24px;
-  --sh-shadow: 0 18px 50px rgba(35, 51, 47, .08);
-  --sh-font: "Libre Franklin", -apple-system, BlinkMacSystemFont, "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
-  --sh-serif: var(--sh-font);
-}
-
-html { color-scheme: light; }
-html[data-trip-theme="light"] {
-  color-scheme: light;
-  --sh-bg: #f3f2ed; --sh-surface: #fffefa; --sh-surface-soft: #e9eeeb;
-  --sh-ink: #242a28; --sh-muted: #5d6662; --sh-line: #cfd6d2;
-  --sh-accent: #356b68; --sh-accent-strong: #275552; --sh-accent-soft: #dce9e5;
-  --sh-on-accent: #ffffff; --sh-danger: #98433d; --sh-danger-soft: #fff1ef;
-  --bg-body: var(--sh-bg); --bg-card: var(--sh-surface);
-  --border-line: var(--sh-line); --border-highlight: var(--sh-ink);
-  --text-main: var(--sh-ink); --text-sub: var(--sh-muted);
-}
-html[data-trip-theme="dark"] {
-  color-scheme: dark;
-  --sh-bg: #171c1b; --sh-surface: #202725; --sh-surface-soft: #293330;
-  --sh-ink: #f1f0eb; --sh-muted: #b8bfbb; --sh-line: #46534f;
-  --sh-accent: #9cc6be; --sh-accent-strong: #315f5b; --sh-accent-soft: #2d4540;
-  --sh-on-accent: #17312e; --sh-danger: #f0a39b; --sh-danger-soft: #432b2a;
-  --sh-shadow: 0 20px 54px rgba(0,0,0,.22);
-  --bg-body: var(--sh-bg); --bg-card: var(--sh-surface);
-  --border-line: var(--sh-line); --border-highlight: var(--sh-ink);
-  --text-main: var(--sh-ink); --text-sub: var(--sh-muted);
-}
+/* SHIORI v3.1 component layer. Shared tokens live in theme-v31.css. */
 body {
   background: var(--sh-bg) !important;
   color: var(--sh-ink) !important;
@@ -331,13 +280,6 @@ input, select, textarea {
 }
 
 /* TALK follows the same quiet system. These are the actual discussion.css hooks. */
-html[data-trip-theme] .talk,
-body:has(#admin-app) .talk,
-body:has(#admin-auth) .talk {
-  --talk-bg: var(--sh-bg); --talk-card: var(--sh-surface); --talk-line: var(--sh-line);
-  --talk-text: var(--sh-ink); --talk-muted: var(--sh-muted);
-  --talk-accent: var(--sh-accent); --talk-ink: var(--sh-on-accent);
-}
 .talk-header, .talk-card, .talk-dialog, .talk-compose, .talk-comment {
   border-color: var(--sh-line) !important;
   box-shadow: none !important;
@@ -345,12 +287,6 @@ body:has(#admin-auth) .talk {
 .talk-button.talk-primary { color: var(--sh-on-accent) !important; }
 
 /* Admin: a calm editing studio */
-html:has(#admin-app), html:has(#admin-auth) {
-  color-scheme: light;
-  --bg: var(--sh-bg); --panel: var(--sh-surface); --panel-2: var(--sh-surface-soft);
-  --line: var(--sh-line); --muted: var(--sh-muted); --text: var(--sh-ink);
-  --accent: var(--sh-accent); --danger: var(--sh-danger);
-}
 body:has(#admin-app), body:has(#admin-auth) { background: var(--sh-bg) !important; }
 .auth-shell { background: var(--sh-bg) !important; }
 .auth-card { background: var(--sh-surface) !important; border: 1px solid var(--sh-line) !important; border-radius: var(--sh-radius-lg) !important; box-shadow: var(--sh-shadow) !important; }
@@ -487,28 +423,6 @@ body:has(#admin-app), body:has(#admin-auth) { background: var(--sh-bg) !importan
 }
 
 @media (prefers-color-scheme: dark) {
-  html:not([data-trip-theme]):not(:has(#admin-app)):not(:has(#admin-auth)),
-  html:has(#admin-app), html:has(#admin-auth) {
-    color-scheme: dark;
-    --sh-bg: #171c1b;
-    --sh-surface: #202725;
-    --sh-surface-soft: #293330;
-    --sh-ink: #f1f0eb;
-    --sh-muted: #b8bfbb;
-    --sh-line: #46534f;
-    --sh-accent: #9cc6be;
-    --sh-accent-strong: #315f5b;
-    --sh-accent-soft: #2d4540;
-    --sh-on-accent: #17312e;
-    --sh-danger: #f0a39b;
-    --sh-danger-soft: #432b2a;
-    --sh-shadow: 0 20px 54px rgba(0,0,0,.22);
-  }
-  html:has(#admin-app), html:has(#admin-auth) {
-    --bg: var(--sh-bg); --panel: var(--sh-surface); --panel-2: var(--sh-surface-soft);
-    --line: var(--sh-line); --muted: var(--sh-muted); --text: var(--sh-ink);
-    --accent: var(--sh-accent); --danger: var(--sh-danger);
-  }
   html:not([data-trip-theme]) body:not(:has(#admin-app)):not(:has(#admin-auth)) .j-nav-sticky,
   html[data-trip-theme="dark"] .j-nav-sticky { background: rgba(23,28,27,.92) !important; }
   html:not([data-trip-theme]) body:not(:has(#admin-app)):not(:has(#admin-auth)) .portal-card::before,
