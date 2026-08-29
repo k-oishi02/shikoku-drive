@@ -82,7 +82,6 @@ let currentContext = null;
       destroy();
       setState('revoked');
     } else if (subscriptionError || /unavailable|deadline-exceeded|network-request-failed/.test(String(error?.code))) {
-      clearViews();
       setState('offline');
     }
   }
@@ -145,10 +144,10 @@ let currentContext = null;
       const active = () => isContextActive(context) && subscriptions.get(key) === item;
       item.unsub = onSnapshot(q, { includeMetadataChanges: true }, snapshot => {
         if (!active()) return;
-        if (snapshot.metadata?.fromCache) { clearViews(); setState('offline'); return; }
+        const fromCache = Boolean(snapshot.metadata?.fromCache);
         const page = pageResult(context, suggestionId, snapshot, pageSize, options.newestFirst === true);
-        setState('live');
-        onUpdate?.(page.items, { cursor: page.cursor, hasMore: page.hasMore });
+        setState(fromCache ? 'offline' : 'live');
+        onUpdate?.(page.items, { cursor: page.cursor, hasMore: page.hasMore, fromCache });
       }, error => {
         if (!active()) return;
         handleError(context, error, true);

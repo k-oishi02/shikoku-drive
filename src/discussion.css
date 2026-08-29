@@ -11,6 +11,7 @@ body:has(#tab-talk.active) #now-mode { display: none; }
 .talk-connection { margin: 0; font-size: .73rem; color: var(--talk-muted); }
 .talk-connection::before { display: inline-block; content: ''; width: .4rem; height: .4rem; border-radius: 50%; background: #adad96; margin-right: .5rem; }
 .talk-connection[data-state="live"]::before { background: #95bb7a; }
+.talk-connection[data-state="offline"]::before { background: #e0a96d; }
 .talk-notice, .talk-error { font-size: .8rem; line-height: 1.7; overflow-wrap: anywhere; white-space: pre-line; }
 .talk-notice:not(:empty) { margin: .8rem 0; border-left: 2px solid var(--talk-accent); padding: .6rem .8rem; background: var(--talk-card); }
 .talk-error { color: #ffa998; }

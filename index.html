@@ -1735,6 +1735,8 @@
         let pwaReloading = false;
         let pwaUpdateRequested = false;
         let pwaHadController = Boolean(navigator.serviceWorker?.controller);
+        const PWA_UPDATE_THROTTLE_MS = 30 * 60 * 1000; // 1,800,000 ms (30 minutes)
+        let lastPwaUpdateCheckTime = 0;
 
         function showPwaUpdate(worker) {
             newWorkerWaiting = worker;
@@ -1765,7 +1767,19 @@
                     });
                 });
 
+                lastPwaUpdateCheckTime = Date.now();
                 registration.update().catch(() => {});
+
+                const checkThrottledUpdate = () => {
+                    if (document.visibilityState !== 'visible') return;
+                    const now = Date.now();
+                    if (now - lastPwaUpdateCheckTime < PWA_UPDATE_THROTTLE_MS) return;
+                    lastPwaUpdateCheckTime = now;
+                    registration.update().catch(() => {});
+                };
+
+                document.addEventListener('visibilitychange', checkThrottledUpdate);
+                window.addEventListener('focus', checkThrottledUpdate);
             }).catch(error => console.warn('Service worker registration failed', error));
         }
 

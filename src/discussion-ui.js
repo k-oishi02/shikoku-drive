@@ -1,7 +1,8 @@
 import { mapHref } from './map-links.js';
 
 const STATUS = { open: '相談中', adopted: '候補に追加済み', declined: '見送り', withdrawn: '取下げ済み' };
-const CONNECTION = { connecting: '接続を確認しています…', live: 'みんなと共有中', offline: 'オフライン · 入力はこの端末に保持', revoked: 'この相談へのアクセスは停止されました', stopped: '配布先へ接続すると相談できます' };
+const CONNECTION = { connecting: '接続を確認しています…', live: 'みんなと共有中', offline: 'オフライン（最終取得時点の内容）', revoked: 'この相談へのアクセスは停止されました', stopped: '配布先へ接続すると相談できます' };
+const OFFLINE_NOTICE = '※ オフライン表示中：候補への追加状況などは最新でない場合があります。';
 const validId = value => typeof value === 'string' && /^[a-z0-9][a-z0-9_-]{3,79}$/i.test(value);
 const freshId = prefix => prefix + '-' + crypto.randomUUID();
 const sameScope = (a, b) => !!a && !!b && ['tripId', 'roomId', 'authUid', 'generation'].every(k => a[k] === b[k]);
@@ -73,21 +74,55 @@ export function createDiscussionPanel(root, options = {}) {
   function renderControls() {
     ui.connection.textContent = CONNECTION[connection] || CONNECTION.stopped;
     ui.connection.dataset.state = connection;
-    for (const button of [ui.new, ui.more, ui.submit, ui['comments-more']]) button.disabled = !ready() || busy;
-    ui.more.hidden = !hasMore; ui['comments-more'].hidden = !commentsMore;
-    ui.retry.hidden = connection === 'live' || connection === 'connecting'; ui.retry.disabled = busy;
-    ui['comment-submit'].disabled = !ready() || busy || selected?.status === 'withdrawn';
-    root.querySelectorAll('[data-talk-action]').forEach(node => node.disabled = !ready() || busy);
+
+    if (connection === 'offline') {
+      if (!ui.notice.textContent || ui.notice.textContent === OFFLINE_NOTICE) {
+        ui.notice.textContent = OFFLINE_NOTICE;
+        ui.notice.dataset.offlineNotice = 'true';
+      }
+    } else if (ui.notice.dataset.offlineNotice === 'true' || ui.notice.textContent === OFFLINE_NOTICE) {
+      ui.notice.textContent = '';
+      delete ui.notice.dataset.offlineNotice;
+    }
+
+    const isLive = ready();
+    const offlineTitle = reason => isLive ? '' : (connection === 'offline' ? reason : '');
+
+    ui.new.disabled = !isLive || busy;
+    ui.new.title = offlineTitle('オフライン中は提案できません');
+
+    ui.submit.disabled = !isLive || busy;
+    ui.submit.title = offlineTitle(editing ? 'オフライン中は編集できません' : 'オフライン中は提案できません');
+
+    for (const button of [ui.more, ui['comments-more']]) button.disabled = !isLive || busy;
+    ui.more.hidden = !hasMore;
+    ui['comments-more'].hidden = !commentsMore;
+    ui.retry.hidden = connection === 'live' || connection === 'connecting';
+    ui.retry.disabled = busy;
+
+    ui['comment-submit'].disabled = !isLive || busy || selected?.status === 'withdrawn';
+    ui['comment-submit'].title = isLive
+      ? (selected?.status === 'withdrawn' ? '取下げ済みの提案にはコメントできません' : '')
+      : (selected?.status === 'withdrawn' ? '取下げ済みの提案にはコメントできません' : (connection === 'offline' ? 'オフライン中はコメントを送信できません' : ''));
+
+    root.querySelectorAll('[data-talk-action="write"]').forEach(node => {
+      node.disabled = !isLive || busy;
+    });
+    root.querySelectorAll('[data-talk-action="read"]').forEach(node => {
+      node.disabled = !context || busy || !active(generation);
+    });
   }
   function setBusy(value) {
     busy = value;
     for (const form of [ui.form, ui['comment-form']]) form.querySelectorAll('input,textarea,button').forEach(node => node.disabled = value);
     renderControls();
   }
-  function action(label, fn, className = '') {
+  function action(label, fn, className = '', isWrite = true) {
     const button = el('button', 'talk-button ' + className, label);
-    button.type = 'button'; button.dataset.talkAction = '';
-    button.addEventListener('click', fn); return button;
+    button.type = 'button';
+    button.dataset.talkAction = isWrite ? 'write' : 'read';
+    button.addEventListener('click', fn);
+    return button;
   }
   function replaceItem(item) {
     if (!item?.id) return;
@@ -125,8 +160,8 @@ export function createDiscussionPanel(root, options = {}) {
     ui.list.replaceChildren();
     if (!shown.length) {
       const empty = el('div', 'talk-empty');
-      empty.append(el('span', 'talk-empty-mark', '＋'), el('h3', '', ready() ? '最初の「行きたい」を。' : '相談を準備しています'),
-        el('p', '', ready() ? (items.length ? 'この条件の提案はありません。' : '食べたいもの、見たい景色。ひとつから始めましょう。') : CONNECTION[connection]));
+      empty.append(el('span', 'talk-empty-mark', '＋'), el('h3', '', (ready() || connection === 'offline') ? '最初の「行きたい」を。' : '相談を準備しています'),
+        el('p', '', (ready() || connection === 'offline') ? (items.length ? 'この条件の提案はありません。' : '食べたいもの、見たい景色。ひとつから始めましょう。') : CONNECTION[connection]));
       ui.list.append(empty);
     }
     for (const item of shown) {
@@ -143,27 +178,55 @@ export function createDiscussionPanel(root, options = {}) {
       const liked = Object.hasOwn(item.likes || {}, context?.authUid || '');
       if (item.status !== 'withdrawn' || liked) {
         const heart = action((liked ? '♥ ' : '♡ ') + '行きたい ' + Object.keys(item.likes || {}).length,
-          () => perform(() => service.setSuggestionReaction(context, item.id, { desired: !liked, name: name() }), replaceItem));
-        heart.setAttribute('aria-pressed', String(liked)); actions.append(heart);
+          () => perform(() => service.setSuggestionReaction(context, item.id, { desired: !liked, name: name() }), replaceItem),
+          'talk-reaction',
+          true
+        );
+        heart.setAttribute('aria-pressed', String(liked));
+        heart.title = ready() ? '' : (connection === 'offline' ? 'オフライン中はリアクションできません' : '');
+        actions.append(heart);
       }
-      actions.append(action('コメント', () => openThread(item))); card.append(actions);
+      actions.append(action('コメント', () => openThread(item), '', false));
+      card.append(actions);
       const details = el('details', 'talk-details'); details.append(el('summary', '', 'メンバー・操作'));
       const likedNames = Object.values(item.likes || {}).map(like => like.name).filter(Boolean);
       details.append(el('p', 'talk-help', likedNames.length ? '行きたい：' + likedNames.join('・') : 'まだリアクションはありません。'));
       const extras = el('div', 'talk-actions');
       if (item.creatorUid === context?.authUid) {
-        if (item.status === 'open') extras.append(action('編集', () => openComposer(item)));
-        if (item.status !== 'withdrawn') extras.append(action('提案を取り下げる', () => {
-          if (window.confirm('この提案を取り下げますか？採用済みの候補や旅程は自動では削除されません。'))
-            perform(() => service.withdrawSuggestion(context, item.id), replaceItem);
-        }, 'talk-danger'));
+        if (item.status === 'open') {
+          const editBtn = action('編集', () => openComposer(item), '', true);
+          editBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は編集できません' : '');
+          extras.append(editBtn);
+        }
+        if (item.status !== 'withdrawn') {
+          const withdrawBtn = action('提案を取り下げる', () => {
+            if (window.confirm('この提案を取り下げますか？採用済みの候補や旅程は自動では削除されません。'))
+              perform(() => service.withdrawSuggestion(context, item.id), replaceItem);
+          }, 'talk-danger', true);
+          withdrawBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は取下げできません' : '');
+          extras.append(withdrawBtn);
+        }
       }
       if (admin) {
         const moderation = el('div', 'talk-actions talk-moderation');
         const candidate = options.getCandidate?.(item.id, context?.roomId);
-        if (item.status === 'open') moderation.append(action('候補棚に追加', () => adminAction('adopt', item), 'talk-primary'), action('見送り', () => adminAction('declined', item)));
-        if (item.status === 'declined') moderation.append(action('再検討する', () => adminAction('open', item)));
-        if (candidate && ['adopted', 'withdrawn'].includes(item.status)) moderation.append(action('採用を取り消す', () => adminAction('unadopt', item, candidate), 'talk-danger'));
+        if (item.status === 'open') {
+          const adoptBtn = action('候補棚に追加', () => adminAction('adopt', item), 'talk-primary', true);
+          adoptBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は操作できません' : '');
+          const declineBtn = action('見送り', () => adminAction('declined', item), '', true);
+          declineBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は操作できません' : '');
+          moderation.append(adoptBtn, declineBtn);
+        }
+        if (item.status === 'declined') {
+          const reopenBtn = action('再検討する', () => adminAction('open', item), '', true);
+          reopenBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は操作できません' : '');
+          moderation.append(reopenBtn);
+        }
+        if (candidate && ['adopted', 'withdrawn'].includes(item.status)) {
+          const unadoptBtn = action('採用を取り消す', () => adminAction('unadopt', item, candidate), 'talk-danger', true);
+          unadoptBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は操作できません' : '');
+          moderation.append(unadoptBtn);
+        }
         if (moderation.childNodes.length) card.append(moderation);
       }
       if (extras.childNodes.length) details.append(extras);
@@ -214,21 +277,25 @@ export function createDiscussionPanel(root, options = {}) {
   }
   function renderComments() {
     ui.comments.replaceChildren();
-    if (!comments.length) ui.comments.append(el('p', 'talk-empty', ready() ? 'まだコメントはありません。' : '接続を確認しています…'));
+    if (!comments.length) ui.comments.append(el('p', 'talk-empty', (ready() || connection === 'offline') ? 'まだコメントはありません。' : '接続を確認しています…'));
     for (const comment of comments) {
       const row = el('article', 'talk-comment'); row.dataset.commentId = comment.id;
       row.append(el('strong', '', comment.creatorName), el('p', '', comment.text));
-      if (comment.creatorUid === context?.authUid) row.append(action('削除', () => {
-        if (window.confirm('このコメントを削除しますか？')) perform(() => service.deleteSuggestionComment(context, selected.id, comment.id), () => {
-          comments = comments.filter(x => x.id !== comment.id); renderComments();
-        }, ui['comment-error']);
-      }, 'talk-quiet talk-danger'));
+      if (comment.creatorUid === context?.authUid) {
+        const deleteBtn = action('削除', () => {
+          if (window.confirm('このコメントを削除しますか？')) perform(() => service.deleteSuggestionComment(context, selected.id, comment.id), () => {
+            comments = comments.filter(x => x.id !== comment.id); renderComments();
+          }, ui['comment-error']);
+        }, 'talk-quiet talk-danger', true);
+        deleteBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は削除できません' : '');
+        row.append(deleteBtn);
+      }
       ui.comments.append(row);
     }
     renderControls();
   }
   function openThread(item) {
-    if (!ready() || busy) return;
+    if (!context || !service || !active(generation) || busy) return;
     stopThread(); selected = item; ui['thread-title'].textContent = item.title; ui['comment-error'].textContent = '';
     const text = drafts.comments?.[item.id]?.text;
     ui['comment-form'].elements.namedItem('text').value = typeof text === 'string' ? text : '';
@@ -306,8 +373,10 @@ export function createDiscussionPanel(root, options = {}) {
   }
   function onConnection(value) {
     connection = value;
-    if (['offline', 'revoked', 'stopped'].includes(value)) {
+    if (['revoked', 'stopped'].includes(value)) {
       headVersion++; commentVersion++; items = []; comments = []; cursor = null; commentCursor = null; hasMore = false; commentsMore = false;
+      renderList(); renderComments();
+    } else if (value === 'offline' || value === 'live') {
       renderList(); renderComments();
     }
     renderControls();

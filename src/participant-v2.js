@@ -237,6 +237,29 @@ function handleDiscussionState(event) {
   if (!discussionPanel) return;
   discussionPanel.onConnection(event.detail?.state || 'stopped');
 }
+function handleDiscussionOnline() {
+  reconnectDiscussionIfNeeded();
+}
+function handleDiscussionVisibility() {
+  if (document.visibilityState === 'visible') reconnectDiscussionIfNeeded();
+}
+function reconnectDiscussionIfNeeded() {
+  if (!activeTrip?.tripId) return;
+  const expectedTripId = activeTrip.tripId;
+  const current = window.suggestionSyncService?.getCurrentContext?.();
+  if (current?.tripId === expectedTripId) {
+    refreshParticipantDiscussion();
+    return;
+  }
+  const initialize = window._initSyncEngine;
+  if (typeof initialize !== 'function') {
+    refreshParticipantDiscussion();
+    return;
+  }
+  Promise.resolve(initialize(expectedTripId)).finally(() => {
+    if (activeTrip?.tripId === expectedTripId) refreshParticipantDiscussion();
+  });
+}
 function activateDiscussion() {
   if (!discussionPanel) discussionPanel = createDiscussionPanel(document.getElementById('participant-discussion'), {
     getName: () => safeStorage.get('user_nickname', '参加者'),
@@ -245,9 +268,13 @@ function activateDiscussion() {
   window.removeEventListener('shiori-suggestions-ready', refreshParticipantDiscussion);
   window.removeEventListener('shiori-tab-changed', refreshParticipantDiscussion);
   window.removeEventListener('shiori-suggestions-state', handleDiscussionState);
+  window.removeEventListener('online', handleDiscussionOnline);
+  document.removeEventListener('visibilitychange', handleDiscussionVisibility);
   window.addEventListener('shiori-suggestions-ready', refreshParticipantDiscussion);
   window.addEventListener('shiori-tab-changed', refreshParticipantDiscussion);
   window.addEventListener('shiori-suggestions-state', handleDiscussionState);
+  window.addEventListener('online', handleDiscussionOnline);
+  document.addEventListener('visibilitychange', handleDiscussionVisibility);
   refreshParticipantDiscussion();
 }
 
@@ -281,6 +308,8 @@ export function deactivateParticipantV2() {
   window.removeEventListener('shiori-suggestions-ready', refreshParticipantDiscussion);
   window.removeEventListener('shiori-tab-changed', refreshParticipantDiscussion);
   window.removeEventListener('shiori-suggestions-state', handleDiscussionState);
+  window.removeEventListener('online', handleDiscussionOnline);
+  document.removeEventListener('visibilitychange', handleDiscussionVisibility);
   discussionPanel?.destroy();
   discussionPanel = null;
   if (nowTimer) clearInterval(nowTimer);
