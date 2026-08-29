@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shiori-pwa-v302';
+const CACHE_NAME = 'shiori-pwa-v310';
 const APP_SHELL = [
   './',
   './index.html',
@@ -9,6 +9,9 @@ const APP_SHELL = [
   './src/suggestion-validation.js',
   './src/discussion-ui.js',
   './src/discussion.css',
+  './src/design-v31.css',
+  './fonts/libre-franklin-latin-400-600.woff2',
+  './fonts/libre-franklin-OFL.txt',
   './src/participant-v2.css',
   './src/participant-v2.js',
   './src/trip-v2-core.js',

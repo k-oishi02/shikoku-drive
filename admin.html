@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#111111">
+    <meta name="theme-color" content="#20312f">
     <title>SHIORI STUDIO — 管理者</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="stylesheet" href="src/admin.css">
     <link rel="stylesheet" href="src/admin-v2.css?v=300">
     <link rel="stylesheet" href="src/discussion.css">
+    <link rel="stylesheet" href="src/design-v31.css?v=310">
 </head>
 <body>
     <section id="admin-auth" class="auth-shell" aria-labelledby="auth-title">
         <div class="auth-card">
-            <p class="eyebrow">SHIORI MANAGEMENT SYSTEM</p>
-            <h1 id="auth-title">ADMIN<br>STUDIO</h1>
+            <p class="eyebrow">しおり編集室</p>
+            <h1 id="auth-title">SHIORI<br>STUDIO</h1>
             <p class="auth-copy">旅程を作り、公開し、同行者へ安全に配布する管理者専用ページです。</p>
             <div id="auth-state" class="auth-state" role="status">管理者アカウントを確認しています…</div>
             <button id="admin-sign-in" class="button primary wide" type="button" hidden>GOOGLEでログイン</button>
@@ -36,7 +34,7 @@
         <header class="topbar">
             <a class="brand" href="admin.html" aria-label="管理者トップ">
                 <span class="brand-mark">S</span>
-                <span><b>SHIORI</b><small>ADMIN STUDIO</small></span>
+                <span><b>SHIORI</b><small>しおり編集室</small></span>
             </a>
             <div class="topbar-actions">
                 <a class="button ghost compact" href="./" target="_blank" rel="noopener noreferrer">参加者ページ ↗</a>
@@ -47,7 +45,7 @@
 
         <div class="admin-layout">
             <aside class="sidebar" aria-label="管理メニュー">
-                <p class="sidebar-label">WORKSPACE</p>
+                <p class="sidebar-label">編集メニュー</p>
                 <button class="nav-item active" type="button" data-admin-view="overview"><span>01</span>概要</button>
                 <button class="nav-item" type="button" data-admin-view="editor"><span>02</span>しおり編集</button>
                 <button class="nav-item" type="button" data-admin-view="distribution"><span>03</span>配布先管理</button>
@@ -61,21 +59,21 @@
             <main class="workspace">
                 <section id="view-overview" class="admin-view" data-view="overview">
                     <div class="view-heading">
-                        <div><p class="eyebrow">CONTROL CENTER</p><h2>旅行を管理</h2></div>
+                        <div><p class="eyebrow">旅行一覧</p><h2>旅行を管理</h2></div>
                         <button id="overview-new-trip" class="button primary" type="button">＋ 新しい旅行</button>
                     </div>
                     <div class="metric-grid" aria-label="管理状況">
-                        <article><span>TRIPS</span><strong id="metric-trips">0</strong><small>登録された旅行</small></article>
-                        <article><span>PUBLISHED</span><strong id="metric-published">0</strong><small>公開中</small></article>
-                        <article><span>DISTRIBUTIONS</span><strong id="metric-distributions">0</strong><small>有効な配布先</small></article>
+                        <article><span>旅行</span><strong id="metric-trips">0</strong><small>登録された旅行</small></article>
+                        <article><span>公開中</span><strong id="metric-published">0</strong><small>参加者へ公開中</small></article>
+                        <article><span>配布先</span><strong id="metric-distributions">0</strong><small>有効な配布先</small></article>
                     </div>
-                    <div class="section-heading"><h3>TRIP LIBRARY</h3><span id="overview-updated">—</span></div>
+                    <div class="section-heading"><h3>しおり一覧</h3><span id="overview-updated">—</span></div>
                     <div id="admin-trip-list" class="trip-grid" aria-live="polite"></div>
                 </section>
 
                 <section id="view-editor" class="admin-view" data-view="editor" hidden>
                     <div class="view-heading editor-heading">
-                        <div><p class="eyebrow">ITINERARY BUILDER</p><h2>しおり・旅程を編集</h2></div>
+                        <div><p class="eyebrow">旅程を組み立てる</p><h2>しおり・旅程を編集</h2></div>
                         <div class="button-group">
                             <label class="button ghost" for="import-trip-file">JSON読込</label>
                             <input id="import-trip-file" type="file" accept="application/json,.json" hidden>
@@ -102,7 +100,7 @@
                                 <label>キャッチコピー<input id="trip-catchphrase" autocomplete="off" maxlength="200"></label>
                                 <label>開始日<input id="trip-start-date" type="date"></label>
                                 <label>終了日<input id="trip-end-date" type="date"></label>
-                                <p class="v2-section-label">DESIGN & FEATURES</p>
+                                <p class="v2-section-label">表示と機能</p>
                                 <label>表示テーマ<select id="trip-theme-mode"><option value="auto">端末に合わせる</option><option value="dark">ダーク</option><option value="light">ライト</option></select></label>
                                 <label>アクセント色<input id="trip-theme-accent" type="color" value="#f4d35e"></label>
                                 <label class="checkbox"><input id="trip-archived" type="checkbox"> 思い出へアーカイブ</label>
@@ -112,7 +110,7 @@
                                     <label><input id="feature-notifications" type="checkbox"> 端末内通知</label>
                                 </div>
                                 <p class="field-help span-2">表紙は標準デザイン、通貨は日本円、時刻は日本時間で固定されます。通知はしおりを開いている間だけ動作します。</p>
-                                <p class="v2-section-label">TEMPLATE</p>
+                                <p class="v2-section-label">持ち物テンプレート</p>
                                 <label>旅行テンプレート<select id="trip-template"><option value="domestic">国内旅行</option><option value="drive">ドライブ旅行</option><option value="rail">鉄道旅行</option></select></label>
                                 <button id="apply-template" class="button ghost" type="button">持ち物テンプレートを適用</button>
                             </div>
@@ -136,7 +134,7 @@
                         </section>
 
                         <section class="panel admin-talk-panel" aria-label="参加者の相談">
-                            <div class="panel-title"><span>TALK</span><h3>参加者の相談</h3></div>
+                            <div class="panel-title"><span>相談</span><h3>参加者の相談</h3></div>
                             <label class="admin-talk-selector">相談する配布先<select id="admin-discussion-room"><option value="">配布先を選択</option></select></label>
                             <p class="field-help">同じ旅行でも配布先ごとに相談は別です。非公開の企画メモはここには表示しません。</p>
                             <div id="admin-discussion"></div>
@@ -164,7 +162,7 @@
 
                 <section id="view-distribution" class="admin-view" data-view="distribution" hidden>
                     <div class="view-heading">
-                        <div><p class="eyebrow">DELIVERY CONTROL</p><h2>配布先・参加者を管理</h2></div>
+                        <div><p class="eyebrow">参加者へ届ける</p><h2>配布先・参加者を管理</h2></div>
                     </div>
                     <section class="panel distribution-create">
                         <div class="panel-title"><span>01</span><h3>新しい配布先</h3></div>

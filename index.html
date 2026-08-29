@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#242424">
+    <meta name="theme-color" content="#356b68">
     <title>SHIORI — 旅行しおり</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Montserrat:wght@400;700;900&amp;family=Shippori+Gothic:wght@700;800&amp;display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
     <link rel="stylesheet" href="src/participant-v2.css?v=300">
     <link rel="stylesheet" href="src/enhancements.css">
     <link rel="stylesheet" href="src/discussion.css">
+    <link rel="stylesheet" href="src/design-v31.css?v=310">
 
     <style>
 :root {
@@ -418,7 +416,7 @@
     <!-- ============ ONBOARDING WELCOME OVERLAY ============ -->
     <div id="welcome-overlay" class="welcome-overlay">
         <div class="welcome-inner">
-            <span class="welcome-badge">TRIP COMPANION</span>
+            <span class="welcome-badge">旅のしおり</span>
             <h1 class="welcome-title">SHIORI</h1>
             <p class="welcome-sub">ニックネームを設定してください</p>
             <form id="welcome-form" class="welcome-form" onsubmit="handleOnboardingSubmit(event)">
@@ -434,13 +432,13 @@
     <!-- ============ PORTAL DASHBOARD ============ -->
     <div id="portal-overlay" class="portal-overlay">
         <div class="portal-inner">
-            <span class="portal-badge">TRIP COMPANION</span>
+            <span class="portal-badge">旅のしおり</span>
             <h1 class="portal-title">SHIORI</h1>
             <p class="portal-sub">旅のしおりを選択してください</p>
 
             <div class="portal-tab-bar">
-                <button type="button" class="portal-tab-btn active" id="portal-tab-upcoming" onclick="switchPortalCategory('upcoming')">これからの旅 (UPCOMING)</button>
-                <button type="button" class="portal-tab-btn" id="portal-tab-past" onclick="switchPortalCategory('past')">思い出の旅 (MEMORIES)</button>
+                <button type="button" class="portal-tab-btn active" id="portal-tab-upcoming" onclick="switchPortalCategory('upcoming')">これからの旅</button>
+                <button type="button" class="portal-tab-btn" id="portal-tab-past" onclick="switchPortalCategory('past')">思い出の旅</button>
             </div>
 
             <div id="portal-status" class="portal-status" role="alert" hidden></div>
@@ -448,7 +446,7 @@
 
             <!-- ADD NEW TRIP INLINE FORM -->
             <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-line);">
-                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%; padding: 14px; font-family: var(--font-mont); font-size: 0.75rem; letter-spacing: 2px;" onclick="showAddTripInput()">＋ 配布IDでしおりを追加 (ADD)</button>
+                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%; padding: 14px;" onclick="showAddTripInput()">＋ 配布IDでしおりを追加</button>
 
                 <div id="add-trip-container" style="display: none; margin-top: 16px;">
                     <form onsubmit="handleAddTripSubmit(event)" style="display: flex; flex-direction: column; gap: 12px;">
@@ -474,8 +472,8 @@
 
             <!-- Compact trip header -->
             <header class="j-hero" style="display: flex; flex-direction: column; position: relative;">
-                <button type="button" class="j-btn" onclick="backToPortal()" style="margin-bottom: 16px; width: auto; align-self: flex-start; padding: 4px 12px; font-family: var(--font-mont); font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px;" aria-label="しおり棚へ戻る">← SHELF</button>
-                <span class="j-hero-badge">TRIP COMPANION</span>
+                <button type="button" class="j-btn" onclick="backToPortal()" style="margin-bottom: 16px; width: auto; align-self: flex-start; padding: 4px 12px;" aria-label="しおり棚へ戻る">← しおり棚</button>
+                <span class="j-hero-badge">旅のしおり</span>
                 <h1 class="j-hero-bebas" id="hero-title">SHIORI</h1>
                 <div class="j-hero-ja" id="hero-catchphrase">旅の感動を、みんなの思い出に。</div>
                 <div class="j-hero-meta">
@@ -493,8 +491,8 @@
             <section id="now-mode" class="now-card" aria-labelledby="now-mode-title">
                 <div class="now-head">
                     <div>
-                        <span class="now-kicker">LIVE TRIP ASSISTANT</span>
-                        <h2 id="now-mode-title">NOW MODE</h2>
+                        <span class="now-kicker">いま確認したい予定</span>
+                        <h2 id="now-mode-title">現在の旅程</h2>
                     </div>
                     <span id="offline-status" class="network-status" aria-live="polite">ONLINE</span>
                 </div>
@@ -506,8 +504,8 @@
                         <span id="now-countdown">出発時刻を計算中</span>
                     </div>
                     <div class="now-actions">
-                        <a id="now-route" class="now-route" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">ROUTE →</a>
-                        <button type="button" class="now-secondary" onclick="jumpToCurrentTripDay()">TODAY</button>
+                        <a id="now-route" class="now-route" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">地図を開く</a>
+                        <button type="button" class="now-secondary" onclick="jumpToCurrentTripDay()">今日の日程</button>
                     </div>
                 </div>
             </section>
@@ -524,9 +522,9 @@
             <!-- Packing Checklist Tab Panel -->
             <div id="tab-checklist" class="j-tab-panel j-tab-pnl" role="tabpanel" aria-labelledby="btn-checklist" aria-hidden="true">
                 <section class="j-sec-header">
-                    <h2 class="j-sec-en">CHECKLIST</h2>
+                    <h2 class="j-sec-en">持ち物</h2>
                     <div class="j-sec-ja">
-                        <span>PACKING CHECKLIST</span>
+                        <span>旅の準備</span>
                         <i class="j-sec-line"></i>
                     </div>
                 </section>
@@ -548,7 +546,7 @@
             <!-- Expenses Tab Panel -->
             <div id="tab-expenses" class="j-tab-panel j-tab-pnl" role="tabpanel" aria-labelledby="btn-expenses" aria-hidden="true">
                 <section class="j-sec-header">
-                    <h2 class="j-sec-en">EXPENSES</h2>
+                    <h2 class="j-sec-en">旅費の精算</h2>
                     <div class="j-sec-ja">
                         <span>旅費・立替精算</span>
                         <i class="j-sec-line"></i>
@@ -1149,7 +1147,7 @@
                 <a href="${escapeHtml(buildTripHref(t.id))}" class="portal-card">
                     <div class="portal-card-title">${escapeHtml(t.title)}</div>
                     <div class="portal-card-meta">${escapeHtml(t.subtitle ? t.subtitle + ' — ' : '')}${escapeHtml(t.date)}</div>
-                    <div class="portal-card-arrow">${t.isPast ? 'MEMORIES →' : 'OPEN →'}</div>
+                    <div class="portal-card-arrow">${t.isPast ? '思い出を開く →' : 'しおりを開く →'}</div>
                 </a>
             `).join('');
         }
@@ -1302,11 +1300,11 @@
                 const dayNum = idx + 1;
                 const activeClass = idx === 0 ? 'active' : '';
                 const selected = idx === 0 ? 'true' : 'false';
-                tabHeadersHtml += `<button type="button" id="btn-${key}" class="j-tab-btn ${activeClass}" role="tab" aria-selected="${selected}" aria-controls="tab-${key}" onclick="switchTab('tab-${key}', this)">DAY ${String(dayNum).padStart(2, '0')}</button>`;
+                tabHeadersHtml += `<button type="button" id="btn-${key}" class="j-tab-btn ${activeClass}" role="tab" aria-selected="${selected}" aria-controls="tab-${key}" onclick="switchTab('tab-${key}', this)">${dayNum}日目</button>`;
             });
-            tabHeadersHtml += `<button type="button" id="btn-checklist" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" onclick="switchTab('tab-checklist', this)">CHECKLIST</button>`;
-            if (data.features?.expenses !== false) tabHeadersHtml += `<button type="button" id="btn-expenses" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-expenses" onclick="switchTab('tab-expenses', this)">EXPENSES</button>`;
-            tabHeadersHtml += `<button type="button" id="btn-talk" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-talk" onclick="switchTab('tab-talk', this)" aria-label="相談・提案">TALK</button>`;
+            tabHeadersHtml += `<button type="button" id="btn-checklist" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" onclick="switchTab('tab-checklist', this)">持ち物</button>`;
+            if (data.features?.expenses !== false) tabHeadersHtml += `<button type="button" id="btn-expenses" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-expenses" onclick="switchTab('tab-expenses', this)">精算</button>`;
+            tabHeadersHtml += `<button type="button" id="btn-talk" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-talk" onclick="switchTab('tab-talk', this)" aria-label="相談・提案">相談</button>`;
             navBar.innerHTML = tabHeadersHtml;
 
             // 4. Day panels & cards
