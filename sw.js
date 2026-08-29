@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shiori-pwa-v310';
+const CACHE_NAME = 'shiori-pwa-v311';
 const APP_SHELL = [
   './',
   './index.html',
