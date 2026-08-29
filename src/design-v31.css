@@ -236,9 +236,10 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .j-card-time { color: var(--sh-accent) !important; font-family: var(--sh-font) !important; font-size: .78rem !important; font-weight: 700 !important; letter-spacing: .03em !important; }
 .j-card-ttl { color: var(--sh-ink) !important; font-family: var(--sh-serif) !important; font-size: 1.35rem !important; font-weight: 600 !important; letter-spacing: .02em !important; line-height: 1.5 !important; }
 .j-card-desc { color: var(--sh-muted) !important; font-size: .9rem !important; font-weight: 400 !important; line-height: 1.8 !important; }
+.j-card-desc:empty { display: none !important; }
 .j-card-img { border-radius: var(--sh-radius) !important; max-height: 300px; object-fit: cover; }
 .j-tag-badge { background: transparent !important; border: 0 !important; color: var(--sh-accent) !important; padding: 0 !important; font-family: var(--sh-font) !important; letter-spacing: .03em !important; }
-.j-btn-row { gap: 8px !important; }
+.j-btn-row { gap: 8px !important; padding-top: 8px !important; border-top: 0 !important; }
 .j-btn {
   min-height: 44px;
   background: var(--sh-surface) !important;
@@ -253,6 +254,19 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 }
 .j-btn.primary { background: var(--sh-accent) !important; border-color: var(--sh-accent) !important; color: var(--sh-on-accent) !important; }
 .j-btn-mark { font-size: .9rem !important; }
+
+/* Travel time is a transition between cards, not another decorative divider. */
+.v2-travel-hint {
+  min-height: 32px;
+  margin: 6px 0 -4px 58px !important;
+  gap: 7px !important;
+  color: var(--sh-muted) !important;
+  font-size: .76rem !important;
+  letter-spacing: .01em !important;
+  flex-wrap: wrap;
+}
+.v2-travel-hint::before { display: none !important; }
+.v2-travel-hint strong { color: var(--sh-accent) !important; font-weight: 650 !important; }
 
 /* Utility panels */
 .checklist-card, .expense-card, .share-room-panel, .device-owner-panel,
@@ -395,6 +409,7 @@ body:has(#admin-app), body:has(#admin-auth) { background: var(--sh-bg) !importan
   .j-card:not(.checklist-card):not(.expense-card) { padding-left: 46px !important; }
   .j-card:not(.checklist-card):not(.expense-card)::before { left: 12px; }
   .j-card:not(.checklist-card):not(.expense-card)::after { left: 16px; }
+  .v2-travel-hint { margin-left: 46px !important; }
   .topbar { padding-inline: 14px !important; }
   .topbar-actions .account-chip { display: none !important; }
   .admin-layout { display: block !important; }
