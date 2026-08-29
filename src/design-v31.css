@@ -206,7 +206,6 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   position: relative;
   background: transparent !important;
   border: 0 !important;
-  border-bottom: 1px solid var(--sh-line) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   margin: 0 !important;
