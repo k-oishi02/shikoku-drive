@@ -1,6 +1,7 @@
 import { getTripNowState, migrateTripToV2, settlementTransfers } from './trip-v2-index.js';
 import { resolveMapFields, mapHref, mapSearchQuery } from './map-links.js';
 import { createDiscussionPanel } from './discussion-ui.js';
+import { createLiveItineraryController } from './live-itinerary.js';
 
 window.shioriMapFields = resolveMapFields;
 window.shioriMapHref = mapHref;
@@ -9,6 +10,7 @@ window.shioriMapSearchQuery = mapSearchQuery;
 let activeTrip = null;
 let nowTimer = null;
 let notificationTimers = [];
+const liveItinerary = createLiveItineraryController();
 
 const safeStorage = {
   get(key, fallback = '') {
@@ -155,7 +157,8 @@ function installSettingsButton() {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'v2-settings-button';
-  button.textContent = '設定';
+  button.textContent = 'SETTINGS';
+  button.setAttribute('aria-label', 'しおり設定を開く');
   button.addEventListener('click', () => {
     const dialog = ensureSettingsDialog();
     dialog.querySelector('#participant-theme').value = safeStorage.get(settingKey('theme'), activeTrip.theme?.mode || 'auto');
@@ -301,6 +304,7 @@ export function activateParticipantV2(raw) {
   window.addEventListener('shiori-members-changed', renderExpenseParticipants);
   renderExpenseParticipants();
   activateDiscussion();
+  liveItinerary.activate(activeTrip);
   return activeTrip;
 }
 
@@ -319,13 +323,17 @@ export function deactivateParticipantV2() {
   document.getElementById('expense-amount')?.removeEventListener('input', updateExpenseSplitPreview);
   document.getElementById('expense-participants')?.removeEventListener('change', updateExpenseSplitPreview);
   window.removeEventListener('shiori-members-changed', renderExpenseParticipants);
+  liveItinerary.deactivate();
   activeTrip = null;
 }
 
 export function preferredMapUrl(query, fallbackUrl = '') {
   const preference = safeStorage.get(settingKey('map'), /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'apple' : 'google');
+  const isDrivingRoute = /\/maps\/dir\//.test(String(fallbackUrl));
   return preference === 'apple' && query
-    ? `https://maps.apple.com/?q=${encodeURIComponent(query)}`
+    ? isDrivingRoute
+      ? `https://maps.apple.com/?daddr=${encodeURIComponent(query)}&dirflg=d`
+      : `https://maps.apple.com/?q=${encodeURIComponent(query)}`
     : fallbackUrl;
 }
 

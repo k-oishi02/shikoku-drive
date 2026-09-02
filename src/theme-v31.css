@@ -23,11 +23,22 @@
   --sh-accent-strong: #275552;
   --sh-accent-soft: #dce9e5;
   --sh-on-accent: #ffffff;
+  --sh-primary-container: #c4e6df;
+  --sh-on-primary-container: #123f3b;
+  --sh-secondary: #76586d;
+  --sh-secondary-container: #f2dbe9;
+  --sh-on-secondary-container: #4c3043;
+  --sh-tertiary: #916033;
+  --sh-tertiary-container: #ffdcc0;
+  --sh-on-tertiary-container: #5a3817;
   --sh-danger: #98433d;
   --sh-danger-soft: #fff1ef;
   --sh-radius-sm: 10px;
   --sh-radius: 16px;
   --sh-radius-lg: 24px;
+  --sh-radius-xl: 32px;
+  --sh-radius-pill: 999px;
+  --sh-motion-spring: cubic-bezier(.2, .9, .2, 1.15);
   --sh-shadow: 0 18px 50px rgba(35, 51, 47, .08);
   --sh-font: "Libre Franklin", -apple-system, BlinkMacSystemFont, "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
   --sh-serif: var(--sh-font);
@@ -46,6 +57,9 @@ html[data-trip-theme="dark"] {
   --sh-ink: #f1f0eb; --sh-muted: #b8bfbb; --sh-line: #46534f;
   --sh-accent: #9cc6be; --sh-accent-strong: #315f5b; --sh-accent-soft: #2d4540;
   --sh-on-accent: #17312e; --sh-danger: #f0a39b; --sh-danger-soft: #432b2a;
+  --sh-primary-container: #315f5b; --sh-on-primary-container: #d1f5ed;
+  --sh-secondary: #d8b9cd; --sh-secondary-container: #563f50; --sh-on-secondary-container: #f6dced;
+  --sh-tertiary: #e5bb91; --sh-tertiary-container: #624321; --sh-on-tertiary-container: #ffdec0;
   --sh-shadow: 0 20px 54px rgba(0, 0, 0, .22);
   --bg-body: var(--sh-bg); --bg-card: var(--sh-surface);
   --border-line: var(--sh-line); --border-highlight: var(--sh-ink);
@@ -76,6 +90,9 @@ html:has(#admin-app), html:has(#admin-auth) {
     --sh-ink: #f1f0eb; --sh-muted: #b8bfbb; --sh-line: #46534f;
     --sh-accent: #9cc6be; --sh-accent-strong: #315f5b; --sh-accent-soft: #2d4540;
     --sh-on-accent: #17312e; --sh-danger: #f0a39b; --sh-danger-soft: #432b2a;
+    --sh-primary-container: #315f5b; --sh-on-primary-container: #d1f5ed;
+    --sh-secondary: #d8b9cd; --sh-secondary-container: #563f50; --sh-on-secondary-container: #f6dced;
+    --sh-tertiary: #e5bb91; --sh-tertiary-container: #624321; --sh-on-tertiary-container: #ffdec0;
     --sh-shadow: 0 20px 54px rgba(0, 0, 0, .22);
   }
 }

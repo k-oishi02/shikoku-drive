@@ -12,8 +12,9 @@
     <link rel="stylesheet" href="src/participant-v2.css?v=300">
     <link rel="stylesheet" href="src/enhancements.css">
     <link rel="stylesheet" href="src/discussion.css">
-    <link rel="stylesheet" href="src/theme-v31.css?v=314">
-    <link rel="stylesheet" href="src/design-v31.css?v=314">
+    <link rel="stylesheet" href="src/theme-v31.css?v=320">
+    <link rel="stylesheet" href="src/design-v31.css?v=320">
+    <link rel="stylesheet" href="src/expressive-v32.css?v=320">
 
     <style>
 :root {
@@ -425,7 +426,7 @@
                     <span>あなたのニックネーム</span>
                     <input id="welcome-nickname" type="text" placeholder="例：たびびと" required maxlength="15">
                 </label>
-                <button type="submit" class="welcome-submit-btn">登録してしおり棚を開く →</button>
+                            <button type="submit" class="welcome-submit-btn" aria-label="登録してしおり棚を開く">OPEN SHIORI →</button>
             </form>
         </div>
     </div>
@@ -438,8 +439,8 @@
             <p class="portal-sub">旅のしおりを選択してください</p>
 
             <div class="portal-tab-bar">
-                <button type="button" class="portal-tab-btn active" id="portal-tab-upcoming" onclick="switchPortalCategory('upcoming')">これからの旅</button>
-                <button type="button" class="portal-tab-btn" id="portal-tab-past" onclick="switchPortalCategory('past')">思い出の旅</button>
+                <button type="button" class="portal-tab-btn active" id="portal-tab-upcoming" onclick="switchPortalCategory('upcoming')" aria-label="これからの旅">UPCOMING</button>
+                <button type="button" class="portal-tab-btn" id="portal-tab-past" onclick="switchPortalCategory('past')" aria-label="思い出の旅">MEMORIES</button>
             </div>
 
             <div id="portal-status" class="portal-status" role="alert" hidden></div>
@@ -447,7 +448,7 @@
 
             <!-- ADD NEW TRIP INLINE FORM -->
             <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-line);">
-                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%; padding: 14px;" onclick="showAddTripInput()">＋ 配布IDでしおりを追加</button>
+                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%; padding: 14px;" onclick="showAddTripInput()" aria-label="配布IDでしおりを追加">＋ ADD SHIORI</button>
 
                 <div id="add-trip-container" style="display: none; margin-top: 16px;">
                     <form onsubmit="handleAddTripSubmit(event)" style="display: flex; flex-direction: column; gap: 12px;">
@@ -457,8 +458,8 @@
                         </label>
                         <div id="add-trip-error" class="welcome-error" style="display: none; margin-top: 0;"></div>
                         <div style="display: flex; gap: 8px;">
-                            <button type="submit" class="j-btn primary" style="flex: 1; padding: 10px;">追加</button>
-                            <button type="button" class="j-btn" style="flex: 1; padding: 10px;" onclick="hideAddTripInput()">キャンセル</button>
+                            <button type="submit" class="j-btn primary" style="flex: 1; padding: 10px;" aria-label="しおりを追加">ADD</button>
+                            <button type="button" class="j-btn" style="flex: 1; padding: 10px;" onclick="hideAddTripInput()" aria-label="追加をキャンセル">CANCEL</button>
                         </div>
                     </form>
                 </div>
@@ -473,7 +474,7 @@
 
             <!-- Compact trip header -->
             <header class="j-hero" style="display: flex; flex-direction: column; position: relative;">
-                <button type="button" class="j-btn" onclick="backToPortal()" style="margin-bottom: 16px; width: auto; align-self: flex-start; padding: 4px 12px;" aria-label="しおり棚へ戻る">← しおり棚</button>
+                <button type="button" class="j-btn" onclick="backToPortal()" style="margin-bottom: 16px; width: auto; align-self: flex-start; padding: 4px 12px;" aria-label="しおり棚へ戻る">← SHELF</button>
                 <span class="j-hero-badge">旅のしおり</span>
                 <h1 class="j-hero-bebas" id="hero-title">SHIORI</h1>
                 <div class="j-hero-ja" id="hero-catchphrase">旅の感動を、みんなの思い出に。</div>
@@ -497,7 +498,7 @@
                     </div>
                     <span id="offline-status" class="network-status" aria-live="polite">ONLINE</span>
                 </div>
-                <div class="now-body">
+                <div id="legacy-now-body" class="now-body">
                     <span id="now-day" class="now-day">旅行前</span>
                     <div id="now-title" class="now-title">最初の予定を準備中…</div>
                     <div class="now-meta">
@@ -505,9 +506,27 @@
                         <span id="now-countdown">出発時刻を計算中</span>
                     </div>
                     <div class="now-actions">
-                        <a id="now-route" class="now-route" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">地図を開く</a>
-                        <button type="button" class="now-secondary" onclick="jumpToCurrentTripDay()">今日の日程</button>
+                        <a id="now-route" class="now-route" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" aria-label="地図で案内を開始">ROUTE</a>
+                        <button type="button" class="now-secondary" onclick="jumpToCurrentTripDay()" aria-label="今日の日程を表示">TODAY</button>
                     </div>
+                </div>
+                <div id="live-itinerary" class="live-itinerary" hidden>
+                    <div class="live-overline"><span>LIVE ITINERARY</span><span data-live="delay-badge" class="live-delay-badge" hidden></span></div>
+                    <span data-live="day" class="live-day"></span>
+                    <h3 data-live="title" class="live-title">次の予定</h3>
+                    <div class="live-time-row"><strong data-live="time">--:--</strong><span data-live="status"></span></div>
+                    <p data-live="offline-note" class="live-offline-note" hidden>OFFLINE · 変更はこの端末に保存されます</p>
+                    <div class="live-primary-actions" role="group" aria-label="現在の予定を操作">
+                        <a data-live="route" class="live-action live-route" target="_blank" rel="noopener noreferrer" aria-label="次の目的地まで案内">ROUTE</a>
+                        <button data-live="arrive" class="live-action" type="button" aria-label="目的地へ到着">ARRIVE</button>
+                        <button data-live="done" class="live-action live-accent" type="button" aria-label="この予定を完了">DONE</button>
+                        <button data-live="skip" class="live-action" type="button" aria-label="この予定をスキップ">SKIP</button>
+                    </div>
+                    <div class="live-secondary-actions">
+                        <button data-live="today" type="button" aria-label="選択日の旅程を見る">TODAY</button>
+                        <button data-live="plan" type="button" aria-label="旅行中の予定を変更">PLAN</button>
+                    </div>
+                    <p class="live-local-note">公開された旅程は変更せず、旅行中の調整だけをこの端末に記録します。</p>
                 </div>
             </section>
 
@@ -554,7 +573,12 @@
                     </div>
                 </section>
 
-                <div class="j-card expense-card">
+                <div class="j-card expense-card expense-privacy-locked">
+                    <div id="expense-privacy-guard" class="expense-privacy-guard" role="status" aria-live="polite">
+                        <span class="now-kicker">PRIVATE LEDGER</span>
+                        <strong>精算内容を確認しています</strong>
+                        <p>オンラインで参加権限を確認できた場合だけ表示します。機内モードや圏外では、ID・支出・精算額を端末画面に残しません。</p>
+                    </div>
                     <div class="share-room-panel">
                         <div class="share-room-head">
                             <div>
@@ -608,7 +632,7 @@
                             <span>内容</span>
                             <input id="expense-note" type="text" maxlength="120" placeholder="例：五志喜 予約分">
                         </label>
-                        <button type="submit" class="expense-submit">この支出を登録</button>
+                        <button type="submit" class="expense-submit" aria-label="この支出を登録して共有">ADD &amp; SHARE</button>
                     </form>
                     <div class="expense-summary" aria-live="polite">
                         <div><span>登録済み支出合計</span><strong id="expense-total">¥0</strong></div>
@@ -616,7 +640,7 @@
                         <div class="expense-settlement"><span>最終的な受け渡し</span><strong id="expense-settlement">まだ支出はありません</strong></div>
                     </div>
                     <ul id="expense-list" class="expense-list" aria-label="支出一覧"></ul>
-                    <button type="button" class="j-btn" onclick="downloadExpensesCsv()">CSVを書き出す</button>
+                    <button type="button" class="j-btn expense-export" onclick="downloadExpensesCsv()" aria-label="精算内容をCSVで書き出す">EXPORT CSV</button>
                 </div>
 
                 <!-- Optional PayPay handoff -->
@@ -670,7 +694,7 @@
                     </div>
                 </div>
                 <p class="weather-note">旅行日の予報です。30分ごと・画面復帰時に再取得します（Open-Meteo）。</p>
-                <button type="button" class="j-btn" onclick="refreshWeather()" aria-label="天気を再取得">↻ 更新</button>
+                <button type="button" class="j-btn" onclick="refreshWeather()" aria-label="天気を再取得">REFRESH</button>
 
                 <div class="weather-footer">
                     <span class="weather-status">
@@ -688,6 +712,31 @@
             </details>
         </div>
     </div>
+
+    <dialog id="live-plan-dialog" class="live-plan-dialog" aria-labelledby="live-plan-title">
+        <div class="live-dialog-head">
+            <div><span class="live-dialog-kicker">FLEXIBLE DAY PLAN</span><h2 id="live-plan-title">旅行中の予定を調整</h2></div>
+            <button data-live="close" type="button" aria-label="予定変更を閉じる">CLOSE</button>
+        </div>
+        <div class="live-dialog-body">
+            <label class="live-day-picker">DAY<select data-live="day-select" aria-label="変更する日"></select></label>
+            <section class="live-delay-section" aria-labelledby="live-delay-title">
+                <div><strong id="live-delay-title">DELAY</strong><span>選択時点以降をずらし、固定予定で止めます</span></div>
+                <div class="live-delay-actions" role="group" aria-label="遅れを反映">
+                    <button type="button" data-live-delay="0">ON TIME</button>
+                    <button type="button" data-live-delay="15">+15</button>
+                    <button type="button" data-live-delay="30">+30</button>
+                    <button type="button" data-live-delay="60">+60</button>
+                </div>
+            </section>
+            <p data-live="conflict" class="live-conflict" role="alert" hidden></p>
+            <ol data-live="plan-list" class="live-plan-list" aria-label="当日の予定一覧"></ol>
+        </div>
+        <div class="live-dialog-actions">
+            <button data-live="undo" type="button" aria-label="直前の変更を取り消す">UNDO</button>
+            <button data-live="reset" class="live-reset" type="button" aria-label="この端末での当日の変更をすべて元に戻す">RESET DAY</button>
+        </div>
+    </dialog>
 
     <!-- ============ UPDATE NOTIFICATION PROMPT ============ -->
     <div id="update-prompt" class="update-prompt">
@@ -1148,7 +1197,7 @@
                 <a href="${escapeHtml(buildTripHref(t.id))}" class="portal-card">
                     <div class="portal-card-title">${escapeHtml(t.title)}</div>
                     <div class="portal-card-meta">${escapeHtml(t.subtitle ? t.subtitle + ' — ' : '')}${escapeHtml(t.date)}</div>
-                    <div class="portal-card-arrow">${t.isPast ? '思い出を開く →' : 'しおりを開く →'}</div>
+                    <div class="portal-card-arrow" aria-label="${t.isPast ? '思い出を開く' : 'しおりを開く'}">${t.isPast ? 'OPEN MEMORY →' : 'OPEN SHIORI →'}</div>
                 </a>
             `).join('');
         }
@@ -1190,7 +1239,7 @@
                 errorEl.style.display = 'block';
             } finally {
                 submitButton.disabled = false;
-                submitButton.textContent = '追加';
+                submitButton.textContent = 'ADD';
             }
         }
 
@@ -1301,11 +1350,11 @@
                 const dayNum = idx + 1;
                 const activeClass = idx === 0 ? 'active' : '';
                 const selected = idx === 0 ? 'true' : 'false';
-                tabHeadersHtml += `<button type="button" id="btn-${key}" class="j-tab-btn ${activeClass}" role="tab" aria-selected="${selected}" aria-controls="tab-${key}" onclick="switchTab('tab-${key}', this)">${dayNum}日目</button>`;
+                tabHeadersHtml += `<button type="button" id="btn-${key}" class="j-tab-btn ${activeClass}" role="tab" aria-selected="${selected}" aria-controls="tab-${key}" onclick="switchTab('tab-${key}', this)" aria-label="${dayNum}日目">DAY ${dayNum}</button>`;
             });
-            tabHeadersHtml += `<button type="button" id="btn-checklist" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" onclick="switchTab('tab-checklist', this)">持ち物</button>`;
-            if (data.features?.expenses !== false) tabHeadersHtml += `<button type="button" id="btn-expenses" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-expenses" onclick="switchTab('tab-expenses', this)">精算</button>`;
-            tabHeadersHtml += `<button type="button" id="btn-talk" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-talk" onclick="switchTab('tab-talk', this)" aria-label="相談・提案">相談</button>`;
+            tabHeadersHtml += `<button type="button" id="btn-checklist" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" onclick="switchTab('tab-checklist', this)" aria-label="持ち物">PACK</button>`;
+            if (data.features?.expenses !== false) tabHeadersHtml += `<button type="button" id="btn-expenses" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-expenses" onclick="switchTab('tab-expenses', this)" aria-label="精算">COST</button>`;
+            tabHeadersHtml += `<button type="button" id="btn-talk" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-talk" onclick="switchTab('tab-talk', this)" aria-label="相談・提案">TALK</button>`;
             navBar.innerHTML = tabHeadersHtml;
 
             // 4. Day panels & cards
@@ -1344,8 +1393,8 @@
                         const reservationUrl = safeExternalUrl(reservation.url);
                         const phone = String(reservation.phone || '').replace(/[^0-9+]/g, '');
                         const actions = [
-                            phone ? `<a class="j-btn" href="tel:${escapeHtml(phone)}">電話</a>` : '',
-                            reservationUrl ? `<a class="j-btn" href="${escapeHtml(reservationUrl)}" target="_blank" rel="noopener noreferrer">予約確認 ↗</a>` : ''
+                            phone ? `<a class="j-btn" href="tel:${escapeHtml(phone)}" aria-label="電話をかける">CALL</a>` : '',
+                            reservationUrl ? `<a class="j-btn" href="${escapeHtml(reservationUrl)}" target="_blank" rel="noopener noreferrer" aria-label="予約を確認">BOOKING ↗</a>` : ''
                         ].join('');
                         reservationHtml = `<details class="v2-reservation"><summary>予約情報</summary><div class="v2-reservation-body">${rows}<div class="v2-reservation-actions">${actions}</div></div></details>`;
                     }
@@ -1826,7 +1875,7 @@
     </script>
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
-    <script src="src/enhancements.js?v=300"></script>
+    <script src="src/enhancements.js?v=320"></script>
     <script type="module" src="src/firebase-sync.js"></script>
 </body>
 </html>

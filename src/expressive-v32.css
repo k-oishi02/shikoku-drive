@@ -1,0 +1,252 @@
+/* SHIORI v3.2 expressive component layer.
+ * Uses the theme contract from theme-v31.css; no data or business rules live here.
+ */
+
+/* Compact English actions, with Japanese meaning retained in aria-labels. */
+.j-btn,
+.mini-button,
+.expense-submit,
+.now-route,
+.now-secondary,
+.v2-settings-button,
+.portal-tab-btn,
+.welcome-submit-btn {
+  border-radius: var(--sh-radius-pill) !important;
+  font-family: var(--sh-font) !important;
+  font-weight: 650 !important;
+  letter-spacing: .065em !important;
+  text-transform: uppercase;
+  transition: transform .22s var(--sh-motion-spring), background-color .18s ease, border-color .18s ease;
+}
+.talk-button,
+.talk-filter {
+  border-radius: var(--sh-radius-pill) !important;
+  font-family: var(--sh-font) !important;
+  font-weight: 650 !important;
+  letter-spacing: .055em !important;
+}
+.talk-filter[aria-pressed="true"] {
+  color: var(--sh-on-secondary-container) !important;
+  background: var(--sh-secondary-container) !important;
+  border-color: transparent !important;
+}
+
+.j-btn:active,
+.mini-button:active,
+.expense-submit:active,
+.live-action:active,
+.live-secondary-actions button:active { transform: scale(.96); }
+
+/* Expressive navigation: a calm pill indicator instead of a thin underline. */
+.j-nav-sticky {
+  gap: 6px !important;
+  padding: 8px 0 !important;
+  border-bottom: 0 !important;
+}
+.j-tab-btn {
+  min-height: 42px;
+  padding: 0 15px !important;
+  border: 0 !important;
+  border-radius: var(--sh-radius-pill) !important;
+  letter-spacing: .06em !important;
+  transition: color .18s ease, background-color .18s ease, transform .22s var(--sh-motion-spring);
+}
+.j-tab-btn.active {
+  color: var(--sh-on-primary-container) !important;
+  background: var(--sh-primary-container) !important;
+  border: 0 !important;
+}
+.j-tab-btn:active { transform: scale(.94); }
+
+/* A distinct hero moment, kept readable in both themes. */
+.now-card {
+  background:
+    radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--sh-tertiary) 42%, transparent), transparent 31%),
+    linear-gradient(145deg, var(--sh-accent-strong), color-mix(in srgb, var(--sh-accent-strong) 82%, #172d2a)) !important;
+  border-radius: var(--sh-radius-xl) var(--sh-radius-xl) 14px var(--sh-radius-xl) !important;
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--sh-accent-strong) 27%, transparent) !important;
+}
+.now-head { padding: 20px 22px 15px !important; }
+.network-status { border-radius: var(--sh-radius-pill) !important; padding: 6px 10px !important; }
+
+/* LIVE / DRIVE surface */
+.live-itinerary { padding: 20px 22px 22px; }
+.live-overline,
+.live-time-row,
+.live-secondary-actions,
+.live-dialog-head,
+.live-dialog-actions,
+.live-delay-section > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.live-overline,
+.live-day,
+.live-dialog-kicker,
+.live-plan-time {
+  font-family: var(--sh-font);
+  font-size: .68rem;
+  font-weight: 650;
+  letter-spacing: .11em;
+}
+.live-overline { color: rgba(255,255,255,.7); }
+.live-delay-badge {
+  padding: 5px 9px;
+  border-radius: var(--sh-radius-pill);
+  color: var(--sh-on-tertiary-container);
+  background: var(--sh-tertiary-container);
+}
+.live-day { display: block; margin-top: 18px; color: rgba(255,255,255,.76); }
+.live-title {
+  margin: 5px 0 7px;
+  color: white;
+  font-family: var(--sh-serif);
+  font-size: clamp(1.65rem, 7vw, 2.35rem);
+  font-weight: 600;
+  letter-spacing: .02em;
+  line-height: 1.32;
+}
+.live-time-row { align-items: flex-start; color: white; }
+.live-time-row strong { flex: 0 0 auto; font-size: .92rem; letter-spacing: .06em; }
+.live-time-row span { max-width: 66%; color: rgba(255,255,255,.72); font-size: .78rem; line-height: 1.6; text-align: right; }
+.live-offline-note {
+  margin: 14px 0 0;
+  padding: 9px 12px;
+  border-radius: var(--sh-radius-sm);
+  color: var(--sh-on-tertiary-container);
+  background: var(--sh-tertiary-container);
+  font-size: .72rem;
+  font-weight: 650;
+}
+.live-primary-actions {
+  display: grid;
+  grid-template-columns: 1.25fr repeat(3, 1fr);
+  gap: 7px;
+  margin-top: 20px;
+}
+.live-action,
+.live-secondary-actions button,
+.live-dialog-head button,
+.live-dialog-actions button,
+.live-delay-actions button,
+.live-mini-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: var(--sh-radius-pill);
+  color: white;
+  background: transparent;
+  font: 650 .72rem/1 var(--sh-font);
+  letter-spacing: .065em;
+  text-decoration: none;
+  cursor: pointer;
+}
+.live-route { color: var(--sh-accent-strong); background: white; border-color: white; }
+.live-action.live-accent { color: var(--sh-on-tertiary-container); background: var(--sh-tertiary-container); border-color: var(--sh-tertiary-container); }
+.live-secondary-actions { justify-content: flex-start; margin-top: 9px; }
+.live-secondary-actions button { min-height: 38px; padding: 0 4px; border-color: transparent; color: rgba(255,255,255,.76); }
+.live-local-note { margin: 12px 0 0; color: rgba(255,255,255,.57); font-size: .69rem; line-height: 1.6; }
+
+/* Plan editor: tap-first, offline-safe, and intentionally separate from public data. */
+.live-plan-dialog {
+  width: min(680px, calc(100vw - 24px));
+  max-height: min(780px, calc(100dvh - 24px));
+  padding: 0;
+  border: 1px solid var(--sh-line);
+  border-radius: var(--sh-radius-xl) var(--sh-radius-xl) 16px var(--sh-radius-xl);
+  color: var(--sh-ink);
+  background: var(--sh-surface);
+  box-shadow: 0 32px 90px rgba(16,31,28,.25);
+  overflow: hidden;
+}
+.live-plan-dialog::backdrop { background: rgba(16,31,28,.54); backdrop-filter: blur(5px); }
+.live-dialog-head { padding: 20px 22px; background: var(--sh-primary-container); }
+.live-dialog-head h2 { margin: 4px 0 0; color: var(--sh-on-primary-container); font-family: var(--sh-serif); font-size: 1.45rem; }
+.live-dialog-kicker { color: color-mix(in srgb, var(--sh-on-primary-container) 72%, transparent); }
+.live-dialog-head button,
+.live-dialog-actions button,
+.live-delay-actions button,
+.live-mini-action {
+  color: var(--sh-ink);
+  background: var(--sh-surface);
+  border-color: var(--sh-line);
+}
+.live-dialog-head button { min-height: 40px; }
+.live-dialog-body { padding: 18px 20px; overflow-y: auto; }
+.live-day-picker { display: grid; gap: 7px; color: var(--sh-muted); font: 650 .72rem var(--sh-font); letter-spacing: .08em; }
+.live-day-picker select { min-height: 48px; padding: 0 14px; border: 1px solid var(--sh-line); border-radius: var(--sh-radius); color: var(--sh-ink); background: var(--sh-surface); }
+.live-delay-section { margin-top: 18px; padding: 16px; border-radius: var(--sh-radius-lg) var(--sh-radius-lg) 10px var(--sh-radius-lg); background: var(--sh-surface-soft); }
+.live-delay-section strong { font-size: .76rem; letter-spacing: .08em; }
+.live-delay-section span { color: var(--sh-muted); font-size: .72rem; }
+.live-delay-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
+.live-delay-actions button { min-height: 40px; padding: 0 8px; }
+.live-delay-actions button[aria-pressed="true"] { color: var(--sh-on-secondary-container); background: var(--sh-secondary-container); border-color: transparent; }
+.live-conflict { margin: 14px 0 0; padding: 12px; border-radius: var(--sh-radius); color: var(--sh-on-tertiary-container); background: var(--sh-tertiary-container); font-size: .78rem; line-height: 1.6; }
+.live-plan-list { display: grid; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+.live-plan-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--sh-line); border-radius: var(--sh-radius-lg) var(--sh-radius-lg) 8px var(--sh-radius-lg); }
+.live-plan-copy { min-width: 0; }
+.live-plan-copy span, .live-plan-copy strong { display: block; }
+.live-plan-copy strong { margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-plan-time { color: var(--sh-accent); }
+.live-plan-row-actions { display: flex; gap: 5px; }
+.live-mini-action { min-height: 36px; padding: 0 9px; font-size: .62rem; }
+.live-plan-row.is-skipped { opacity: .55; background: var(--sh-surface-soft); }
+.live-dialog-actions { justify-content: flex-end; padding: 14px 20px 18px; border-top: 1px solid var(--sh-line); }
+.live-dialog-actions button { min-height: 42px; }
+.live-dialog-actions .live-reset { color: var(--sh-danger); border-color: color-mix(in srgb, var(--sh-danger) 42%, transparent); }
+
+/* The published itinerary stays intact; local live state is a visual annotation. */
+.j-card.live-done,
+.j-card.live-skipped { opacity: .52; }
+.j-card.live-done .j-card-ttl { text-decoration: line-through; text-decoration-thickness: 1px; }
+.j-card.live-skipped .j-card-ttl::after { content: " · SKIPPED"; color: var(--sh-muted); font: 650 .66rem var(--sh-font); letter-spacing: .07em; }
+.j-card.live-arrived::before { background: var(--sh-tertiary) !important; box-shadow: 0 0 0 7px var(--sh-tertiary-container) !important; }
+
+/* Sensitive ledger: never paint cached values before live authorization. */
+.expense-privacy-guard {
+  display: grid;
+  gap: 7px;
+  padding: 20px;
+  border: 1px solid var(--sh-line);
+  border-radius: var(--sh-radius-lg) var(--sh-radius-lg) 10px var(--sh-radius-lg);
+  background: var(--sh-secondary-container);
+  color: var(--sh-on-secondary-container);
+}
+.expense-privacy-guard .now-kicker { color: currentColor !important; opacity: .72; }
+.expense-privacy-guard strong { font-family: var(--sh-serif); font-size: 1.15rem; }
+.expense-privacy-guard p { margin: 0; font-size: .78rem; line-height: 1.7; }
+.expense-card.expense-privacy-locked > :not(#expense-privacy-guard) { display: none !important; }
+#tab-expenses [aria-disabled="true"] { pointer-events: none; opacity: .45; }
+#tab-expenses:has(.expense-privacy-locked) > .j-widget { display: none !important; }
+
+/* Expressive containment without bringing the old card wall back. */
+.checklist-card,
+.expense-card,
+.talk-card,
+.panel,
+.metric-grid article {
+  border-radius: var(--sh-radius-lg) var(--sh-radius-lg) 10px var(--sh-radius-lg) !important;
+}
+.portal-card { border-radius: var(--sh-radius-xl) var(--sh-radius-xl) 12px var(--sh-radius-xl) !important; }
+.button { border-radius: var(--sh-radius-pill) !important; }
+
+@media (max-width: 560px) {
+  .live-primary-actions { grid-template-columns: repeat(3, 1fr); }
+  .live-route { grid-column: 1 / -1; }
+  .live-time-row { display: grid; }
+  .live-time-row span { max-width: none; text-align: left; }
+  .live-delay-actions { grid-template-columns: repeat(2, 1fr); }
+  .live-plan-row { grid-template-columns: 1fr; }
+  .live-plan-row-actions { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .live-mini-action { width: 100%; }
+  .live-dialog-head { align-items: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .j-btn, .mini-button, .expense-submit, .live-action, .j-tab-btn { transition: none !important; }
+}

@@ -350,16 +350,16 @@ function renderTripLibrary() {
       meta.append(makeElement('span', '', `候補 ${candidateCount}件`));
     }
     const actions = makeElement('div', 'trip-actions');
-    const edit = makeElement('button', 'compact', '編集');
+    const edit = makeElement('button', 'compact', 'EDIT');
     edit.type = 'button';
     edit.addEventListener('click', () => openTripEditor(tripId));
-    const distribute = makeElement('button', 'compact ghost', '配布');
+    const distribute = makeElement('button', 'compact ghost', 'DISTRIBUTE');
     distribute.type = 'button';
     distribute.addEventListener('click', () => openDistribution(tripId));
-    const duplicate = makeElement('button', 'compact ghost', '複製');
+    const duplicate = makeElement('button', 'compact ghost', 'DUPLICATE');
     duplicate.type = 'button';
     duplicate.addEventListener('click', () => duplicateTrip(tripId));
-    const archive = makeElement('button', 'compact ghost', trip.archived ? '戻す' : '保管');
+    const archive = makeElement('button', 'compact ghost', trip.archived ? 'RESTORE' : 'ARCHIVE');
     archive.type = 'button';
     archive.addEventListener('click', () => toggleTripArchive(tripId));
     card.classList.toggle('archived', trip.archived === true);
@@ -369,7 +369,7 @@ function renderTripLibrary() {
       duplicate.disabled = true;
       archive.disabled = true;
       card.append(makeElement('p', 'field-help', `下書きの読込を停止しました。元データを保管し、JSONを修正して読み込んでください。公開済み内容は変更していません。\n${record.loadError}`));
-      const recover = makeElement('button', 'compact ghost', '元データを保管');
+      const recover = makeElement('button', 'compact ghost', 'KEEP SOURCE');
       recover.type = 'button';
       recover.addEventListener('click', () => downloadDraftRecovery(tripId));
       actions.append(recover);
@@ -615,19 +615,19 @@ function renderCandidateList() {
     }
 
     const actions = makeElement('div', 'candidate-card-actions');
-    const adoptBtn = makeElement('button', 'compact primary', isAssigned ? '日程に追加済み' : '日程に入れる');
+    const adoptBtn = makeElement('button', 'compact primary', isAssigned ? 'ADDED' : 'ADD TO DAY');
     adoptBtn.disabled = isAssigned;
     adoptBtn.type = 'button';
     adoptBtn.addEventListener('click', () => openCandidateAdoptDialog(candidate.id));
     actions.append(adoptBtn);
 
-    const editBtn = makeElement('button', 'compact ghost', '編集');
+    const editBtn = makeElement('button', 'compact ghost', 'EDIT');
     editBtn.type = 'button';
     editBtn.addEventListener('click', () => openCandidateDialog(candidate.id));
     actions.append(editBtn);
 
     if (isAssigned) {
-      const resetBtn = makeElement('button', 'compact ghost', '日程への追加を取り消す');
+      const resetBtn = makeElement('button', 'compact ghost', 'REMOVE FROM DAY');
       resetBtn.type = 'button';
       resetBtn.addEventListener('click', () => resetCandidateStatus(candidate.id));
       actions.append(resetBtn);
@@ -979,7 +979,7 @@ function renderEditorCards() {
     if (card.timeLocked) meta.append(makeElement('span', 'time-locked-indicator', ' 🔒 固定予定'));
     copy.append(meta);
     const actions = makeElement('div', 'actions');
-    const edit = makeElement('button', 'compact', '編集');
+    const edit = makeElement('button', 'compact', 'EDIT');
     edit.type = 'button';
     edit.addEventListener('click', () => openCardDialog(index));
     actions.append(edit);
@@ -2348,7 +2348,7 @@ function renderDistributions() {
     capacityInput.step = '1';
     capacityInput.value = String(capacity);
     capacityInput.disabled = isDeleting;
-    const updateCapacity = makeElement('button', 'compact ghost', '端末枠を変更');
+    const updateCapacity = makeElement('button', 'compact ghost', 'DEVICE LIMIT');
     updateCapacity.type = 'button';
     updateCapacity.disabled = isDeleting;
     updateCapacity.addEventListener('click', () => updateDistributionCapacity(distribution, Number(capacityInput.value), updateCapacity));
@@ -2356,15 +2356,15 @@ function renderDistributions() {
     capacityControl.append(capacityLabel, updateCapacity);
 
     const actions = makeElement('div', 'trip-actions');
-    const copyLink = makeElement('button', 'compact primary', '登録リンクをコピー');
+    const copyLink = makeElement('button', 'compact primary', 'COPY LINK');
     copyLink.type = 'button';
     copyLink.disabled = distribution.status !== 'active' || !distribution.accessId;
     copyLink.addEventListener('click', () => copyText(participantRegistrationUrl(distribution.accessId), '自動登録リンクをコピーしました。'));
-    const copy = makeElement('button', 'compact ghost', '配布IDをコピー');
+    const copy = makeElement('button', 'compact ghost', 'COPY ID');
     copy.type = 'button';
     copy.disabled = distribution.status !== 'active' || !distribution.accessId;
     copy.addEventListener('click', () => copyText(formatAccessId(distribution.accessId), '配布IDをコピーしました。'));
-    const copyApp = makeElement('button', 'compact ghost', '空のアプリURLをコピー');
+    const copyApp = makeElement('button', 'compact ghost', 'COPY APP URL');
     copyApp.type = 'button';
     copyApp.addEventListener('click', () => copyText(participantAppUrl(), '空の参加者アプリURLをコピーしました。'));
     const toggle = makeElement('button', `compact ${distribution.status === 'active' ? 'danger' : ''}`, distribution.status === 'active' ? '配布を停止' : '再開');
@@ -2537,7 +2537,7 @@ async function showPublishHistory() {
       const copy = makeElement('div');
       copy.append(makeElement('strong', '', `公開版 ${versions.length - index}`));
       copy.append(makeElement('small', '', formatTimestamp(version.publishedAt)));
-      const restore = makeElement('button', 'button compact', '下書きへ復元');
+      const restore = makeElement('button', 'button compact', 'RESTORE DRAFT');
       restore.type = 'button';
       restore.addEventListener('click', () => {
         try {
@@ -2661,7 +2661,7 @@ function renderAdminRoles() {
     row.append(head, makeElement('h3', '', profile.name || profile.email || '管理者'));
     row.append(makeElement('p', 'muted small', profile.uid));
     const actions = makeElement('div', 'trip-actions');
-    const edit = makeElement('button', 'compact ghost', '編集');
+    const edit = makeElement('button', 'compact ghost', 'EDIT');
     edit.type = 'button';
     edit.addEventListener('click', () => {
       $('role-uid').value = profile.uid;

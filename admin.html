@@ -9,8 +9,9 @@
     <link rel="stylesheet" href="src/admin.css">
     <link rel="stylesheet" href="src/admin-v2.css?v=300">
     <link rel="stylesheet" href="src/discussion.css">
-    <link rel="stylesheet" href="src/theme-v31.css?v=314">
-    <link rel="stylesheet" href="src/design-v31.css?v=314">
+    <link rel="stylesheet" href="src/theme-v31.css?v=320">
+    <link rel="stylesheet" href="src/design-v31.css?v=320">
+    <link rel="stylesheet" href="src/expressive-v32.css?v=320">
 </head>
 <body>
     <section id="admin-auth" class="auth-shell" aria-labelledby="auth-title">
@@ -19,7 +20,7 @@
             <h1 id="auth-title">SHIORI<br>STUDIO</h1>
             <p class="auth-copy">旅程を作り、公開し、同行者へ安全に配布する管理者専用ページです。</p>
             <div id="auth-state" class="auth-state" role="status">管理者アカウントを確認しています…</div>
-            <button id="admin-sign-in" class="button primary wide" type="button" hidden>GOOGLEでログイン</button>
+            <button id="admin-sign-in" class="button primary wide" type="button" hidden aria-label="Googleでログイン">SIGN IN WITH GOOGLE</button>
             <div id="admin-access-help" class="access-help" hidden>
                 <strong>管理者登録が必要です</strong>
                 <p>下のUIDをFirebaseの <code>admins</code> コレクションへドキュメントIDとして登録してください。</p>
@@ -38,19 +39,19 @@
                 <span><b>SHIORI</b><small>しおり編集室</small></span>
             </a>
             <div class="topbar-actions">
-                <a class="button ghost compact" href="./" target="_blank" rel="noopener noreferrer">参加者ページ ↗</a>
+                <a class="button ghost compact" href="./" target="_blank" rel="noopener noreferrer" aria-label="参加者ページを開く">OPEN APP ↗</a>
                 <span id="admin-account" class="account-chip">—</span>
-                <button id="admin-sign-out" class="button compact" type="button">ログアウト</button>
+                <button id="admin-sign-out" class="button compact" type="button" aria-label="ログアウト">SIGN OUT</button>
             </div>
         </header>
 
         <div class="admin-layout">
             <aside class="sidebar" aria-label="管理メニュー">
                 <p class="sidebar-label">編集メニュー</p>
-                <button class="nav-item active" type="button" data-admin-view="overview"><span>01</span>概要</button>
-                <button class="nav-item" type="button" data-admin-view="editor"><span>02</span>しおり編集</button>
-                <button class="nav-item" type="button" data-admin-view="distribution"><span>03</span>配布先管理</button>
-                <button id="roles-nav" class="nav-item" type="button" data-admin-view="roles"><span>04</span>管理者</button>
+                <button class="nav-item active" type="button" data-admin-view="overview" aria-label="概要"><span>01</span>OVERVIEW</button>
+                <button class="nav-item" type="button" data-admin-view="editor" aria-label="しおり編集"><span>02</span>EDIT</button>
+                <button class="nav-item" type="button" data-admin-view="distribution" aria-label="配布先管理"><span>03</span>DISTRIBUTE</button>
+                <button id="roles-nav" class="nav-item" type="button" data-admin-view="roles" aria-label="管理者"><span>04</span>ADMINS</button>
                 <div class="sidebar-note">
                     <b>公開について</b>
                     <p>「下書き保存」では参加者ページは変わりません。「公開」を押した時だけ更新されます。</p>
@@ -61,7 +62,7 @@
                 <section id="view-overview" class="admin-view" data-view="overview">
                     <div class="view-heading">
                         <div><p class="eyebrow">旅行一覧</p><h2>旅行を管理</h2></div>
-                        <button id="overview-new-trip" class="button primary" type="button">＋ 新しい旅行</button>
+                        <button id="overview-new-trip" class="button primary" type="button" aria-label="新しい旅行を作成">＋ NEW TRIP</button>
                     </div>
                     <div class="metric-grid" aria-label="管理状況">
                         <article><span>旅行</span><strong id="metric-trips">0</strong><small>登録された旅行</small></article>
@@ -76,14 +77,14 @@
                     <div class="view-heading editor-heading">
                         <div><p class="eyebrow">旅程を組み立てる</p><h2>しおり・旅程を編集</h2></div>
                         <div class="button-group">
-                            <label class="button ghost" for="import-trip-file">JSON読込</label>
+                            <label class="button ghost" for="import-trip-file" aria-label="JSONを読み込む">IMPORT JSON</label>
                             <input id="import-trip-file" type="file" accept="application/json,.json" hidden>
-                            <button id="download-trip" class="button ghost" type="button">参加者用JSON</button>
-                            <button id="download-admin-backup" class="button ghost" type="button" title="管理者専用・非公開メモを含むため共有注意">管理者バックアップ</button>
-                            <button id="preview-trip" class="button ghost" type="button">スマホ確認</button>
-                            <button id="history-trip" class="button ghost" type="button">公開履歴</button>
-                            <button id="save-draft" class="button" type="button">下書き保存</button>
-                            <button id="reload-draft" class="button ghost" type="button">最新の下書き</button>
+                            <button id="download-trip" class="button ghost" type="button" aria-label="参加者用JSONを書き出す">EXPORT JSON</button>
+                            <button id="download-admin-backup" class="button ghost" type="button" title="管理者専用・非公開メモを含むため共有注意" aria-label="管理者バックアップを書き出す">BACKUP</button>
+                            <button id="preview-trip" class="button ghost" type="button" aria-label="スマホ表示を確認">PREVIEW</button>
+                            <button id="history-trip" class="button ghost" type="button" aria-label="公開履歴を表示">HISTORY</button>
+                            <button id="save-draft" class="button" type="button" aria-label="下書きを保存">SAVE DRAFT</button>
+                            <button id="reload-draft" class="button ghost" type="button" aria-label="最新の下書きを再読込">RELOAD</button>
                             <button id="publish-trip" class="button primary" type="button">参加者へ公開</button>
                         </div>
                     </div>
@@ -113,7 +114,7 @@
                                 <p class="field-help span-2">表紙は標準デザイン、通貨は日本円、時刻は日本時間で固定されます。通知はしおりを開いている間だけ動作します。</p>
                                 <p class="v2-section-label">持ち物テンプレート</p>
                                 <label>旅行テンプレート<select id="trip-template"><option value="domestic">国内旅行</option><option value="drive">ドライブ旅行</option><option value="rail">鉄道旅行</option></select></label>
-                                <button id="apply-template" class="button ghost" type="button">持ち物テンプレートを適用</button>
+                                <button id="apply-template" class="button ghost" type="button" aria-label="持ち物テンプレートを適用">APPLY TEMPLATE</button>
                             </div>
                         </section>
 
@@ -121,7 +122,7 @@
                             <div class="panel-title responsive-title">
                                 <div><span>02</span><h3>候補スポット</h3></div>
                                 <div class="day-actions">
-                                    <button id="add-candidate" class="button primary compact" type="button">＋ 候補を追加</button>
+                                    <button id="add-candidate" class="button primary compact" type="button" aria-label="候補を追加">＋ ADD</button>
                                 </div>
                             </div>
                             <div class="candidate-filter-bar">
@@ -146,9 +147,9 @@
                                 <div><span>03</span><h3>日程とカード</h3></div>
                                 <div class="day-actions">
                                     <select id="editor-day-select" aria-label="編集する日"></select>
-                                    <button id="add-day" class="button compact" type="button">＋ DAY</button>
-                                    <button id="add-card" class="button primary compact" type="button">＋ カード</button>
-                                    <button id="undo-day-plan" class="button compact ghost" type="button" hidden>↩ 直前の変更を取り消す</button>
+                                    <button id="add-day" class="button compact" type="button" aria-label="日程の日を追加">＋ DAY</button>
+                                    <button id="add-card" class="button primary compact" type="button" aria-label="旅程カードを追加">＋ CARD</button>
+                                    <button id="undo-day-plan" class="button compact ghost" type="button" hidden aria-label="直前の変更を取り消す">↩ UNDO</button>
                                 </div>
                             </div>
                             <div class="form-grid day-label-field">
@@ -171,7 +172,7 @@
                             <label>旅行<select id="distribution-trip"></select></label>
                             <label>配布先名<input id="distribution-label" maxlength="40" placeholder="友人グループ用"></label>
                             <label class="distribution-capacity-field">端末枠<input id="distribution-capacity" type="number" min="1" max="50" step="1" value="2" inputmode="numeric"></label>
-                            <button id="create-distribution" class="button primary" type="button">配布IDを発行</button>
+                            <button id="create-distribution" class="button primary" type="button" aria-label="配布IDを発行">ISSUE ID</button>
                         </div>
                         <p class="field-help">端末枠は1〜50台で設定できます。参加者は登録リンクを開くだけで追加され、配布IDをADDへ手入力する方法も使えます。配布先ごとに独立した参加者・割り勘ルームを作成し、共有支出は各配布先カードの「共有台帳」から管理者もリアルタイムで確認できます。</p>
                     </section>
@@ -187,7 +188,7 @@
                             <label>Firebase UID<input id="role-uid" maxlength="128" autocomplete="off"></label>
                             <label>表示名<input id="role-name" maxlength="40" autocomplete="off"></label>
                             <label>役割<select id="role-type"><option value="editor">編集者</option><option value="owner">オーナー</option></select></label>
-                            <button id="save-role" class="button primary" type="button">登録・更新</button>
+                            <button id="save-role" class="button primary" type="button" aria-label="管理者を登録または更新">SAVE</button>
                         </div>
                         <p class="field-help">オーナーは管理者登録と完全削除ができます。編集者は旅程の編集・公開・配布管理ができます。</p>
                     </section>
@@ -223,11 +224,11 @@
                     <div class="duration-input-group">
                         <input id="candidate-duration" type="number" min="0" max="1440" step="5" value="60" placeholder="60">
                         <div class="quick-duration-buttons">
-                            <button type="button" class="button compact ghost" data-set-duration="15">15分</button>
-                            <button type="button" class="button compact ghost" data-set-duration="30">30分</button>
-                            <button type="button" class="button compact ghost" data-set-duration="60">60分</button>
-                            <button type="button" class="button compact ghost" data-set-duration="90">90分</button>
-                            <button type="button" class="button compact ghost" data-set-duration="120">120分</button>
+                            <button type="button" class="button compact ghost" data-set-duration="15">15 MIN</button>
+                            <button type="button" class="button compact ghost" data-set-duration="30">30 MIN</button>
+                            <button type="button" class="button compact ghost" data-set-duration="60">60 MIN</button>
+                            <button type="button" class="button compact ghost" data-set-duration="90">90 MIN</button>
+                            <button type="button" class="button compact ghost" data-set-duration="120">120 MIN</button>
                         </div>
                     </div>
                 </label>
@@ -243,9 +244,9 @@
             <div class="dialog-actions">
                 <div>
                     <button id="delete-candidate" class="button danger" type="button" hidden>削除</button>
-                    <button id="reset-candidate-status" class="button compact ghost" type="button" hidden>日程への追加を取り消す</button>
+                    <button id="reset-candidate-status" class="button compact ghost" type="button" hidden aria-label="日程への追加を取り消す">REMOVE FROM DAY</button>
                 </div>
-                <button id="save-candidate" class="button primary" type="submit">候補を保存</button>
+                <button id="save-candidate" class="button primary" type="submit" aria-label="候補を保存">SAVE</button>
             </div>
         </form>
     </dialog>
@@ -265,7 +266,7 @@
                     <input id="adopt-travel-minutes" type="number" min="0" max="1440" value="0">
                     <p class="field-help">※ 移動時間は Google Maps で確認して入力してください。</p>
                     <div class="adopt-maps-actions">
-                        <a id="adopt-maps-route-link" class="button compact ghost" target="_blank" rel="noopener noreferrer" href="#">Google Mapsで前後の経路を確認 ↗</a>
+                        <a id="adopt-maps-route-link" class="button compact ghost" target="_blank" rel="noopener noreferrer" href="#" aria-label="Google Mapsで前後の経路を確認">CHECK ROUTE ↗</a>
                     </div>
                 </label>
                 <label>開始時刻<input id="adopt-start-time" type="time" required></label>
@@ -275,8 +276,8 @@
             </div>
             <div id="adopt-preview" class="adopt-preview-box" role="status" aria-live="polite"></div>
             <div class="dialog-actions">
-                <button id="cancel-adopt" class="button ghost" type="button">キャンセル</button>
-                <button id="confirm-adopt" class="button primary" type="submit">この内容で日程に追加</button>
+                <button id="cancel-adopt" class="button ghost" type="button" aria-label="日程への追加をキャンセル">CANCEL</button>
+                <button id="confirm-adopt" class="button primary" type="submit" aria-label="この内容で日程に追加">ADD TO DAY</button>
             </div>
         </form>
     </dialog>
@@ -304,10 +305,10 @@
                 <div class="preset-buttons-group span-2">
                     <span class="muted small">アプリ・経路ボタンのプリセット追加:</span>
                     <div class="preset-chips">
-                        <button type="button" class="button compact ghost" data-add-preset="route">🚗 Maps経路</button>
+                        <button type="button" class="button compact ghost" data-add-preset="route" aria-label="Google Maps経路ボタンを追加">🚗 ROUTE</button>
                         <button type="button" class="button compact ghost" data-add-preset="ana">✈️ ANA</button>
-                        <button type="button" class="button compact ghost" data-add-preset="toyota">🚙 トヨタレンタカー</button>
-                        <button type="button" class="button compact ghost" data-add-preset="jalan">🏨 じゃらん</button>
+                        <button type="button" class="button compact ghost" data-add-preset="toyota" aria-label="トヨタレンタカーボタンを追加">🚙 TOYOTA</button>
+                        <button type="button" class="button compact ghost" data-add-preset="jalan" aria-label="じゃらんボタンを追加">🏨 JALAN</button>
                         <button type="button" class="button compact ghost" data-add-preset="hello-cycling">🚲 HELLO CYCLING</button>
                     </div>
                 </div>
@@ -339,12 +340,12 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
             <div class="dialog-actions">
                 <div>
                     <button id="delete-card" class="button danger" type="button">削除</button>
-                    <button id="move-card-up" class="button compact" type="button">↑ 上へ</button>
-                    <button id="move-card-down" class="button compact" type="button">↓ 下へ</button>
-                    <button id="open-move-day" class="button compact ghost" type="button">別日へ移動</button>
-                    <button id="open-cascade-adjust" class="button compact ghost" type="button">後続時刻を調整</button>
+                    <button id="move-card-up" class="button compact" type="button" aria-label="カードを上へ移動">↑ UP</button>
+                    <button id="move-card-down" class="button compact" type="button" aria-label="カードを下へ移動">↓ DOWN</button>
+                    <button id="open-move-day" class="button compact ghost" type="button" aria-label="別日へ移動">MOVE DAY</button>
+                    <button id="open-cascade-adjust" class="button compact ghost" type="button" aria-label="後続時刻を調整">ADJUST TIME</button>
                 </div>
-                <button id="save-card" class="button primary" type="submit">カードを保存</button>
+                <button id="save-card" class="button primary" type="submit" aria-label="カードを保存">SAVE</button>
             </div>
         </form>
     </dialog>
@@ -368,8 +369,8 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
                 <label class="span-2 inline-checkbox"><input id="move-day-allow-locked" type="checkbox"><span>固定予定（timeLocked）の日時変更を許可する</span></label>
             </div>
             <div class="dialog-actions">
-                <button id="cancel-move-day" class="button ghost" type="button">キャンセル</button>
-                <button id="preview-move-day" class="button primary" type="submit">移動案を確認</button>
+                <button id="cancel-move-day" class="button ghost" type="button" aria-label="別日移動をキャンセル">CANCEL</button>
+                <button id="preview-move-day" class="button primary" type="submit" aria-label="移動案を確認">PREVIEW</button>
             </div>
         </form>
     </dialog>
@@ -388,8 +389,8 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
                 <p class="field-help span-2">※ 🔒固定予定（timeLocked）に到達した場合は時刻を動かさず停止します。</p>
             </div>
             <div class="dialog-actions">
-                <button id="cancel-cascade" class="button ghost" type="button">キャンセル</button>
-                <button id="preview-cascade" class="button primary" type="submit">調整案を確認</button>
+                <button id="cancel-cascade" class="button ghost" type="button" aria-label="時刻調整をキャンセル">CANCEL</button>
+                <button id="preview-cascade" class="button primary" type="submit" aria-label="調整案を確認">PREVIEW</button>
             </div>
         </form>
     </dialog>
@@ -404,9 +405,9 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
             <div id="planner-compare-diff" class="planner-diff-list" aria-live="polite"></div>
             <div id="planner-compare-alerts" class="adopt-preview-box" role="status" aria-live="polite"></div>
             <div class="dialog-actions">
-                <button id="planner-compare-auto-adjust" class="button compact ghost" type="button" hidden>⚡ 時刻を自動調整して解決</button>
-                <button id="cancel-planner-compare" class="button ghost" type="button">キャンセル</button>
-                <button id="confirm-planner-compare" class="button primary" type="submit">変更を適用</button>
+                <button id="planner-compare-auto-adjust" class="button compact ghost" type="button" hidden aria-label="時刻を自動調整して解決">⚡ AUTO ADJUST</button>
+                <button id="cancel-planner-compare" class="button ghost" type="button" aria-label="変更をキャンセル">CANCEL</button>
+                <button id="confirm-planner-compare" class="button primary" type="submit" aria-label="変更を適用">APPLY</button>
             </div>
         </form>
     </dialog>

@@ -60,6 +60,46 @@
             : { uid: '', isAdmin: false };
     }
 
+    function expenseIsUnlocked() {
+        const access = window.currentLedgerAccess;
+        return navigator.onLine === true && access?.live === true && Boolean(access?.uid);
+    }
+
+    function clearExpenseDisplay() {
+        document.getElementById('expense-list')?.replaceChildren();
+        const total = document.getElementById('expense-total');
+        const share = document.getElementById('expense-share');
+        const settlement = document.getElementById('expense-settlement');
+        if (total) total.textContent = '—';
+        if (share) share.textContent = '—';
+        if (settlement) settlement.textContent = 'オンライン確認後に表示します';
+    }
+
+    function updateExpensePrivacy(reason = '') {
+        const unlocked = expenseIsUnlocked();
+        const card = document.querySelector('.expense-card');
+        const guard = document.getElementById('expense-privacy-guard');
+        card?.classList.toggle('expense-privacy-locked', !unlocked);
+        if (guard) {
+            guard.hidden = unlocked;
+            const title = guard.querySelector('strong');
+            const copy = guard.querySelector('p');
+            if (!unlocked && title) title.textContent = reason === 'revoked'
+                ? 'この精算へのアクセスは停止されました'
+                : navigator.onLine ? '参加権限を確認しています' : 'オフラインのため精算を非表示にしています';
+            if (!unlocked && copy) copy.textContent = reason === 'revoked'
+                ? '管理者から新しい配布IDを受け取ってください。精算内容は画面へ表示しません。'
+                : 'ID・支出内容・精算額は表示しません。通信復帰後、参加権限を再確認すると自動で表示します。';
+        }
+        document.querySelectorAll('#tab-expenses input, #tab-expenses select, #tab-expenses button, #tab-expenses a').forEach(control => {
+            if (guard?.contains(control)) return;
+            if ('disabled' in control) control.disabled = !unlocked;
+            control.setAttribute('aria-disabled', String(!unlocked));
+        });
+        if (!unlocked) clearExpenseDisplay();
+        return unlocked;
+    }
+
     function canRemoveExpense(expense) {
         if (!window.currentTripLedgerToken) return true;
         const access = currentLedgerAccess();
@@ -286,7 +326,7 @@
         const seen = new Set();
         return source.map(member => ({
             id: String(member?.id || '').slice(0, 128),
-            name: String(member?.name || member?.id || '参加者').slice(0, 40)
+            name: String(member?.name || '参加者').slice(0, 40)
         })).filter(member => member.id && !seen.has(member.id) && seen.add(member.id));
     }
 
@@ -298,7 +338,7 @@
     }
 
     function expenseMemberName(id, members = expenseMembers()) {
-        return members.find(member => member.id === id)?.name || window.memberNames?.[id] || id || '参加者';
+        return members.find(member => member.id === id)?.name || window.memberNames?.[id] || '参加者';
     }
 
     function buildExpenseSettlements(members, paidBy, total) {
@@ -346,6 +386,7 @@
     }
 
     function renderExpenses() {
+        if (!updateExpensePrivacy()) return;
         const expenses = safeLoad(EXPENSE_KEY, []);
         const list = document.getElementById('expense-list');
         if (!list) return;
@@ -406,6 +447,10 @@
     };
     window.recalculateExpenses = renderExpenses;
     window.downloadExpensesCsv = function () {
+        if (!expenseIsUnlocked()) {
+            window.alert('精算内容はオンラインで参加権限を確認できた時だけ書き出せます。');
+            return;
+        }
         const members = expenseMembers();
         const rows = [['日時', '内容', 'カテゴリ', '金額', '支払者', '分け方', '対象者']];
         safeLoad(EXPENSE_KEY, []).forEach(expense => {
@@ -425,6 +470,7 @@
     };
 
     function removeExpense(id) {
+        if (!expenseIsUnlocked()) return;
         const current = safeLoad(EXPENSE_KEY, []);
         const target = current.find(expense => expense.id === id);
         if (!target) return;
@@ -464,6 +510,10 @@
             form.dataset.expenseBound = 'true';
             form.addEventListener('submit', event => {
                 event.preventDefault();
+                if (!expenseIsUnlocked()) {
+                    window.alert('オフライン中は精算内容を追加できません。通信復帰後にお試しください。');
+                    return;
+                }
                 const amount = Number(document.getElementById('expense-amount').value);
                 if (!Number.isFinite(amount) || amount <= 0) return;
                 const expenses = safeLoad(EXPENSE_KEY, []);
@@ -502,11 +552,15 @@
         if (!remoteExpensesBound) {
             remoteExpensesBound = true;
             window.addEventListener('shiori-expenses-remote', event => {
+                if (!expenseIsUnlocked()) return;
                 const expenses = Array.isArray(event.detail) ? event.detail : [];
                 safeSave(EXPENSE_KEY, expenses);
                 renderExpenses();
             });
-            window.addEventListener('shiori-ledger-access', renderExpenses);
+            window.addEventListener('shiori-ledger-access', event => {
+                updateExpensePrivacy(event.detail?.reason || '');
+                renderExpenses();
+            });
         }
         renderExpenses();
     }
@@ -524,6 +578,10 @@
     window.openExpenseShortcut = function (category, note) {
         const expensesButton = document.getElementById('btn-expenses');
         if (typeof window.switchTab === 'function') window.switchTab('tab-expenses', expensesButton);
+        if (!expenseIsUnlocked()) {
+            updateExpensePrivacy();
+            return;
+        }
         const categoryField = document.getElementById('expense-category');
         const noteField = document.getElementById('expense-note');
         const payerField = document.getElementById('expense-payer');
@@ -577,6 +635,7 @@
                     bar.textContent = 'OFFLINE MODE';
                     bar.classList.add('offline');
                 }
+                updateExpensePrivacy(navigator.onLine ? '' : 'offline');
             };
             updateNetworkStatus();
             if (bar.dataset.offlineBound !== 'true') {

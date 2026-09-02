@@ -45,11 +45,11 @@ export function createDiscussionPanel(root, options = {}) {
   };
   root.classList.add('talk');
   root.innerHTML = [
-    '<header class="talk-header"><div><p class="talk-kicker">PLAN TOGETHER</p><h2>旅の、作戦会議。</h2><p class="talk-intro">気になる場所を持ち寄って、旅をつくろう。</p></div><button class="talk-button talk-primary" type="button" data-ui="new">＋ 提案する</button></header>',
-    '<div class="talk-toolbar"><p class="talk-connection" role="status" data-ui="connection"></p><button class="talk-button talk-quiet" type="button" data-ui="retry">再接続</button></div>',
+    '<header class="talk-header"><div><p class="talk-kicker">PLAN TOGETHER</p><h2>旅の、作戦会議。</h2><p class="talk-intro">気になる場所を持ち寄って、旅をつくろう。</p></div><button class="talk-button talk-primary" type="button" data-ui="new" aria-label="新しい場所を提案">＋ SUGGEST</button></header>',
+    '<div class="talk-toolbar"><p class="talk-connection" role="status" data-ui="connection"></p><button class="talk-button talk-quiet" type="button" data-ui="retry" aria-label="再接続">RETRY</button></div>',
     '<p class="talk-notice" role="status" aria-live="polite" data-ui="notice"></p>',
-    '<div class="talk-filters" role="group" aria-label="提案の絞り込み"><button type="button" class="talk-filter" data-filter="all" aria-pressed="true">すべて</button><button type="button" class="talk-filter" data-filter="open" aria-pressed="false">相談中</button><button type="button" class="talk-filter" data-filter="adopted" aria-pressed="false">候補に追加</button></div>',
-    '<p class="talk-count" data-ui="count"></p><div class="talk-list" data-ui="list"></div><button class="talk-button talk-more" type="button" data-ui="more" hidden>続きを見る</button>',
+    '<div class="talk-filters" role="group" aria-label="提案の絞り込み"><button type="button" class="talk-filter" data-filter="all" aria-pressed="true">ALL</button><button type="button" class="talk-filter" data-filter="open" aria-pressed="false">OPEN</button><button type="button" class="talk-filter" data-filter="adopted" aria-pressed="false">ADDED</button></div>',
+    '<p class="talk-count" data-ui="count"></p><div class="talk-list" data-ui="list"></div><button class="talk-button talk-more" type="button" data-ui="more" hidden aria-label="提案の続きを見る">MORE</button>',
     '<p class="talk-footnote">この配布先のメンバーに共有されます。候補への追加だけでは旅程は公開されません。</p>',
     '<dialog class="talk-dialog talk" data-ui="composer" aria-labelledby="' + prefix + '-compose-title"><form data-ui="form">',
     '<header class="talk-dialog-head"><div><p class="talk-kicker">SUGGEST A PLACE</p><h3 id="' + prefix + '-compose-title" data-ui="compose-title">気になる場所を提案</h3></div><button type="button" class="talk-close" data-ui="close-form" aria-label="提案を閉じる">×</button></header>',
@@ -57,10 +57,10 @@ export function createDiscussionPanel(root, options = {}) {
     '<label>Google Maps の共有リンク <span>任意</span><input name="mapUrl" type="url" maxlength="2048" placeholder="https://maps.app.goo.gl/…"></label>',
     '<label>住所・地図の検索語 <span>任意</span><input name="mapQuery" maxlength="300" placeholder="空欄ならスポット名で検索"></label>',
     '<label>ひとこと <span>任意・200文字まで</span><textarea name="comment" rows="3" maxlength="200" placeholder="ここでゆっくり写真を撮りたい！"></textarea></label>',
-    '<p class="talk-help" data-ui="draft-note">未送信の入力は、この端末にだけ保存します。</p><p class="talk-error" role="alert" data-ui="form-error"></p><button class="talk-button talk-primary" type="submit" data-ui="submit">みんなに提案する</button></form></dialog>',
+    '<p class="talk-help" data-ui="draft-note">未送信の入力は、この端末にだけ保存します。</p><p class="talk-error" role="alert" data-ui="form-error"></p><button class="talk-button talk-primary" type="submit" data-ui="submit" aria-label="みんなに提案する">SHARE</button></form></dialog>',
     '<dialog class="talk-dialog talk" data-ui="thread" aria-labelledby="' + prefix + '-thread-title"><header class="talk-dialog-head"><div><p class="talk-kicker">CONVERSATION</p><h3 id="' + prefix + '-thread-title" data-ui="thread-title"></h3></div><button type="button" class="talk-close" data-ui="close-thread" aria-label="コメントを閉じる">×</button></header>',
-    '<p class="talk-help">コメントは新しい順に表示します。</p><div class="talk-comments" data-ui="comments"></div><button class="talk-button talk-more" type="button" data-ui="comments-more" hidden>以前のコメント</button>',
-    '<form class="talk-comment-form" data-ui="comment-form"><label>コメント<textarea name="text" rows="2" maxlength="200" required placeholder="気になることを話そう"></textarea></label><p class="talk-error" role="alert" data-ui="comment-error"></p><button class="talk-button talk-primary" type="submit" data-ui="comment-submit">送信</button></form></dialog>'
+    '<p class="talk-help">コメントは新しい順に表示します。</p><div class="talk-comments" data-ui="comments"></div><button class="talk-button talk-more" type="button" data-ui="comments-more" hidden aria-label="以前のコメントを見る">MORE</button>',
+    '<form class="talk-comment-form" data-ui="comment-form"><label>コメント<textarea name="text" rows="2" maxlength="200" required placeholder="気になることを話そう"></textarea></label><p class="talk-error" role="alert" data-ui="comment-error"></p><button class="talk-button talk-primary" type="submit" data-ui="comment-submit" aria-label="コメントを送信">SEND</button></form></dialog>'
   ].join('');
   const ui = Object.fromEntries([...root.querySelectorAll('[data-ui]')].map(node => [node.dataset.ui, node]));
   const input = name => ui.form.elements.namedItem(name);
@@ -177,7 +177,7 @@ export function createDiscussionPanel(root, options = {}) {
       }
       const liked = Object.hasOwn(item.likes || {}, context?.authUid || '');
       if (item.status !== 'withdrawn' || liked) {
-        const heart = action((liked ? '♥ ' : '♡ ') + '行きたい ' + Object.keys(item.likes || {}).length,
+        const heart = action((liked ? '♥ ' : '♡ ') + 'WANT ' + Object.keys(item.likes || {}).length,
           () => perform(() => service.setSuggestionReaction(context, item.id, { desired: !liked, name: name() }), replaceItem),
           'talk-reaction',
           true
@@ -186,7 +186,7 @@ export function createDiscussionPanel(root, options = {}) {
         heart.title = ready() ? '' : (connection === 'offline' ? 'オフライン中はリアクションできません' : '');
         actions.append(heart);
       }
-      actions.append(action('コメント', () => openThread(item), '', false));
+      actions.append(action('COMMENT', () => openThread(item), '', false));
       card.append(actions);
       const details = el('details', 'talk-details'); details.append(el('summary', '', 'メンバー・操作'));
       const likedNames = Object.values(item.likes || {}).map(like => like.name).filter(Boolean);
@@ -194,7 +194,7 @@ export function createDiscussionPanel(root, options = {}) {
       const extras = el('div', 'talk-actions');
       if (item.creatorUid === context?.authUid) {
         if (item.status === 'open') {
-          const editBtn = action('編集', () => openComposer(item), '', true);
+          const editBtn = action('EDIT', () => openComposer(item), '', true);
           editBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は編集できません' : '');
           extras.append(editBtn);
         }
@@ -211,14 +211,14 @@ export function createDiscussionPanel(root, options = {}) {
         const moderation = el('div', 'talk-actions talk-moderation');
         const candidate = options.getCandidate?.(item.id, context?.roomId);
         if (item.status === 'open') {
-          const adoptBtn = action('候補棚に追加', () => adminAction('adopt', item), 'talk-primary', true);
+          const adoptBtn = action('ADD TO SHELF', () => adminAction('adopt', item), 'talk-primary', true);
           adoptBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は操作できません' : '');
           const declineBtn = action('見送り', () => adminAction('declined', item), '', true);
           declineBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は操作できません' : '');
           moderation.append(adoptBtn, declineBtn);
         }
         if (item.status === 'declined') {
-          const reopenBtn = action('再検討する', () => adminAction('open', item), '', true);
+          const reopenBtn = action('REOPEN', () => adminAction('open', item), '', true);
           reopenBtn.title = ready() ? '' : (connection === 'offline' ? 'オフライン中は操作できません' : '');
           moderation.append(reopenBtn);
         }

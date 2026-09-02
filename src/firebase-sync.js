@@ -52,8 +52,8 @@ const PARTICIPANT_ACTIVE_MS = 5 * 60 * 1000;
 const TRIP_ACCESS_KEY = 'participant-trip-access-v1';
 const ACCESS_ID_PATTERN = /^[A-Z2-9]{12}$/;
 
-function publishLedgerAccess(uid = '', live = false) {
-    const access = { uid: String(uid || ''), isAdmin: false, live: live === true };
+function publishLedgerAccess(uid = '', live = false, reason = '') {
+    const access = { uid: String(uid || ''), isAdmin: false, live: live === true, reason: String(reason || '') };
     window.currentLedgerAccess = access;
     window.dispatchEvent(new CustomEvent('shiori-ledger-access', { detail: access }));
 }
@@ -121,17 +121,18 @@ function setSyncUi(mode, title, message) {
                 : 'MEMBERS: 接続中…';
     }
     if (expenseSubmit) {
-        expenseSubmit.textContent = mode === 'live'
-            ? 'ADD & SHARE'
-            : mode === 'connecting'
-                ? 'SAVE & SYNC SOON'
-                : 'SAVE OFFLINE';
+        expenseSubmit.textContent = mode === 'live' ? 'ADD & SHARE' : 'LOCKED';
+        expenseSubmit.disabled = mode !== 'live';
         expenseSubmit.dataset.syncMode = mode;
     }
 }
 
 function renderLiveSyncState() {
-    if (!syncContext?.roomReady || !syncContext?.participantsReady) return;
+    if (!syncContext?.roomReady || !syncContext?.participantsReady
+        || !syncContext.roomVerified || !syncContext.participantsVerified
+        || !Array.isArray(syncContext.verifiedExpenses) || !navigator.onLine) return;
+    publishLedgerAccess(syncContext.uid, true);
+    if (Array.isArray(syncContext.verifiedExpenses)) emitRemoteExpenses(syncContext.verifiedExpenses);
     const deviceCount = Number(syncContext.memberCount || 0);
     const peopleCount = Number(syncContext.logicalMemberCount ?? deviceCount);
     const capacity = Math.max(deviceCount, Number(syncContext.capacity || 2));
@@ -427,14 +428,17 @@ export async function initSyncEngine(tripId) {
             ledgerToken,
             roomReady: false,
             participantsReady: false,
+            roomVerified: false,
+            participantsVerified: false,
             memberCount: 0,
             logicalMemberCount: null,
             capacity: 2,
             deviceOwnerInitialized: false,
             memberIds: [],
-            roomMemberIds: []
+            roomMemberIds: [],
+            verifiedExpenses: null
         };
-        publishLedgerAccess(uid, true);
+        publishLedgerAccess(uid, false);
 
         // Register participant nickname in Firestore
         const nickname = String(localStorage.getItem('user_nickname') || '名無し').trim().slice(0, 40) || '名無し';
@@ -490,7 +494,7 @@ export async function initSyncEngine(tripId) {
             });
             const optionData = [
                 ...[...canonicalByName.values()].map(person => ({ id: person.uid, name: person.nickname })),
-                ...missingMemberIds.map(memberId => ({ id: memberId, name: '端末…' + memberId.slice(-6) }))
+                ...missingMemberIds.map((memberId, index) => ({ id: memberId, name: `参加者 ${index + canonicalByName.size + 1}` }))
             ];
             const activeCanonicalIds = new Set(allParticipants
                 .filter(person => person.activeAt >= cutoff)
@@ -543,14 +547,15 @@ export async function initSyncEngine(tripId) {
         };
 
         // Listen to participant updates for header display and PayPay select options.
-        unsubscribeParticipants = onSnapshot(collection(roomRef, 'participants'), snapshot => {
+        unsubscribeParticipants = onSnapshot(collection(roomRef, 'participants'), { includeMetadataChanges: true }, snapshot => {
+            syncContext.participantsVerified = snapshot.metadata?.fromCache !== true;
             latestParticipantSnapshot = snapshot;
             refreshParticipants();
         }, error => {
             if (currentRunId !== syncRunId || !syncContext) return;
             console.error('Participant sync failed', error);
             window.expensePayerAliases = {};
-            publishLedgerAccess();
+            publishLedgerAccess('', false, /permission-denied|unauthenticated/.test(String(error?.code)) ? 'revoked' : 'offline');
             setIdentityControlLocked(false);
             setSyncUi('error', '参加者情報を同期できません', '管理者へ連絡し、Firestoreルールと登録リンクを確認してください。');
         });
@@ -567,7 +572,7 @@ export async function initSyncEngine(tripId) {
         })));
         if (currentRunId !== syncRunId) return;
 
-        unsubscribeRoom = onSnapshot(roomRef, snapshot => {
+        unsubscribeRoom = onSnapshot(roomRef, { includeMetadataChanges: true }, snapshot => {
             if (currentRunId !== syncRunId || !syncContext) return;
             const roomData = snapshot.data() || {};
             const members = roomData.members || {};
@@ -576,6 +581,7 @@ export async function initSyncEngine(tripId) {
             syncContext.memberCount = syncContext.roomMemberIds.length;
             syncContext.capacity = Number.isInteger(Number(roomData.capacity)) ? Number(roomData.capacity) : 2;
             syncContext.roomReady = true;
+            syncContext.roomVerified = snapshot.metadata?.fromCache !== true;
             refreshParticipants();
             renderLiveSyncState();
             if (!roomWasReady && syncContext.participantsReady) {
@@ -594,21 +600,23 @@ export async function initSyncEngine(tripId) {
                 state: /permission-denied|unauthenticated/.test(String(error?.code)) ? 'revoked' : 'offline'
             } }));
             window.expensePayerAliases = {};
-            publishLedgerAccess();
+            publishLedgerAccess('', false, /permission-denied|unauthenticated/.test(String(error?.code)) ? 'revoked' : 'offline');
             setIdentityControlLocked(false);
             setSyncUi('error', '配布ルームが停止されました', '管理者から新しい登録リンクを受け取ってください。');
         });
 
-        unsubscribeExpenses = onSnapshot(expensesCollection, snapshot => {
+        unsubscribeExpenses = onSnapshot(expensesCollection, { includeMetadataChanges: true }, snapshot => {
             if (currentRunId !== syncRunId) return;
+            if (snapshot.metadata?.fromCache === true || !navigator.onLine) return;
             const expenses = snapshot.docs
                 .map(item => cleanExpense({ id: item.id, ...item.data() }))
                 .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-            emitRemoteExpenses(expenses);
-        }, () => {
+            syncContext.verifiedExpenses = expenses;
+            if (window.currentLedgerAccess?.live === true) emitRemoteExpenses(expenses);
+        }, error => {
             if (currentRunId !== syncRunId) return;
             window.expensePayerAliases = {};
-            publishLedgerAccess();
+            publishLedgerAccess('', false, /permission-denied|unauthenticated/.test(String(error?.code)) ? 'revoked' : 'offline');
             setIdentityControlLocked(false);
             setSyncUi('error', '台帳を同期できません', '通信状態、または登録リンクの有効期限を確認してください。端末内の入力は残っています。');
         });
@@ -655,8 +663,8 @@ export async function initSyncEngine(tripId) {
         }
         window.suggestionSyncService = null;
         window.expensePayerAliases = {};
-        publishLedgerAccess();
         const code = String(error?.code || '');
+        publishLedgerAccess('', false, code.includes('permission-denied') ? 'revoked' : 'offline');
         if (code.includes('auth/operation-not-allowed')) {
             setSyncUi('error', '共有機能を利用できません', '管理者へ連絡してください。端末内では引き続き記録できます。');
         } else if (code.includes('permission-denied')) {
@@ -722,3 +730,16 @@ window._redeemAccessId = redeemAccessId;
 window._fetchManagedTripConfig = fetchManagedTripConfig;
 window._initSyncEngine = initSyncEngine;
 window._stopSyncEngine = stopSyncEngine;
+
+window.addEventListener('offline', () => {
+    if (window.currentTripId) publishLedgerAccess('', false, 'offline');
+});
+
+window.addEventListener('online', () => {
+    const tripId = String(window.currentTripId || '');
+    if (!tripId) return;
+    publishLedgerAccess('', false, 'offline');
+    initSyncEngine(tripId).catch(() => {
+        publishLedgerAccess('', false, 'offline');
+    });
+});
