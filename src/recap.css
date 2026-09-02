@@ -38,6 +38,18 @@
 .recap-intro { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .6fr); gap: 24px; padding: 54px 0 44px; }
 .recap-intro-copy h2 { margin: 0 0 15px; font-size: clamp(1.65rem, 4vw, 2.55rem); font-weight: 500; line-height: 1.35; }
 .recap-intro-copy p { margin: 0; color: var(--sh-muted); line-height: 1.9; }
+.recap-original {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 20px; margin: -12px 0 42px;
+  padding: 20px 22px; border: 1px solid var(--sh-line); border-radius: var(--sh-radius-xl) var(--sh-radius-xl) 10px var(--sh-radius-xl);
+  color: var(--sh-ink); background: var(--sh-surface); box-shadow: var(--sh-shadow); text-decoration: none;
+}
+.recap-original[hidden] { display: none !important; }
+.recap-original-label { color: var(--sh-accent); font-size: .66rem; font-weight: 650; letter-spacing: .12em; }
+.recap-original-copy { display: grid; gap: 4px; }
+.recap-original-copy strong { font-size: .94rem; font-weight: 600; }
+.recap-original-copy small { color: var(--sh-muted); font-size: .72rem; }
+.recap-original-arrow { color: var(--sh-accent); font-size: .7rem; font-weight: 650; letter-spacing: .08em; white-space: nowrap; }
+.recap-original:active { transform: scale(.99); }
 .recap-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 0; }
 .recap-stats div { padding: 18px 14px; border-radius: var(--sh-radius-lg) var(--sh-radius-lg) 8px var(--sh-radius-lg); background: var(--sh-surface); }
 .recap-stats dt { color: var(--sh-muted); font-size: .62rem; font-weight: 650; letter-spacing: .08em; }
@@ -79,6 +91,8 @@
   .recap-cover { min-height: 410px; padding: 28px 24px; }
   .recap-cover h1 { margin-top: 116px; }
   .recap-intro { grid-template-columns: 1fr; padding: 38px 4px 32px; }
+  .recap-original { grid-template-columns: 1fr auto; gap: 8px 14px; margin-top: -8px; padding: 18px; }
+  .recap-original-label { grid-column: 1 / -1; }
   .recap-highlights { grid-template-columns: 1fr; }
   .recap-nav { overflow-x: auto; }
   .recap-day { padding: 27px 20px; }
@@ -91,7 +105,7 @@
   @page { margin: 14mm; }
   .recap-page { background: white !important; color: #1e2725 !important; }
   .recap-shell { width: 100%; padding: 0; }
-  .recap-toolbar, .recap-nav, .recap-footer-actions { display: none !important; }
+  .recap-toolbar, .recap-nav, .recap-footer-actions, .recap-original { display: none !important; }
   .recap-cover { min-height: 190mm; break-after: page; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .recap-intro { break-after: page; }
   .recap-day { break-before: page; box-shadow: none; border: 1px solid #d9dfdc; }

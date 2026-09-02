@@ -10,7 +10,7 @@
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
     <link rel="stylesheet" href="src/participant-v2.css?v=300">
-    <link rel="stylesheet" href="src/recap.css?v=330">
+    <link rel="stylesheet" href="src/recap.css?v=331">
     <link rel="stylesheet" href="src/enhancements.css">
     <link rel="stylesheet" href="src/discussion.css">
     <link rel="stylesheet" href="src/theme-v31.css?v=320">
@@ -1110,25 +1110,37 @@
         let portalTripsCache = [];
         let currentPortalCategory = 'upcoming';
 
-        function publicRecapSummaries() {
+        function publicRecapSummaries(joinedTrips = []) {
             return (Array.isArray(window.shioriPublicRecaps) ? window.shioriPublicRecaps : []).map(recap => ({
                 id: `recap-${recap.id}`,
                 title: recap.title,
                 subtitle: recap.subtitle,
                 date: `${recap.startDate} - ${recap.endDate}`,
-                href: recap.href,
+                href: (() => {
+                    const original = joinedTrips.find(trip => trip.recapId === recap.id);
+                    return original ? `${recap.href}&trip=${encodeURIComponent(original.id)}` : recap.href;
+                })(),
                 isPast: true,
                 isRecap: true
             }));
         }
 
+        function combinePortalTrips(joinedTrips) {
+            const visibleTrips = joinedTrips.filter(trip => !(trip.isPast && trip.recapId));
+            return visibleTrips.concat(publicRecapSummaries(joinedTrips));
+        }
+
         function portalTripSummary(tripId, data, todayStr) {
             if (!validTripConfig(data, tripId)) return null;
+            const recap = window.shioriFindRecapForTrip?.(data) || null;
             return {
                 id: tripId,
                 title: data.title,
                 subtitle: data.subtitle || '',
                 date: `${data.startDate} - ${data.endDate}`,
+                startDate: data.startDate || '',
+                endDate: data.endDate || '',
+                recapId: recap?.id || '',
                 isPast: data.archived === true || (data.endDate ? (data.endDate < todayStr) : false)
             };
         }
@@ -1158,10 +1170,10 @@
             // The ADD flow already stores an authorized copy of the trip. Render that
             // copy immediately when returning to the shelf, then validate/refresh it
             // with Firebase in the background.
-            portalTripsCache = joined
+            const cachedTrips = joined
                 .map(tripId => portalTripSummary(tripId, readCachedTripConfig(tripId), todayStr))
-                .filter(Boolean)
-                .concat(publicRecapSummaries());
+                .filter(Boolean);
+            portalTripsCache = combinePortalTrips(cachedTrips);
             updatePortalOwnerLabel();
             if (portalTripsCache.length || joined.length === 0) {
                 filterAndRenderPortalCards();
@@ -1176,6 +1188,8 @@
                     .catch(error => {
                         const code = String(error?.code || '');
                         if (code.includes('access/revoked') || code.includes('access/invalid') || code.includes('access/id-required')) return null;
+                        const cached = portalTripSummary(tripId, readCachedTripConfig(tripId), todayStr);
+                        if (cached) return cached;
                         return {
                             id: tripId,
                             title: `旅程 ID: ${tripId}`,
@@ -1188,7 +1202,7 @@
 
             Promise.all(promises).then(trips => {
                 if (currentPortalLoadId !== portalLoadRunId) return;
-                portalTripsCache = trips.filter(Boolean).concat(publicRecapSummaries());
+                portalTripsCache = combinePortalTrips(trips.filter(Boolean));
                 updatePortalOwnerLabel();
                 filterAndRenderPortalCards();
             });
@@ -1302,6 +1316,11 @@
             const currentLoadId = ++tripLoadRunId;
             window.currentTripId = tripId;
             window.currentTripLedgerToken = storedTripAccess(tripId)?.ledger || '';
+            // Validate the shared ledger in parallel with the itinerary fetch. Both
+            // paths keep their own server-side access checks; this only removes a
+            // needless serial wait before the expense tab can unlock.
+            const syncStarted = Boolean(window._initSyncEngine && typeof window._initSyncEngine === 'function');
+            if (syncStarted) window._initSyncEngine(tripId);
             Promise.all([fetchTripConfig(tripId), import('./src/participant-v2.js')])
                 .then(([rawData, v2Runtime]) => {
                     const data = v2Runtime.migrateParticipantTrip(rawData);
@@ -1319,7 +1338,7 @@
                     weatherRefreshInterval = window.setInterval(refreshWeather, WEATHER_REFRESH_MS);
 
                     // Trigger Firestore sync initialization if available
-                    if (window._initSyncEngine && typeof window._initSyncEngine === 'function') {
+                    if (!syncStarted && window._initSyncEngine && typeof window._initSyncEngine === 'function') {
                         window._initSyncEngine(tripId);
                     }
                     if (window.initEnhancements && typeof window.initEnhancements === 'function') {
@@ -1918,8 +1937,8 @@
     </script>
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
-    <script src="src/enhancements.js?v=320"></script>
-    <script type="module" src="src/recap.js?v=330"></script>
-    <script type="module" src="src/firebase-sync.js"></script>
+    <script src="src/enhancements.js?v=331"></script>
+    <script type="module" src="src/recap.js?v=331"></script>
+    <script type="module" src="src/firebase-sync.js?v=331"></script>
 </body>
 </html>

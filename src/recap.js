@@ -22,6 +22,54 @@ function registryEntry(id) {
   return PUBLIC_RECAPS.find(item => item.id === id) || null;
 }
 
+const TRIP_ACCESS_KEY = 'participant-trip-access-v1';
+const MANAGED_TRIP_CACHE_PREFIX = 'managed-trip-cache-v2:';
+const DATA_KEY_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+function isValidTripId(value) {
+  const tripId = String(value || '');
+  return DATA_KEY_PATTERN.test(tripId) && !['__proto__', 'prototype', 'constructor'].includes(tripId);
+}
+
+function storedTripAccessMap() {
+  try {
+    const value = JSON.parse(localStorage.getItem(TRIP_ACCESS_KEY) || '{}');
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function cachedTripMatches(tripId, entry) {
+  const prefix = `${MANAGED_TRIP_CACHE_PREFIX}${tripId}:`;
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index) || '';
+    if (!key.startsWith(prefix)) continue;
+    try {
+      const trip = JSON.parse(localStorage.getItem(key) || 'null');
+      if (trip?.tripId === tripId && trip.startDate === entry.startDate && trip.endDate === entry.endDate) return true;
+    } catch (error) {}
+  }
+  return false;
+}
+
+function findOriginalTripId(entry) {
+  const access = storedTripAccessMap();
+  const requested = new URLSearchParams(location.search).get('trip') || '';
+  if (isValidTripId(requested) && access[requested] && cachedTripMatches(requested, entry)) return requested;
+  return Object.keys(access).find(tripId => isValidTripId(tripId) && cachedTripMatches(tripId, entry)) || '';
+}
+
+function configureOriginalLink(entry) {
+  const link = document.getElementById('recap-original');
+  if (!link) return;
+  const tripId = findOriginalTripId(entry);
+  if (!tripId) return;
+  link.href = `./?trip=${encodeURIComponent(tripId)}`;
+  link.hidden = false;
+  link.setAttribute('aria-label', `${entry.title}の旅行前のしおりを開く`);
+}
+
 function applyTheme(mode) {
   const root = document.documentElement;
   if (mode === 'light' || mode === 'dark') root.dataset.tripTheme = mode;
@@ -172,6 +220,7 @@ async function initRecapPage() {
   const id = new URLSearchParams(location.search).get('id') || PUBLIC_RECAPS[0].id;
   const entry = registryEntry(id);
   if (!entry) return showError('指定されたRECAPは公開されていません。');
+  configureOriginalLink(entry);
   try {
     const response = await fetch(entry.dataUrl, { cache: 'no-cache' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);

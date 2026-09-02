@@ -612,7 +612,10 @@ export async function initSyncEngine(tripId) {
                 .map(item => cleanExpense({ id: item.id, ...item.data() }))
                 .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
             syncContext.verifiedExpenses = expenses;
-            if (window.currentLedgerAccess?.live === true) emitRemoteExpenses(expenses);
+            // The expense snapshot is frequently the last authorization signal to
+            // arrive. Re-evaluate immediately so the ledger does not remain locked
+            // until an unrelated room or participant update occurs.
+            renderLiveSyncState();
         }, error => {
             if (currentRunId !== syncRunId) return;
             window.expensePayerAliases = {};
