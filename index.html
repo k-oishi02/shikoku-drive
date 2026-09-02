@@ -10,6 +10,7 @@
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
     <link rel="stylesheet" href="src/participant-v2.css?v=300">
+    <link rel="stylesheet" href="src/recap.css?v=330">
     <link rel="stylesheet" href="src/enhancements.css">
     <link rel="stylesheet" href="src/discussion.css">
     <link rel="stylesheet" href="src/theme-v31.css?v=320">
@@ -537,6 +538,14 @@
 
             <section id="tab-talk" class="j-tab-panel j-tab-pnl" role="tabpanel" aria-labelledby="btn-talk" aria-hidden="true">
                 <div id="participant-discussion"></div>
+            </section>
+
+            <section id="tab-recap" class="j-tab-panel j-tab-pnl" role="tabpanel" aria-labelledby="btn-recap" aria-hidden="true" hidden>
+                <section class="j-sec-header">
+                    <h2 class="j-sec-en">RECAP</h2>
+                    <div class="j-sec-ja"><span>旅の記録</span><i class="j-sec-line"></i></div>
+                </section>
+                <div id="recap-preview" class="recap-preview"></div>
             </section>
 
             <!-- Packing Checklist Tab Panel -->
@@ -1101,6 +1110,18 @@
         let portalTripsCache = [];
         let currentPortalCategory = 'upcoming';
 
+        function publicRecapSummaries() {
+            return (Array.isArray(window.shioriPublicRecaps) ? window.shioriPublicRecaps : []).map(recap => ({
+                id: `recap-${recap.id}`,
+                title: recap.title,
+                subtitle: recap.subtitle,
+                date: `${recap.startDate} - ${recap.endDate}`,
+                href: recap.href,
+                isPast: true,
+                isRecap: true
+            }));
+        }
+
         function portalTripSummary(tripId, data, todayStr) {
             if (!validTripConfig(data, tripId)) return null;
             return {
@@ -1139,7 +1160,8 @@
             // with Firebase in the background.
             portalTripsCache = joined
                 .map(tripId => portalTripSummary(tripId, readCachedTripConfig(tripId), todayStr))
-                .filter(Boolean);
+                .filter(Boolean)
+                .concat(publicRecapSummaries());
             updatePortalOwnerLabel();
             if (portalTripsCache.length || joined.length === 0) {
                 filterAndRenderPortalCards();
@@ -1166,7 +1188,7 @@
 
             Promise.all(promises).then(trips => {
                 if (currentPortalLoadId !== portalLoadRunId) return;
-                portalTripsCache = trips.filter(Boolean);
+                portalTripsCache = trips.filter(Boolean).concat(publicRecapSummaries());
                 updatePortalOwnerLabel();
                 filterAndRenderPortalCards();
             });
@@ -1194,10 +1216,10 @@
             }
 
             container.innerHTML = filtered.map(t => `
-                <a href="${escapeHtml(buildTripHref(t.id))}" class="portal-card">
+                <a href="${escapeHtml(t.href || buildTripHref(t.id))}" class="portal-card">
                     <div class="portal-card-title">${escapeHtml(t.title)}</div>
                     <div class="portal-card-meta">${escapeHtml(t.subtitle ? t.subtitle + ' — ' : '')}${escapeHtml(t.date)}</div>
-                    <div class="portal-card-arrow" aria-label="${t.isPast ? '思い出を開く' : 'しおりを開く'}">${t.isPast ? 'OPEN MEMORY →' : 'OPEN SHIORI →'}</div>
+                    <div class="portal-card-arrow" aria-label="${t.isRecap ? '旅の記録を開く' : t.isPast ? '思い出を開く' : 'しおりを開く'}">${t.isRecap ? 'OPEN RECAP →' : t.isPast ? 'OPEN MEMORY →' : 'OPEN SHIORI →'}</div>
                 </a>
             `).join('');
         }
@@ -1355,7 +1377,28 @@
             tabHeadersHtml += `<button type="button" id="btn-checklist" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" onclick="switchTab('tab-checklist', this)" aria-label="持ち物">PACK</button>`;
             if (data.features?.expenses !== false) tabHeadersHtml += `<button type="button" id="btn-expenses" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-expenses" onclick="switchTab('tab-expenses', this)" aria-label="精算">COST</button>`;
             tabHeadersHtml += `<button type="button" id="btn-talk" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-talk" onclick="switchTab('tab-talk', this)" aria-label="相談・提案">TALK</button>`;
+            const publicRecap = window.shioriFindRecapForTrip?.(data) || null;
+            if (publicRecap) tabHeadersHtml += `<button type="button" id="btn-recap" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-recap" onclick="switchTab('tab-recap', this)" aria-label="旅の記録">RECAP</button>`;
             navBar.innerHTML = tabHeadersHtml;
+
+            const recapPanel = document.getElementById('tab-recap');
+            const recapPreview = document.getElementById('recap-preview');
+            if (recapPanel && recapPreview) {
+                recapPanel.hidden = !publicRecap;
+                recapPreview.replaceChildren();
+                if (publicRecap) {
+                    const title = document.createElement('strong');
+                    title.textContent = `${publicRecap.title}の旅の記録`;
+                    const copy = document.createElement('p');
+                    copy.textContent = '予定から変わった時間も、その場で見つけた味も、実際に歩いた3日間として残しました。';
+                    const link = document.createElement('a');
+                    link.className = 'j-btn';
+                    link.href = publicRecap.href;
+                    link.textContent = 'OPEN RECAP';
+                    link.setAttribute('aria-label', '旅のRECAPを開く');
+                    recapPreview.append(title, copy, link);
+                }
+            }
 
             // 4. Day panels & cards
             const panelsContainer = document.getElementById('day-panels-container');
@@ -1876,6 +1919,7 @@
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
     <script src="src/enhancements.js?v=320"></script>
+    <script type="module" src="src/recap.js?v=330"></script>
     <script type="module" src="src/firebase-sync.js"></script>
 </body>
 </html>

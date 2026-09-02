@@ -1,7 +1,8 @@
-const CACHE_NAME = 'shiori-pwa-v320';
+const CACHE_NAME = 'shiori-pwa-v330';
 const APP_SHELL = [
   './',
   './index.html',
+  './recap.html',
   './src/enhancements.css',
   './src/enhancements.js',
   './src/firebase-sync.js',
@@ -17,6 +18,9 @@ const APP_SHELL = [
   './src/participant-v2.css',
   './src/participant-v2.js',
   './src/live-itinerary.js',
+  './src/recap.js',
+  './src/recap.css',
+  './recaps/shikoku-2026.json',
   './src/trip-v2-core.js',
   './src/map-links.js',
   './src/draft-validation.js',

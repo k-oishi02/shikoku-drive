@@ -1,0 +1,103 @@
+/* Public travel record. All selectors are scoped to the RECAP surface. */
+.recap-page {
+  margin: 0;
+  color: var(--sh-ink);
+  background:
+    radial-gradient(circle at 88% 5%, color-mix(in srgb, var(--sh-tertiary-container) 55%, transparent), transparent 25rem),
+    var(--sh-bg);
+  font-family: var(--sh-font);
+}
+.recap-shell { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 18px 0 72px; }
+.recap-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.recap-toolbar-actions { display: flex; gap: 7px; }
+.recap-button,
+.recap-nav a {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 15px;
+  border: 1px solid var(--sh-line); border-radius: var(--sh-radius-pill); color: var(--sh-ink);
+  background: var(--sh-surface); font: 650 .7rem/1 var(--sh-font); letter-spacing: .07em;
+  text-decoration: none; cursor: pointer;
+}
+.recap-button:active, .recap-nav a:active { transform: scale(.96); }
+.recap-cover {
+  position: relative; min-height: 460px; margin-top: 20px; padding: clamp(30px, 8vw, 74px);
+  border-radius: var(--sh-radius-xl) var(--sh-radius-xl) 16px var(--sh-radius-xl);
+  color: #fff; background:
+    radial-gradient(circle at 82% 22%, rgba(255,220,192,.82), transparent 18%),
+    radial-gradient(circle at 76% 28%, rgba(255,255,255,.14), transparent 34%),
+    linear-gradient(145deg, #356b68, #274f58 62%, #263f49);
+  box-shadow: var(--sh-shadow); overflow: hidden;
+}
+.recap-cover::after {
+  content: ""; position: absolute; right: -12%; bottom: -39%; width: 66%; aspect-ratio: 1;
+  border: 2px solid rgba(255,255,255,.2); border-radius: 50%; box-shadow: 0 0 0 42px rgba(255,255,255,.06), 0 0 0 84px rgba(255,255,255,.035);
+}
+.recap-kicker, .recap-day-number, .recap-changed-label { font-size: .7rem; font-weight: 650; letter-spacing: .13em; }
+.recap-cover h1 { max-width: 670px; margin: 92px 0 12px; font-size: clamp(2.7rem, 10vw, 6.2rem); font-weight: 500; letter-spacing: -.045em; line-height: 1; text-wrap: balance; }
+.recap-cover p { position: relative; z-index: 1; max-width: 570px; margin: 0; color: rgba(255,255,255,.76); line-height: 1.75; }
+.recap-date { display: block; position: relative; z-index: 1; margin-top: 24px; font-size: .75rem; font-weight: 650; letter-spacing: .11em; }
+.recap-intro { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .6fr); gap: 24px; padding: 54px 0 44px; }
+.recap-intro-copy h2 { margin: 0 0 15px; font-size: clamp(1.65rem, 4vw, 2.55rem); font-weight: 500; line-height: 1.35; }
+.recap-intro-copy p { margin: 0; color: var(--sh-muted); line-height: 1.9; }
+.recap-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 0; }
+.recap-stats div { padding: 18px 14px; border-radius: var(--sh-radius-lg) var(--sh-radius-lg) 8px var(--sh-radius-lg); background: var(--sh-surface); }
+.recap-stats dt { color: var(--sh-muted); font-size: .62rem; font-weight: 650; letter-spacing: .08em; }
+.recap-stats dd { margin: 8px 0 0; color: var(--sh-accent); font-size: 1.75rem; font-weight: 600; }
+.recap-highlights-wrap { padding: 28px; border-radius: var(--sh-radius-xl) var(--sh-radius-xl) 12px var(--sh-radius-xl); background: var(--sh-primary-container); color: var(--sh-on-primary-container); }
+.recap-highlights-wrap h2 { margin: 0 0 18px; font-size: 1.15rem; font-weight: 600; }
+.recap-highlights { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 26px; margin: 0; padding: 0; list-style: none; }
+.recap-highlights li { display: grid; grid-template-columns: 32px 1fr; gap: 10px; padding: 13px 0; border-top: 1px solid color-mix(in srgb, var(--sh-on-primary-container) 18%, transparent); line-height: 1.6; }
+.recap-highlight-number { opacity: .6; font-size: .7rem; font-weight: 650; letter-spacing: .06em; }
+.recap-nav { position: sticky; z-index: 5; top: 0; display: flex; gap: 7px; margin: 38px 0 24px; padding: 10px 0; background: color-mix(in srgb, var(--sh-bg) 92%, transparent); backdrop-filter: blur(14px); }
+.recap-nav a:first-child { color: var(--sh-on-primary-container); background: var(--sh-primary-container); border-color: transparent; }
+.recap-chapters { display: grid; gap: 22px; }
+.recap-day { scroll-margin-top: 78px; padding: clamp(24px, 6vw, 48px); border-radius: var(--sh-radius-xl) var(--sh-radius-xl) 14px var(--sh-radius-xl); background: var(--sh-surface); box-shadow: var(--sh-shadow); }
+.recap-day-head { display: grid; grid-template-columns: 1fr auto; align-items: end; padding-bottom: 25px; border-bottom: 1px solid var(--sh-line); }
+.recap-day-number { grid-column: 1 / -1; color: var(--sh-accent); }
+.recap-day-head h2 { margin: 8px 0 0; font-size: clamp(1.55rem, 5vw, 2.45rem); font-weight: 500; }
+.recap-day-head p { margin: 0; color: var(--sh-muted); font-size: .78rem; }
+.recap-timeline { margin: 0; padding: 16px 0 0; list-style: none; }
+.recap-timeline li { position: relative; display: grid; grid-template-columns: 118px 1fr; gap: 25px; padding: 18px 0 18px 25px; }
+.recap-timeline li::before { content: ""; position: absolute; left: 2px; top: 27px; width: 9px; height: 9px; border-radius: 50%; background: var(--sh-accent); box-shadow: 0 0 0 6px var(--sh-accent-soft); }
+.recap-timeline li:not(:last-child)::after { content: ""; position: absolute; left: 6px; top: 41px; bottom: -11px; width: 1px; background: var(--sh-line); }
+.recap-event-time { color: var(--sh-accent); font-size: .75rem; font-weight: 650; letter-spacing: .04em; }
+.recap-timeline h3 { margin: -4px 0 5px; font-size: 1.02rem; font-weight: 600; }
+.recap-timeline p { margin: 0; color: var(--sh-muted); font-size: .82rem; line-height: 1.7; }
+.recap-changed { margin-top: 22px; padding: 20px; border-radius: var(--sh-radius-lg) var(--sh-radius-lg) 8px var(--sh-radius-lg); color: var(--sh-on-tertiary-container); background: var(--sh-tertiary-container); }
+.recap-changed ul { margin: 10px 0 0; padding-left: 1.25rem; line-height: 1.8; }
+.recap-source { margin: 34px auto 0; max-width: 680px; color: var(--sh-muted); font-size: .7rem; line-height: 1.8; text-align: center; }
+.recap-footer-actions { display: flex; justify-content: center; gap: 8px; margin-top: 24px; }
+.recap-loading { display: grid; min-height: 70dvh; place-items: center; color: var(--sh-muted); }
+.recap-loading[hidden], #recap-main[hidden] { display: none !important; }
+.recap-loading[data-state="error"] { color: var(--sh-danger); }
+.recap-preview { display: grid; gap: 12px; padding: 24px; border-radius: var(--sh-radius-xl) var(--sh-radius-xl) 12px var(--sh-radius-xl); background: var(--sh-primary-container); color: var(--sh-on-primary-container); }
+.recap-preview strong { font-size: 1.25rem; }
+.recap-preview p { margin: 0; line-height: 1.7; }
+.recap-preview .j-btn { justify-self: start; color: var(--sh-on-accent) !important; background: var(--sh-accent) !important; border-color: transparent !important; }
+
+@media (max-width: 680px) {
+  .recap-shell { width: min(100% - 20px, 920px); padding-top: 10px; }
+  .recap-cover { min-height: 410px; padding: 28px 24px; }
+  .recap-cover h1 { margin-top: 116px; }
+  .recap-intro { grid-template-columns: 1fr; padding: 38px 4px 32px; }
+  .recap-highlights { grid-template-columns: 1fr; }
+  .recap-nav { overflow-x: auto; }
+  .recap-day { padding: 27px 20px; }
+  .recap-day-head { grid-template-columns: 1fr; gap: 8px; }
+  .recap-timeline li { grid-template-columns: 1fr; gap: 6px; padding-left: 25px; }
+  .recap-timeline h3 { margin-top: 0; }
+}
+
+@media print {
+  @page { margin: 14mm; }
+  .recap-page { background: white !important; color: #1e2725 !important; }
+  .recap-shell { width: 100%; padding: 0; }
+  .recap-toolbar, .recap-nav, .recap-footer-actions { display: none !important; }
+  .recap-cover { min-height: 190mm; break-after: page; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .recap-intro { break-after: page; }
+  .recap-day { break-before: page; box-shadow: none; border: 1px solid #d9dfdc; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recap-button, .recap-nav a { transition: none; }
+  html { scroll-behavior: auto; }
+}
