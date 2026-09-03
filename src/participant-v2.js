@@ -120,6 +120,7 @@ function ensureSettingsDialog() {
       <label>地図アプリ<select id="participant-map"><option value="google">Google Maps</option><option value="apple">Apple Maps</option></select></label>
       <label class="v2-settings-toggle"><input id="participant-notifications" type="checkbox"><span>予定前の通知を受け取る</span></label>
       <small>無料運用の端末内通知です。通知許可が必要で、しおりを開いている間だけ予定時刻をお知らせします。</small>
+      <small>DRIVEはGoogle MapsまたはApple Mapsへ案内を渡します。Android Auto／CarPlay接続中は、対応する地図アプリで車載画面へ引き継げます。</small>
     </div>`;
   document.body.append(dialog);
   dialog.querySelector('[data-close]').addEventListener('click', () => dialog.close());

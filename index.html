@@ -10,12 +10,12 @@
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
     <link rel="stylesheet" href="src/participant-v2.css?v=300">
-    <link rel="stylesheet" href="src/recap.css?v=331">
+    <link rel="stylesheet" href="src/recap.css?v=400">
     <link rel="stylesheet" href="src/enhancements.css">
     <link rel="stylesheet" href="src/discussion.css">
     <link rel="stylesheet" href="src/theme-v31.css?v=320">
     <link rel="stylesheet" href="src/design-v31.css?v=320">
-    <link rel="stylesheet" href="src/expressive-v32.css?v=320">
+    <link rel="stylesheet" href="src/expressive-v32.css?v=400">
 
     <style>
 :root {
@@ -512,13 +512,13 @@
                     </div>
                 </div>
                 <div id="live-itinerary" class="live-itinerary" hidden>
-                    <div class="live-overline"><span>LIVE ITINERARY</span><span data-live="delay-badge" class="live-delay-badge" hidden></span></div>
+                    <div class="live-overline"><span data-live="phase">PLAN · LIVE · RECAP</span><span data-live="delay-badge" class="live-delay-badge" hidden></span></div>
                     <span data-live="day" class="live-day"></span>
                     <h3 data-live="title" class="live-title">次の予定</h3>
                     <div class="live-time-row"><strong data-live="time">--:--</strong><span data-live="status"></span></div>
                     <p data-live="offline-note" class="live-offline-note" hidden>OFFLINE · 変更はこの端末に保存されます</p>
                     <div class="live-primary-actions" role="group" aria-label="現在の予定を操作">
-                        <a data-live="route" class="live-action live-route" target="_blank" rel="noopener noreferrer" aria-label="次の目的地まで案内">ROUTE</a>
+                        <a data-live="route" class="live-action live-route" target="_blank" rel="noopener noreferrer" aria-label="地図アプリで次の目的地までの運転案内を開始">DRIVE</a>
                         <button data-live="arrive" class="live-action" type="button" aria-label="目的地へ到着">ARRIVE</button>
                         <button data-live="done" class="live-action live-accent" type="button" aria-label="この予定を完了">DONE</button>
                         <button data-live="skip" class="live-action" type="button" aria-label="この予定をスキップ">SKIP</button>
@@ -526,8 +526,11 @@
                     <div class="live-secondary-actions">
                         <button data-live="today" type="button" aria-label="選択日の旅程を見る">TODAY</button>
                         <button data-live="plan" type="button" aria-label="旅行中の予定を変更">PLAN</button>
+                        <button data-live="memo" type="button" aria-label="現在の予定に旅メモを追加">MEMO</button>
+                        <button data-live="cost" type="button" aria-label="旅費精算を開く">COST</button>
+                        <button data-live="recap" type="button" aria-label="実際の記録からRECAPを作る">RECAP</button>
                     </div>
-                    <p class="live-local-note">公開された旅程は変更せず、旅行中の調整だけをこの端末に記録します。</p>
+                    <p class="live-local-note">予定は残したまま、実際の到着・完了・見送り・現地追加をこの端末へ記録します。</p>
                 </div>
             </section>
 
@@ -737,6 +740,20 @@
                     <button type="button" data-live-delay="30">+30</button>
                     <button type="button" data-live-delay="60">+60</button>
                 </div>
+            </section>
+            <form data-live="add-stop-form" class="live-add-stop">
+                <div class="live-section-copy"><strong>ADD STOP</strong><span>その場で決めた立ち寄り先を実績へ追加</span></div>
+                <div class="live-add-stop-fields">
+                    <label>場所<input data-live="add-stop-title" maxlength="120" required placeholder="例：海辺のカフェ"></label>
+                    <label>ひとこと<input data-live="add-stop-note" maxlength="500" placeholder="食べたもの・印象など"></label>
+                    <label>地図検索<input data-live="add-stop-map" maxlength="200" placeholder="店名・住所（任意）"></label>
+                    <button type="submit">ADD</button>
+                </div>
+            </form>
+            <section class="live-timeline-import" aria-labelledby="live-timeline-title">
+                <div class="live-section-copy"><strong id="live-timeline-title">IMPORT TIMELINE</strong><span>Google Maps Timeline JSONから旅行中の訪問候補を端末内へ取り込みます</span></div>
+                <label class="live-file-action">SELECT JSON<input data-live="timeline-file" type="file" accept="application/json,.json"></label>
+                <output data-live="timeline-result" aria-live="polite"></output>
             </section>
             <p data-live="conflict" class="live-conflict" role="alert" hidden></p>
             <ol data-live="plan-list" class="live-plan-list" aria-label="当日の予定一覧"></ol>
@@ -1120,14 +1137,40 @@
                     const original = joinedTrips.find(trip => trip.recapId === recap.id);
                     return original ? `${recap.href}&trip=${encodeURIComponent(original.id)}` : recap.href;
                 })(),
+                sourceTripId: joinedTrips.find(trip => trip.recapId === recap.id)?.id || '',
                 isPast: true,
                 isRecap: true
             }));
         }
 
+        function localRecapSummaries(joinedTrips, publicRecaps) {
+            const publicTripIds = new Set(publicRecaps.map(recap => recap.sourceTripId).filter(Boolean));
+            return joinedTrips.filter(trip => trip.isPast && !publicTripIds.has(trip.id)).flatMap(trip => {
+                try {
+                    const recap = JSON.parse(localStorage.getItem(`shiori-recap-v4:${trip.id}`) || 'null');
+                    if (recap?.schema !== 'shiori-recap-v1' || recap.visibility !== 'local' || recap.sourceTripId !== trip.id) return [];
+                    return [{
+                        id: `local-recap-${trip.id}`,
+                        title: recap.title || trip.title,
+                        subtitle: 'この端末で作った旅の記録 · RECAP',
+                        date: `${recap.startDate || trip.startDate} - ${recap.endDate || trip.endDate}`,
+                        href: `./recap.html?local=${encodeURIComponent(trip.id)}`,
+                        sourceTripId: trip.id,
+                        isPast: true,
+                        isRecap: true
+                    }];
+                } catch (error) {
+                    return [];
+                }
+            });
+        }
+
         function combinePortalTrips(joinedTrips) {
-            const visibleTrips = joinedTrips.filter(trip => !(trip.isPast && trip.recapId));
-            return visibleTrips.concat(publicRecapSummaries(joinedTrips));
+            const publicRecaps = publicRecapSummaries(joinedTrips);
+            const localRecaps = localRecapSummaries(joinedTrips, publicRecaps);
+            const recapTripIds = new Set([...publicRecaps, ...localRecaps].map(recap => recap.sourceTripId).filter(Boolean));
+            const visibleTrips = joinedTrips.filter(trip => !(trip.isPast && recapTripIds.has(trip.id)));
+            return visibleTrips.concat(publicRecaps, localRecaps);
         }
 
         function portalTripSummary(tripId, data, todayStr) {
@@ -1937,8 +1980,8 @@
     </script>
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
-    <script src="src/enhancements.js?v=331"></script>
-    <script type="module" src="src/recap.js?v=331"></script>
-    <script type="module" src="src/firebase-sync.js?v=331"></script>
+    <script src="src/enhancements.js?v=400"></script>
+    <script type="module" src="src/recap.js?v=400"></script>
+    <script type="module" src="src/firebase-sync.js?v=400"></script>
 </body>
 </html>

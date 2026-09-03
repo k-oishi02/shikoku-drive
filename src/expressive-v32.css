@@ -147,8 +147,12 @@
   cursor: pointer;
 }
 .live-route { color: var(--sh-accent-strong); background: white; border-color: white; }
+.live-action[hidden] { display: none !important; }
+.live-itinerary[data-phase="plan"] .live-primary-actions { grid-template-columns: 1fr; }
+.live-itinerary[data-phase="plan"] .live-route { grid-column: 1 / -1; }
 .live-action.live-accent { color: var(--sh-on-tertiary-container); background: var(--sh-tertiary-container); border-color: var(--sh-tertiary-container); }
-.live-secondary-actions { justify-content: flex-start; margin-top: 9px; }
+.live-secondary-actions { justify-content: flex-start; flex-wrap: wrap; margin-top: 9px; }
+.live-secondary-actions button[hidden] { display: none !important; }
 .live-secondary-actions button { min-height: 38px; padding: 0 4px; border-color: transparent; color: rgba(255,255,255,.76); }
 .live-local-note { margin: 12px 0 0; color: rgba(255,255,255,.57); font-size: .69rem; line-height: 1.6; }
 
@@ -186,6 +190,31 @@
 .live-delay-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
 .live-delay-actions button { min-height: 40px; padding: 0 8px; }
 .live-delay-actions button[aria-pressed="true"] { color: var(--sh-on-secondary-container); background: var(--sh-secondary-container); border-color: transparent; }
+.live-add-stop,
+.live-timeline-import {
+  display: grid; gap: 12px; margin-top: 12px; padding: 16px;
+  border: 1px solid var(--sh-line); border-radius: var(--sh-radius-lg) var(--sh-radius-lg) 10px var(--sh-radius-lg);
+  background: var(--sh-surface);
+}
+.live-section-copy { display: grid; gap: 4px; }
+.live-section-copy strong { font-size: .76rem; letter-spacing: .08em; }
+.live-section-copy span,
+.live-timeline-import output { color: var(--sh-muted); font-size: .72rem; line-height: 1.55; }
+.live-add-stop-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.live-add-stop-fields label { display: grid; gap: 5px; color: var(--sh-muted); font-size: .68rem; }
+.live-add-stop-fields label:first-child { grid-column: 1 / -1; }
+.live-add-stop-fields input {
+  min-width: 0; min-height: 44px; padding: 0 12px; border: 1px solid var(--sh-line); border-radius: var(--sh-radius-sm);
+  color: var(--sh-ink); background: var(--sh-surface-soft); font: 500 .82rem var(--sh-font);
+}
+.live-add-stop-fields button,
+.live-file-action {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 14px;
+  border: 0; border-radius: var(--sh-radius-pill); color: var(--sh-on-primary-container); background: var(--sh-primary-container);
+  font: 650 .7rem/1 var(--sh-font); letter-spacing: .07em; cursor: pointer;
+}
+.live-file-action { justify-self: start; }
+.live-file-action input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .live-conflict { margin: 14px 0 0; padding: 12px; border-radius: var(--sh-radius); color: var(--sh-on-tertiary-container); background: var(--sh-tertiary-container); font-size: .78rem; line-height: 1.6; }
 .live-plan-list { display: grid; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
 .live-plan-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--sh-line); border-radius: var(--sh-radius-lg) var(--sh-radius-lg) 8px var(--sh-radius-lg); }
@@ -193,6 +222,7 @@
 .live-plan-copy span, .live-plan-copy strong { display: block; }
 .live-plan-copy strong { margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .live-plan-time { color: var(--sh-accent); }
+.live-plan-record { margin-top: 5px; color: var(--sh-muted); font-size: .7rem; line-height: 1.45; }
 .live-plan-row-actions { display: flex; gap: 5px; }
 .live-mini-action { min-height: 36px; padding: 0 9px; font-size: .62rem; }
 .live-plan-row.is-skipped { opacity: .55; background: var(--sh-surface-soft); }
@@ -242,8 +272,10 @@
   .live-time-row span { max-width: none; text-align: left; }
   .live-delay-actions { grid-template-columns: repeat(2, 1fr); }
   .live-plan-row { grid-template-columns: 1fr; }
-  .live-plan-row-actions { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .live-plan-row-actions { display: grid; grid-template-columns: repeat(4, 1fr); }
   .live-mini-action { width: 100%; }
+  .live-add-stop-fields { grid-template-columns: 1fr; }
+  .live-add-stop-fields label:first-child { grid-column: auto; }
   .live-dialog-head { align-items: flex-start; }
 }
 

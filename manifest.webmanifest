@@ -1,7 +1,7 @@
 {
   "name": "SHIORI 旅行しおり",
   "short_name": "SHIORI",
-  "description": "旅程を閲覧・共有し、旅行後のRECAPまで残せる旅行しおりアプリ",
+  "description": "旅の計画、当日の柔軟な変更、旅費精算、RECAPまでをひとつにつなぐ旅行しおりアプリ",
   "lang": "ja",
   "start_url": "./?source=pwa",
   "scope": "./",

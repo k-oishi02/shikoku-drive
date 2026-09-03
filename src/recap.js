@@ -1,3 +1,5 @@
+import { journeyRecapStorageKey } from './journey-v4.js';
+
 const PUBLIC_RECAPS = Object.freeze([
   Object.freeze({
     id: 'shikoku-2026',
@@ -104,8 +106,8 @@ function appendText(parent, tag, className, value) {
   return node;
 }
 
-function validRecap(data, expectedId) {
-  if (!data || data.schema !== 'shiori-recap-v1' || data.id !== expectedId || data.visibility !== 'public') return false;
+function validRecap(data, expectedId, visibility = 'public') {
+  if (!data || data.schema !== 'shiori-recap-v1' || data.id !== expectedId || data.visibility !== visibility) return false;
   if (!Array.isArray(data.days) || data.days.length < 1 || data.days.length > 31) return false;
   return data.days.every(day => Array.isArray(day.events) && day.events.length <= 100);
 }
@@ -217,7 +219,25 @@ async function initRecapPage() {
   document.getElementById('recap-theme')?.addEventListener('click', cycleTheme);
   document.getElementById('recap-print')?.addEventListener('click', () => window.print());
   document.getElementById('recap-share')?.addEventListener('click', shareRecap);
-  const id = new URLSearchParams(location.search).get('id') || PUBLIC_RECAPS[0].id;
+  const params = new URLSearchParams(location.search);
+  const localTripId = params.get('local') || '';
+  if (isValidTripId(localTripId)) {
+    const access = storedTripAccessMap();
+    if (!access[localTripId]) return showError('この端末では元のしおりへの参加権限を確認できません。');
+    try {
+      const data = JSON.parse(localStorage.getItem(journeyRecapStorageKey(localTripId)) || 'null');
+      if (!validRecap(data, `local-${localTripId}`, 'local') || data.sourceTripId !== localTripId) throw new Error('invalid local recap');
+      document.body.dataset.recapScope = 'local';
+      document.getElementById('recap-share')?.setAttribute('hidden', '');
+      configureOriginalLink({ title: data.title, startDate: data.startDate, endDate: data.endDate });
+      renderRecap(data);
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+      return;
+    } catch (error) {
+      return showError('端末内のRECAPを読み込めませんでした。元のしおりからもう一度作成してください。');
+    }
+  }
+  const id = params.get('id') || PUBLIC_RECAPS[0].id;
   const entry = registryEntry(id);
   if (!entry) return showError('指定されたRECAPは公開されていません。');
   configureOriginalLink(entry);

@@ -18,6 +18,7 @@
   text-decoration: none; cursor: pointer;
 }
 .recap-button:active, .recap-nav a:active { transform: scale(.96); }
+.recap-button[hidden] { display: none !important; }
 .recap-cover {
   position: relative; min-height: 460px; margin-top: 20px; padding: clamp(30px, 8vw, 74px);
   border-radius: var(--sh-radius-xl) var(--sh-radius-xl) 16px var(--sh-radius-xl);

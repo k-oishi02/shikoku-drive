@@ -1,8 +1,20 @@
 import { formatMinute, parseTimeRange } from './trip-v2-core.js';
 import { mapHref, resolveMapFields } from './map-links.js';
+import {
+  applyJourneyStatus,
+  buildJourneyRecap,
+  cleanJourneyStop,
+  extractGoogleTimelineVisits,
+  journeyDateForDay,
+  journeyPhase,
+  journeyRecapStorageKey,
+  normalizeJourneyRecord,
+  setJourneyNote
+} from './journey-v4.js';
 
-const LIVE_STATE_VERSION = 1;
+const LIVE_STATE_VERSION = 4;
 const VALID_STATUS = new Set(['arrived', 'done', 'skipped']);
+const MAX_TIMELINE_FILE_BYTES = 150 * 1024 * 1024;
 
 function safeCopy(value) {
   return value == null ? value : JSON.parse(JSON.stringify(value));
@@ -39,7 +51,11 @@ function dateForDay(startDate, dayKey) {
 }
 
 function stateKey(tripId) {
-  return `shiori-live-itinerary-v${LIVE_STATE_VERSION}:${tripId}`;
+  return `shiori-journey-v${LIVE_STATE_VERSION}:${tripId}`;
+}
+
+function legacyStateKey(tripId) {
+  return `shiori-live-itinerary-v1:${tripId}`;
 }
 
 function emptyState(trip) {
@@ -48,13 +64,18 @@ function emptyState(trip) {
     tripId: trip.tripId,
     selectedDay: '',
     days: {},
+    records: {},
     history: [],
     updatedAt: ''
   };
 }
 
 function normalizeDayState(source, cards) {
-  const ids = cards.map(card => card.cardId);
+  const extraCards = (Array.isArray(source?.extraCards) ? source.extraCards : [])
+    .slice(0, 100)
+    .map((card, index) => cleanJourneyStop(card, `extra-${index}`))
+    .filter(Boolean);
+  const ids = [...cards, ...extraCards].map(card => card.cardId);
   const known = new Set(ids);
   const suppliedOrder = Array.isArray(source?.order) ? source.order.filter(id => known.has(id)) : [];
   const order = [...new Set([...suppliedOrder, ...ids])];
@@ -68,28 +89,33 @@ function normalizeDayState(source, cards) {
         fromCardId: known.has(source.delay.fromCardId) ? source.delay.fromCardId : order.find(id => !status[id]) || order[0] || ''
       }
     : { minutes: 0, fromCardId: '' };
-  return { order, status, delay };
+  return { order, status, delay, extraCards };
 }
 
 function normalizeState(trip, stored) {
-  const state = stored?.version === LIVE_STATE_VERSION && stored?.tripId === trip.tripId
-    ? { ...emptyState(trip), ...stored }
+  const source = stored?.tripId === trip.tripId ? stored : null;
+  const state = source
+    ? { ...emptyState(trip), ...source }
     : emptyState(trip);
+  state.version = LIVE_STATE_VERSION;
   state.days = {};
   Object.entries(trip.days || {}).forEach(([dayKey, cards]) => {
-    state.days[dayKey] = normalizeDayState(stored?.days?.[dayKey], cards);
+    state.days[dayKey] = normalizeDayState(source?.days?.[dayKey], cards);
   });
-  state.history = Array.isArray(stored?.history) ? stored.history.slice(-10) : [];
+  state.history = Array.isArray(source?.history) ? source.history.slice(-10) : [];
+  state.records = Object.fromEntries(Object.entries(source?.records || {})
+    .filter(([cardId]) => /^[A-Za-z0-9_-]{1,120}$/.test(cardId))
+    .map(([cardId, record]) => [cardId, normalizeJourneyRecord(record)]));
   if (!Object.hasOwn(state.days, state.selectedDay)) state.selectedDay = '';
   return state;
 }
 
 function snapshotState(state) {
-  return { selectedDay: state.selectedDay, days: safeCopy(state.days), updatedAt: state.updatedAt };
+  return { selectedDay: state.selectedDay, days: safeCopy(state.days), records: safeCopy(state.records), updatedAt: state.updatedAt };
 }
 
-function cardMap(trip, dayKey) {
-  return new Map((trip.days?.[dayKey] || []).map(card => [card.cardId, card]));
+function cardMap(trip, state, dayKey) {
+  return new Map([...(trip.days?.[dayKey] || []), ...(state.days?.[dayKey]?.extraCards || [])].map(card => [card.cardId, card]));
 }
 
 function routeForCard(card) {
@@ -115,7 +141,7 @@ function shiftedTime(card, offset) {
 
 function buildTimeline(trip, state, dayKey) {
   const day = state.days[dayKey];
-  const cards = cardMap(trip, dayKey);
+  const cards = cardMap(trip, state, dayKey);
   let offset = 0;
   let delayStarted = false;
   let previous = null;
@@ -132,7 +158,8 @@ function buildTimeline(trip, state, dayKey) {
     if (previous?.time.end != null && time.start != null && previous.time.end > time.start) {
       conflicts.push(`${previous.card.title}と${card.title}が${previous.time.end - time.start}分重なります`);
     }
-    const item = { card, time, orderIndex, status: day.status[id] || '', dayKey };
+    const record = normalizeJourneyRecord(state.records?.[id]);
+    const item = { card, time, orderIndex, status: record.status || day.status[id] || '', record, dayKey };
     previous = item;
     return item;
   }).filter(Boolean);
@@ -160,13 +187,36 @@ function element(tag, className, text) {
   return node;
 }
 
+function actualRecordLabel(record) {
+  const values = [];
+  const time = value => value
+    ? new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' }).format(new Date(value))
+    : '';
+  if (record?.arrivedAt) values.push(`ARRIVE ${time(record.arrivedAt)}`);
+  if (record?.doneAt) values.push(`DONE ${time(record.doneAt)}`);
+  if (record?.skippedAt) values.push(`SKIP ${time(record.skippedAt)}`);
+  if (record?.note) values.push(record.note);
+  return values.join(' · ');
+}
+
 export function createLiveItineraryController() {
   let trip = null;
   let state = null;
   let bindings = null;
   let timer = null;
+  let syncOffline = false;
   let root = null;
   let dialog = null;
+
+  function renderNetworkState() {
+    const note = root?.querySelector('[data-live="offline-note"]');
+    if (note) note.hidden = navigator.onLine && !syncOffline;
+  }
+
+  function handleLedgerAccess(event) {
+    syncOffline = event?.detail?.live === false && event?.detail?.reason === 'offline';
+    renderNetworkState();
+  }
 
   function persist() {
     state.updatedAt = new Date().toISOString();
@@ -203,6 +253,7 @@ export function createLiveItineraryController() {
     mutate(status === 'skipped' ? '予定をスキップ' : status === 'done' ? '予定を完了' : '到着を記録', () => {
       if (status) state.days[dayKey].status[cardId] = status;
       else delete state.days[dayKey].status[cardId];
+      state.records = applyJourneyStatus(state.records, cardId, status, new Date().toISOString());
     });
   }
 
@@ -233,6 +284,7 @@ export function createLiveItineraryController() {
     if (!previous) return;
     state.selectedDay = previous.snapshot.selectedDay || '';
     state.days = previous.snapshot.days;
+    state.records = previous.snapshot.records || {};
     state.updatedAt = new Date().toISOString();
     persist();
     render();
@@ -242,8 +294,134 @@ export function createLiveItineraryController() {
     const dayKey = selectedDayKey();
     if (!window.confirm('この端末で行った当日の変更を元に戻しますか？公開済みの旅程は変わりません。')) return;
     mutate('当日の変更をリセット', () => {
+      const affectedIds = new Set([
+        ...(trip.days?.[dayKey] || []).map(card => card.cardId),
+        ...(state.days?.[dayKey]?.extraCards || []).map(card => card.cardId)
+      ]);
+      state.records = Object.fromEntries(Object.entries(state.records || {}).filter(([cardId]) => !affectedIds.has(cardId)));
       state.days[dayKey] = normalizeDayState({}, trip.days[dayKey] || []);
     });
+  }
+
+  function editJourneyItem(item) {
+    if (!item?.card?.cardId) return;
+    const card = item.card;
+    if (card.isJourneyExtra) {
+      const title = window.prompt('立ち寄り先の名称', card.title);
+      if (title == null || !title.trim()) return;
+      const note = window.prompt('食べたもの・印象など', item.record?.note || card.desc || '');
+      if (note == null) return;
+      mutate('現地追加を編集', () => {
+        const target = state.days[item.dayKey].extraCards.find(candidate => candidate.cardId === card.cardId);
+        if (target) target.title = title.trim().slice(0, 120);
+        state.records = setJourneyNote(state.records, card.cardId, note);
+      });
+      return;
+    }
+    const note = window.prompt(`${card.title}の旅メモ`, item.record?.note || '');
+    if (note == null) return;
+    mutate('旅メモを更新', () => {
+      state.records = setJourneyNote(state.records, card.cardId, note);
+    });
+  }
+
+  function removeExtraItem(item) {
+    if (!item?.card?.isJourneyExtra) return;
+    mutate('現地追加を削除', () => {
+      const day = state.days[item.dayKey];
+      day.extraCards = day.extraCards.filter(card => card.cardId !== item.card.cardId);
+      day.order = day.order.filter(cardId => cardId !== item.card.cardId);
+      delete day.status[item.card.cardId];
+      delete state.records[item.card.cardId];
+    });
+  }
+
+  function addStop(form) {
+    const dayKey = selectedDayKey();
+    const title = form.querySelector('[data-live="add-stop-title"]')?.value.trim() || '';
+    if (!title) return;
+    const now = new Date();
+    const added = cleanJourneyStop({
+      cardId: `live-${crypto.randomUUID()}`,
+      title,
+      time: new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' }).format(now),
+      desc: form.querySelector('[data-live="add-stop-note"]')?.value || '',
+      mapQuery: form.querySelector('[data-live="add-stop-map"]')?.value || '',
+      addedAt: now.toISOString()
+    });
+    if (!added) return;
+    mutate('現地で立ち寄り先を追加', () => {
+      state.days[dayKey].extraCards.push(added);
+      state.days[dayKey].order.push(added.cardId);
+      state.days[dayKey].status[added.cardId] = 'done';
+      state.records = applyJourneyStatus(state.records, added.cardId, 'done', added.addedAt);
+      if (added.desc) state.records = setJourneyNote(state.records, added.cardId, added.desc);
+    });
+    form.reset();
+  }
+
+  async function importTimeline(file, output) {
+    if (!file) return;
+    if (file.size > MAX_TIMELINE_FILE_BYTES) {
+      output.textContent = '150MB以下のTimeline JSONを選択してください。';
+      return;
+    }
+    try {
+      const payload = JSON.parse(await file.text());
+      const visits = extractGoogleTimelineVisits(payload, { startDate: trip.startDate, endDate: trip.endDate });
+      if (!visits.length) {
+        output.textContent = '旅行期間内の訪問候補を見つけられませんでした。';
+        return;
+      }
+      if (!window.confirm(`${visits.length}件の訪問候補を端末内の実績へ追加します。よろしいですか？`)) {
+        output.textContent = '取り込みをキャンセルしました。';
+        return;
+      }
+      let addedCount = 0;
+      mutate('Google Timelineを取り込み', () => {
+        visits.forEach((visit, index) => {
+          const dayKey = Object.keys(trip.days || {}).find(key => journeyDateForDay(trip.startDate, key) === visit.date);
+          if (!dayKey) return;
+          const day = state.days[dayKey];
+          if (day.extraCards.some(card => card.mapQuery === visit.mapQuery && card.time === visit.time)) return;
+          const added = cleanJourneyStop({
+            cardId: `timeline-${crypto.randomUUID()}`,
+            title: visit.title || `Timeline訪問地点 ${index + 1}`,
+            time: visit.time,
+            mapQuery: visit.mapQuery,
+            desc: 'Google Maps Timelineから取り込み',
+            addedAt: visit.startTime
+          });
+          if (!added) return;
+          day.extraCards.push(added);
+          day.order.push(added.cardId);
+          day.status[added.cardId] = 'done';
+          state.records = applyJourneyStatus(state.records, added.cardId, 'done', added.addedAt);
+          addedCount += 1;
+        });
+      });
+      output.textContent = `${addedCount}件を追加しました。名称やメモはEDITから整えられます。`;
+    } catch (error) {
+      output.textContent = 'JSONを読み込めませんでした。Google Maps Timelineの書き出しファイルを確認してください。';
+    }
+  }
+
+  function openRecap() {
+    const hasActual = Object.values(state.records || {}).some(record => record?.status)
+      || Object.values(state.days || {}).some(day => day.extraCards?.length);
+    const publicRecap = window.shioriFindRecapForTrip?.(trip);
+    if (!hasActual && publicRecap) {
+      location.href = `${publicRecap.href}&trip=${encodeURIComponent(trip.tripId)}`;
+      return;
+    }
+    if (!hasActual) {
+      window.alert('まだ実際の記録がありません。ARRIVE・DONE・SKIP、またはADD STOPで旅の記録を残してください。');
+      dialog?.showModal();
+      return;
+    }
+    const recap = buildJourneyRecap(trip, state);
+    writeJson(journeyRecapStorageKey(trip.tripId), recap);
+    location.href = `./recap.html?local=${encodeURIComponent(trip.tripId)}`;
   }
 
   function openDay(dayKey) {
@@ -251,6 +429,19 @@ export function createLiveItineraryController() {
     window.switchTab?.(`tab-${dayKey}`, button);
     button?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     document.getElementById(`tab-${dayKey}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function openActiveMemo() {
+    const dayKey = selectedDayKey();
+    const timeline = buildTimeline(trip, state, dayKey);
+    const item = activeItem(timeline, dateForDay(trip.startDate, dayKey)) || timeline.items.at(-1);
+    if (item) editJourneyItem(item);
+  }
+
+  function openCosts() {
+    const button = document.getElementById('btn-expenses');
+    if (!button) return;
+    window.switchTab?.('tab-expenses', button);
   }
 
   function renderCards(timeline) {
@@ -280,6 +471,8 @@ export function createLiveItineraryController() {
       const row = element('li', `live-plan-row ${item.status ? `is-${item.status}` : ''}`);
       const copy = element('div', 'live-plan-copy');
       copy.append(element('span', 'live-plan-time', item.time.label), element('strong', '', item.card.title));
+      const actual = actualRecordLabel(item.record);
+      if (actual) copy.append(element('span', 'live-plan-record', actual));
       const actions = element('div', 'live-plan-row-actions');
       const up = element('button', 'live-mini-action', 'UP');
       up.type = 'button'; up.disabled = index === 0; up.setAttribute('aria-label', `${item.card.title}を上へ移動`);
@@ -287,10 +480,15 @@ export function createLiveItineraryController() {
       const down = element('button', 'live-mini-action', 'DOWN');
       down.type = 'button'; down.disabled = index === timeline.items.length - 1; down.setAttribute('aria-label', `${item.card.title}を下へ移動`);
       down.addEventListener('click', () => moveCard(item.card.cardId, 1), { signal: bindings.signal });
-      const toggle = element('button', 'live-mini-action', item.status === 'skipped' ? 'RESTORE' : 'SKIP');
-      toggle.type = 'button'; toggle.setAttribute('aria-label', item.status === 'skipped' ? `${item.card.title}を予定へ戻す` : `${item.card.title}をスキップ`);
-      toggle.addEventListener('click', () => setStatus(item.card.cardId, item.status === 'skipped' ? '' : 'skipped'), { signal: bindings.signal });
-      actions.append(up, down, toggle);
+      const toggleLabel = item.card.isJourneyExtra ? 'REMOVE' : item.status === 'skipped' ? 'RESTORE' : 'SKIP';
+      const toggle = element('button', 'live-mini-action', toggleLabel);
+      toggle.type = 'button';
+      toggle.setAttribute('aria-label', item.card.isJourneyExtra ? `${item.card.title}を現地追加から削除` : item.status === 'skipped' ? `${item.card.title}を予定へ戻す` : `${item.card.title}をスキップ`);
+      toggle.addEventListener('click', () => item.card.isJourneyExtra ? removeExtraItem(item) : setStatus(item.card.cardId, item.status === 'skipped' ? '' : 'skipped'), { signal: bindings.signal });
+      const edit = element('button', 'live-mini-action', 'EDIT');
+      edit.type = 'button'; edit.setAttribute('aria-label', `${item.card.title}の名称または旅メモを編集`);
+      edit.addEventListener('click', () => editJourneyItem(item), { signal: bindings.signal });
+      actions.append(up, down, toggle, edit);
       row.append(copy, actions);
       return row;
     }));
@@ -320,6 +518,15 @@ export function createLiveItineraryController() {
     const done = root.querySelector('[data-live="done"]');
     const skip = root.querySelector('[data-live="skip"]');
     const delay = state.days[dayKey].delay.minutes;
+    const phase = journeyPhase(trip);
+    const isPlan = phase === 'plan';
+    root.dataset.phase = phase;
+    root.querySelector('[data-live="phase"]').textContent = phase === 'plan' ? 'PLAN · 旅の準備' : phase === 'recap' ? 'RECAP · 旅の振り返り' : 'LIVE · 旅行中';
+    const recapButton = root.querySelector('[data-live="recap"]');
+    recapButton.textContent = phase === 'recap' ? 'CREATE RECAP' : 'RECAP';
+    recapButton.hidden = isPlan;
+    root.querySelector('[data-live="memo"]').hidden = isPlan;
+    root.querySelector('[data-live="cost"]').hidden = !document.getElementById('btn-expenses');
     dayLabel.textContent = `${dayKey.toUpperCase()} · ${trip.dayLabels?.[dayKey] || ''}`;
     if (!active) {
       title.textContent = '今日の予定は完了しました';
@@ -334,16 +541,18 @@ export function createLiveItineraryController() {
         : delay ? `${delay}分の遅れを反映中。固定予定は動かしません。` : '公開旅程を元に、この端末で柔軟に変更できます。';
       const url = routeForCard(active.card);
       route.hidden = !url;
+      route.textContent = isPlan ? 'MAP' : 'DRIVE';
       if (url) route.href = url;
-      arrive.hidden = active.status === 'arrived';
-      done.hidden = false; skip.hidden = false;
+      arrive.hidden = isPlan || active.status === 'arrived';
+      done.hidden = isPlan; skip.hidden = isPlan;
       arrive.dataset.cardId = active.card.cardId;
       done.dataset.cardId = active.card.cardId;
       skip.dataset.cardId = active.card.cardId;
+      if (isPlan) status.textContent = '旅行前はPLANで順序や立ち寄り先を確認できます。実績の記録は旅行開始後に表示します。';
     }
     root.querySelector('[data-live="delay-badge"]').hidden = !delay;
     root.querySelector('[data-live="delay-badge"]').textContent = delay ? `+${delay} MIN` : '';
-    root.querySelector('[data-live="offline-note"]').hidden = navigator.onLine;
+    renderNetworkState();
     renderCards(timeline);
     renderDialog(timeline);
   }
@@ -357,6 +566,9 @@ export function createLiveItineraryController() {
     root.querySelector('[data-live="skip"]').addEventListener('click', event => setStatus(event.currentTarget.dataset.cardId, 'skipped'), options);
     root.querySelector('[data-live="today"]').addEventListener('click', () => openDay(selectedDayKey()), options);
     root.querySelector('[data-live="plan"]').addEventListener('click', () => dialog?.showModal(), options);
+    root.querySelector('[data-live="memo"]').addEventListener('click', openActiveMemo, options);
+    root.querySelector('[data-live="cost"]').addEventListener('click', openCosts, options);
+    root.querySelector('[data-live="recap"]').addEventListener('click', openRecap, options);
     dialog.querySelector('[data-live="close"]').addEventListener('click', () => dialog.close(), options);
     dialog.querySelector('[data-live="day-select"]').addEventListener('change', event => {
       state.selectedDay = event.target.value;
@@ -365,8 +577,19 @@ export function createLiveItineraryController() {
     dialog.querySelectorAll('[data-live-delay]').forEach(button => button.addEventListener('click', () => setDelay(Number(button.dataset.liveDelay)), options));
     dialog.querySelector('[data-live="undo"]').addEventListener('click', undo, options);
     dialog.querySelector('[data-live="reset"]').addEventListener('click', resetDay, options);
+    dialog.querySelector('[data-live="add-stop-form"]').addEventListener('submit', event => {
+      event.preventDefault();
+      addStop(event.currentTarget);
+    }, options);
+    dialog.querySelector('[data-live="timeline-file"]').addEventListener('change', event => {
+      const output = dialog.querySelector('[data-live="timeline-result"]');
+      importTimeline(event.target.files?.[0], output).finally(() => { event.target.value = ''; });
+    }, options);
     window.addEventListener('online', render, options);
     window.addEventListener('offline', render, options);
+    window.addEventListener('pageshow', render, options);
+    window.addEventListener('shiori-ledger-access', handleLedgerAccess, options);
+    document.addEventListener('visibilitychange', render, options);
   }
 
   function activate(nextTrip) {
@@ -374,7 +597,8 @@ export function createLiveItineraryController() {
     root = document.getElementById('live-itinerary');
     dialog = document.getElementById('live-plan-dialog');
     if (!root || !dialog) return;
-    state = normalizeState(trip, readJson(stateKey(trip.tripId), null));
+    state = normalizeState(trip, readJson(stateKey(trip.tripId), null) || readJson(legacyStateKey(trip.tripId), null));
+    syncOffline = window.currentLedgerAccess?.live === false && window.currentLedgerAccess?.reason === 'offline';
     const legacy = document.getElementById('legacy-now-body');
     if (legacy) legacy.hidden = true;
     root.hidden = false;
@@ -389,6 +613,7 @@ export function createLiveItineraryController() {
     bindings = null;
     if (timer) clearInterval(timer);
     timer = null;
+    syncOffline = false;
     document.querySelectorAll('.j-card[data-card-id]').forEach(card => card.classList.remove('live-done', 'live-skipped', 'live-arrived'));
     const legacy = document.getElementById('legacy-now-body');
     if (legacy) legacy.hidden = false;
@@ -396,5 +621,11 @@ export function createLiveItineraryController() {
     trip = null; state = null; root = null; dialog = null;
   }
 
-  return { activate, deactivate, render };
+  return {
+    activate,
+    deactivate,
+    render,
+    getState: () => safeCopy(state),
+    buildRecap: () => trip && state ? buildJourneyRecap(trip, state) : null
+  };
 }
