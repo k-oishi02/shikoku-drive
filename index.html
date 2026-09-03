@@ -735,10 +735,10 @@
             <section class="live-delay-section" aria-labelledby="live-delay-title">
                 <div><strong id="live-delay-title">DELAY</strong><span>選択時点以降をずらし、固定予定で止めます</span></div>
                 <div class="live-delay-actions" role="group" aria-label="遅れを反映">
-                    <button type="button" data-live-delay="0">ON TIME</button>
-                    <button type="button" data-live-delay="15">+15</button>
-                    <button type="button" data-live-delay="30">+30</button>
-                    <button type="button" data-live-delay="60">+60</button>
+                    <button type="button" data-live-delay="0" aria-label="遅れを解除して予定どおりに戻す">ON TIME</button>
+                    <button type="button" data-live-delay="15" aria-label="15分遅れを反映">+15</button>
+                    <button type="button" data-live-delay="30" aria-label="30分遅れを反映">+30</button>
+                    <button type="button" data-live-delay="60" aria-label="60分遅れを反映">+60</button>
                 </div>
             </section>
             <form data-live="add-stop-form" class="live-add-stop">
@@ -752,7 +752,7 @@
             </form>
             <section class="live-timeline-import" aria-labelledby="live-timeline-title">
                 <div class="live-section-copy"><strong id="live-timeline-title">IMPORT TIMELINE</strong><span>Google Maps Timeline JSONから旅行中の訪問候補を端末内へ取り込みます</span></div>
-                <label class="live-file-action">SELECT JSON<input data-live="timeline-file" type="file" accept="application/json,.json"></label>
+                <label class="live-file-action" aria-label="Google Maps Timeline JSONを選択">SELECT JSON<input data-live="timeline-file" type="file" accept="application/json,.json"></label>
                 <output data-live="timeline-result" aria-live="polite"></output>
             </section>
             <p data-live="conflict" class="live-conflict" role="alert" hidden></p>
@@ -963,6 +963,16 @@
             const access = readStoredObject(TRIP_ACCESS_KEY);
             delete access[tripId];
             localStorage.setItem(TRIP_ACCESS_KEY, JSON.stringify(access));
+            const prefixes = [
+                `${MANAGED_TRIP_CACHE_PREFIX}${tripId}:`,
+                `shiori-journey-v4:${tripId}`, `shiori-live-itinerary-v1:${tripId}`,
+                `shiori-recap-v4:${tripId}`, `expenses-${tripId}-`, `checklist-${tripId}-`,
+                `shiori-device-owner-v2-${tripId}-`
+            ];
+            for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+                const key = localStorage.key(index) || '';
+                if (prefixes.some(prefix => key === prefix || key.startsWith(prefix))) localStorage.removeItem(key);
+            }
         }
 
 

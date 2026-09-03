@@ -188,7 +188,7 @@
 .live-delay-section strong { font-size: .76rem; letter-spacing: .08em; }
 .live-delay-section span { color: var(--sh-muted); font-size: .72rem; }
 .live-delay-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
-.live-delay-actions button { min-height: 40px; padding: 0 8px; }
+.live-delay-actions button { min-height: 44px; padding: 0 8px; }
 .live-delay-actions button[aria-pressed="true"] { color: var(--sh-on-secondary-container); background: var(--sh-secondary-container); border-color: transparent; }
 .live-add-stop,
 .live-timeline-import {
@@ -224,7 +224,7 @@
 .live-plan-time { color: var(--sh-accent); }
 .live-plan-record { margin-top: 5px; color: var(--sh-muted); font-size: .7rem; line-height: 1.45; }
 .live-plan-row-actions { display: flex; gap: 5px; }
-.live-mini-action { min-height: 36px; padding: 0 9px; font-size: .62rem; }
+.live-mini-action { min-height: 44px; min-width: 44px; padding: 0 9px; font-size: .62rem; }
 .live-plan-row.is-skipped { opacity: .55; background: var(--sh-surface-soft); }
 .live-dialog-actions { justify-content: flex-end; padding: 14px 20px 18px; border-top: 1px solid var(--sh-line); }
 .live-dialog-actions button { min-height: 42px; }

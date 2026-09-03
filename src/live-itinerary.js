@@ -207,6 +207,7 @@ export function createLiveItineraryController() {
   let syncOffline = false;
   let root = null;
   let dialog = null;
+  let timelineWorker = null;
 
   function renderNetworkState() {
     const note = root?.querySelector('[data-live="offline-note"]');
@@ -366,17 +367,9 @@ export function createLiveItineraryController() {
       output.textContent = '150MB以下のTimeline JSONを選択してください。';
       return;
     }
-    try {
-      const payload = JSON.parse(await file.text());
-      const visits = extractGoogleTimelineVisits(payload, { startDate: trip.startDate, endDate: trip.endDate });
-      if (!visits.length) {
-        output.textContent = '旅行期間内の訪問候補を見つけられませんでした。';
-        return;
-      }
-      if (!window.confirm(`${visits.length}件の訪問候補を端末内の実績へ追加します。よろしいですか？`)) {
-        output.textContent = '取り込みをキャンセルしました。';
-        return;
-      }
+    const addVisits = visits => {
+      if (!visits.length) { output.textContent = '旅行期間内の訪問候補を見つけられませんでした。'; return; }
+      if (!window.confirm(`${visits.length}件の訪問候補を端末内の実績へ追加します。よろしいですか？`)) { output.textContent = '取り込みをキャンセルしました。'; return; }
       let addedCount = 0;
       mutate('Google Timelineを取り込み', () => {
         visits.forEach((visit, index) => {
@@ -384,28 +377,37 @@ export function createLiveItineraryController() {
           if (!dayKey) return;
           const day = state.days[dayKey];
           if (day.extraCards.some(card => card.mapQuery === visit.mapQuery && card.time === visit.time)) return;
-          const added = cleanJourneyStop({
-            cardId: `timeline-${crypto.randomUUID()}`,
-            title: visit.title || `Timeline訪問地点 ${index + 1}`,
-            time: visit.time,
-            mapQuery: visit.mapQuery,
-            desc: 'Google Maps Timelineから取り込み',
-            addedAt: visit.startTime
-          });
+          const added = cleanJourneyStop({ cardId: `timeline-${crypto.randomUUID()}`, title: visit.title || `Timeline訪問地点 ${index + 1}`, time: visit.time, mapQuery: visit.mapQuery, desc: 'Google Maps Timelineから取り込み', addedAt: visit.startTime });
           if (!added) return;
-          day.extraCards.push(added);
-          day.order.push(added.cardId);
-          day.status[added.cardId] = 'done';
-          state.records = applyJourneyStatus(state.records, added.cardId, 'done', added.addedAt);
-          addedCount += 1;
+          day.extraCards.push(added); day.order.push(added.cardId); day.status[added.cardId] = 'done';
+          state.records = applyJourneyStatus(state.records, added.cardId, 'done', added.addedAt); addedCount += 1;
         });
       });
       output.textContent = `${addedCount}件を追加しました。名称やメモはEDITから整えられます。`;
+    };
+    output.textContent = 'Timelineを読み込み中…';
+    try {
+      const text = await file.text();
+      if (typeof Worker === 'function') {
+        await new Promise((resolve, reject) => {
+          const worker = new Worker('./src/timeline-worker.js', { type: 'module' });
+          timelineWorker = worker;
+          worker.onmessage = event => {
+            if (event.data?.type === 'progress') output.textContent = event.data.message;
+            if (event.data?.type === 'result') { addVisits(event.data.visits || []); worker.terminate(); timelineWorker = null; resolve(); }
+            if (event.data?.type === 'error') { worker.terminate(); timelineWorker = null; reject(new Error(event.data.message)); }
+          };
+          worker.onerror = error => { worker.terminate(); timelineWorker = null; reject(error); };
+          worker.postMessage({ text, startDate: trip.startDate, endDate: trip.endDate });
+        });
+      } else {
+        addVisits(extractGoogleTimelineVisits(JSON.parse(text), { startDate: trip.startDate, endDate: trip.endDate }));
+      }
     } catch (error) {
+      if (timelineWorker) { timelineWorker.terminate(); timelineWorker = null; }
       output.textContent = 'JSONを読み込めませんでした。Google Maps Timelineの書き出しファイルを確認してください。';
     }
   }
-
   function openRecap() {
     const hasActual = Object.values(state.records || {}).some(record => record?.status)
       || Object.values(state.days || {}).some(day => day.extraCards?.length);
@@ -612,6 +614,7 @@ export function createLiveItineraryController() {
     bindings?.abort();
     bindings = null;
     if (timer) clearInterval(timer);
+    if (timelineWorker) { timelineWorker.terminate(); timelineWorker = null; }
     timer = null;
     syncOffline = false;
     document.querySelectorAll('.j-card[data-card-id]').forEach(card => card.classList.remove('live-done', 'live-skipped', 'live-arrived'));

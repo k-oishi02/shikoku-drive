@@ -7,6 +7,7 @@ const PUBLIC_RECAPS = Object.freeze([
     subtitle: '旅の記録 · RECAP',
     startDate: '2026-08-30',
     endDate: '2026-09-01',
+    sourceTripIds: ['shikoku2026'],
     href: './recap.html?id=shikoku-2026',
     dataUrl: './recaps/shikoku-2026.json'
   })
@@ -17,7 +18,14 @@ export function listPublicRecaps() {
 }
 
 export function findRecapForTrip(trip) {
-  return PUBLIC_RECAPS.find(item => item.startDate === trip?.startDate && item.endDate === trip?.endDate) || null;
+  const explicitId = String(trip?.recapId || trip?.publicRecapId || '').trim();
+  if (explicitId) return registryEntry(explicitId);
+  const explicitTripId = String(trip?.tripId || '').trim();
+  if (explicitTripId) {
+    const linked = PUBLIC_RECAPS.filter(item => Array.isArray(item.sourceTripIds) && item.sourceTripIds.includes(explicitTripId));
+    return linked.length === 1 ? linked[0] : null;
+  }
+  return null;
 }
 
 function registryEntry(id) {
@@ -108,6 +116,8 @@ function appendText(parent, tag, className, value) {
 
 function validRecap(data, expectedId, visibility = 'public') {
   if (!data || data.schema !== 'shiori-recap-v1' || data.id !== expectedId || data.visibility !== visibility) return false;
+  const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date((value + 'T12:00:00+09:00')).getTime());
+  if (!validDate(data.startDate) || !validDate(data.endDate)) return false;
   if (!Array.isArray(data.days) || data.days.length < 1 || data.days.length > 31) return false;
   return data.days.every(day => Array.isArray(day.events) && day.events.length <= 100);
 }
@@ -168,7 +178,8 @@ function renderRecap(data) {
   document.getElementById('recap-title').textContent = data.title;
   document.getElementById('recap-subtitle').textContent = data.subtitle || '旅の記録';
   document.getElementById('recap-summary').textContent = data.summary || '';
-  document.getElementById('recap-date').textContent = `${data.startDate.replaceAll('-', '.')} — ${data.endDate.replaceAll('-', '.')}`;
+  const displayDate = value => String(value || '').replaceAll('-', '.');
+  document.getElementById('recap-date').textContent = `${displayDate(data.startDate)} — ${displayDate(data.endDate)}`;
   const eventCount = data.days.reduce((total, day) => total + day.events.length, 0);
   const changedCount = data.days.reduce((total, day) => total + (day.changedPlans?.length || 0), 0);
   document.getElementById('recap-days').textContent = String(data.days.length);
