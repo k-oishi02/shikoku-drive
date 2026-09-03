@@ -387,3 +387,18 @@
 }
 
 
+
+/* Planning cockpit: a compact Material 3 Expressive planning flow. */
+.planning-cockpit { display:grid; gap:.85rem; margin:0 0 1rem; padding:1.15rem; border:1px solid color-mix(in srgb,var(--accent) 38%,var(--line)); border-radius:1.35rem 1.35rem .5rem 1.35rem; background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 14%,var(--panel)),var(--panel)); box-shadow:0 .8rem 2rem rgba(0,0,0,.12); }
+.planning-cockpit-title { display:flex; align-items:baseline; justify-content:space-between; gap:.8rem; }
+.planning-cockpit-kicker { color:var(--accent); font-size:.67rem; font-weight:900; letter-spacing:.14em; }
+.planning-cockpit h3 { margin:.18rem 0 0; font-size:1.15rem; }
+.planning-cockpit-hint { margin:0; color:var(--muted); font-size:.76rem; line-height:1.55; }
+.planning-cockpit-steps { display:grid; grid-template-columns:repeat(5,1fr); gap:.55rem; }
+.planning-step { display:grid; gap:.25rem; min-height:4.4rem; padding:.7rem; border:1px solid var(--line); border-radius:1rem 1rem .35rem 1rem; color:var(--text); background:color-mix(in srgb,var(--panel) 78%,transparent); text-align:left; cursor:pointer; transition:transform .15s ease,border-color .15s ease; }
+.planning-step:hover,.planning-step:focus-visible { border-color:var(--accent); transform:translateY(-1px); }
+.planning-step-number { color:var(--accent); font-size:.65rem; font-weight:900; letter-spacing:.1em; }
+.planning-step-copy { font-size:.72rem; line-height:1.45; }
+@media (max-width:900px) { .planning-cockpit-steps { grid-template-columns:repeat(3,1fr); } }
+@media (max-width:600px) { .planning-cockpit-steps { grid-template-columns:repeat(2,1fr); } }
+@media (prefers-reduced-motion: reduce) { .planning-step { transition:none; } .planning-step:hover,.planning-step:focus-visible { transform:none; } }

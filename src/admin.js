@@ -533,6 +533,7 @@ function renderEditor() {
   renderCandidateList();
   hideEditorErrors();
   renderTripAudit();
+  renderPlanningCockpit();
   refreshAdminDiscussionRooms();
 }
 
@@ -2496,6 +2497,42 @@ function renderTripAudit(report = analyzeTrip(state.activeTrip || {})) {
   panel.replaceChildren(head, list);
 }
 
+function renderPlanningCockpit() {
+  const panel = $('planning-cockpit');
+  const trip = state.activeTrip;
+  if (!panel || !trip) return;
+  const days = Object.entries(trip.days || {});
+  const cards = days.flatMap(([, items]) => items || []);
+  const fixed = cards.filter(card => card.timeLocked || card.constraints?.reservationAt || card.constraints?.departureBy).length;
+  const candidates = Array.isArray(state.activePlanning?.candidates) ? state.activePlanning.candidates : [];
+  const assigned = candidates.filter(item => item.assignedDay).length;
+  let checkDetail = '公開前チェックを確認';
+  try {
+    const report = analyzeTrip(trip);
+    checkDetail = report.errors.length ? `要修正 ${report.errors.length}件` : report.warnings.length ? `確認 ${report.warnings.length}件` : '公開準備OK';
+  } catch {
+    checkDetail = 'チェックを確認';
+  }
+  const steps = [
+    ['01', 'BASICS', trip.startDate && trip.endDate ? '期間設定済み' : '期間を設定', 'trip-start-date'],
+    ['02', 'ANCHORS', `${fixed}件の固定予定`, 'trip-audit'],
+    ['03', 'CANDIDATES', candidates.length ? `${assigned}/${candidates.length}件を日程へ配置` : '候補を追加', 'editor-candidate-list'],
+    ['04', 'DAY PLAN', `${days.length}日・${cards.length}カード`, 'editor-card-list'],
+    ['05', 'CHECK', checkDetail, 'trip-audit']
+  ];
+  const title = makeElement('div', 'planning-cockpit-title');
+  title.append(makeElement('div', 'planning-cockpit-kicker', 'TRIP PLANNING'), makeElement('h3', '', '旅程を組み立てる'));
+  const hint = makeElement('p', 'planning-cockpit-hint', '固定予定を先に置き、候補を日程へ配置してから公開前チェックを確認します。');
+  const nav = makeElement('div', 'planning-cockpit-steps');
+  steps.forEach(([number, label, detail, target]) => {
+    const button = makeElement('button', 'planning-step', '');
+    button.type = 'button'; button.dataset.planningTarget = target;
+    button.append(makeElement('span', 'planning-step-number', number), makeElement('span', 'planning-step-copy', `${label} · ${detail}`));
+    button.addEventListener('click', () => document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    nav.append(button);
+  });
+  panel.replaceChildren(title, hint, nav);
+}
 function showTripPreview() {
   readTripBasics();
   readDaySettings();
