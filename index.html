@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
-    <link rel="stylesheet" href="src/participant-v2.css?v=300">
+    <link rel="stylesheet" href="src/participant-v2.css?v=402">
     <link rel="stylesheet" href="src/recap.css?v=400">
     <link rel="stylesheet" href="src/enhancements.css">
     <link rel="stylesheet" href="src/discussion.css">
@@ -1590,7 +1590,7 @@
                     const btnRowHtml = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
                     cardsHtml += `
                         ${travelHintHtml}
-                        <div class="j-card" data-card-id="${escapeHtml(card.cardId || '')}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-travel-minutes="${travelMinutes}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
+                        <div class="j-card" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-travel-minutes="${travelMinutes}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
                             <span class="j-card-time">${escapeHtml(card.time)}</span>
                             <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span>${escapeHtml(cardTitle)}</div>
                             <div class="j-card-desc">${escapeHtml(cardDescription)}</div>

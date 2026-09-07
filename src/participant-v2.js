@@ -2,6 +2,7 @@ import { getTripNowState, migrateTripToV2, settlementTransfers } from './trip-v2
 import { resolveMapFields, mapHref, mapSearchQuery } from './map-links.js';
 import { createDiscussionPanel } from './discussion-ui.js';
 import { createLiveItineraryController } from './live-itinerary.js';
+import { appleMapsUrl, buildNavigationTargets, navigationPreference } from './navigation-picker.js';
 
 window.shioriMapFields = resolveMapFields;
 window.shioriMapHref = mapHref;
@@ -11,6 +12,7 @@ let activeTrip = null;
 let nowTimer = null;
 let notificationTimers = [];
 const liveItinerary = createLiveItineraryController();
+let navigationPicker = null;
 
 const safeStorage = {
   get(key, fallback = '') {
@@ -117,10 +119,10 @@ function ensureSettingsDialog() {
     <div class="v2-settings-head"><h2>しおり設定</h2><button type="button" class="v2-settings-button" data-close>閉じる</button></div>
     <div class="v2-settings-body">
       <label>表示テーマ<select id="participant-theme"><option value="auto">端末に合わせる</option><option value="dark">ダーク</option><option value="light">ライト</option></select></label>
-      <label>地図アプリ<select id="participant-map"><option value="google">Google Maps</option><option value="apple">Apple Maps</option></select></label>
+      <label>MAPボタン<select id="participant-map"><option value="ask">毎回選ぶ</option><option value="google">Google Maps</option><option value="yahoo">Yahoo!カーナビ</option><option value="waze">Waze</option><option value="apple">Apple Maps（従来設定）</option></select></label>
       <label class="v2-settings-toggle"><input id="participant-notifications" type="checkbox"><span>予定前の通知を受け取る</span></label>
       <small>無料運用の端末内通知です。通知許可が必要で、しおりを開いている間だけ予定時刻をお知らせします。</small>
-      <small>DRIVEはGoogle MapsまたはApple Mapsへ案内を渡します。Android Auto／CarPlay接続中は、対応する地図アプリで車載画面へ引き継げます。</small>
+      <small>「毎回選ぶ」では、MAPを押すたびにGoogle Maps・Yahoo!カーナビ・Wazeから選択できます。</small>
     </div>`;
   document.body.append(dialog);
   dialog.querySelector('[data-close]').addEventListener('click', () => dialog.close());
@@ -129,7 +131,7 @@ function ensureSettingsDialog() {
     applyTheme(activeTrip);
   });
   dialog.querySelector('#participant-map').addEventListener('change', event => {
-    safeStorage.set(settingKey('map'), event.target.value);
+    safeStorage.set(settingKey('navigation-app'), event.target.value);
     applyMapPreference();
   });
   dialog.querySelector('#participant-notifications').addEventListener('change', async event => {
@@ -152,6 +154,89 @@ function applyMapPreference() {
   });
 }
 
+function launchWithFallback(appUrl, webUrl) {
+  if (!webUrl) return;
+  if (!appUrl) {
+    window.location.href = webUrl;
+    return;
+  }
+  let appOpened = false;
+  const detectBackground = () => { if (document.hidden) appOpened = true; };
+  document.addEventListener('visibilitychange', detectBackground);
+  window.location.href = appUrl;
+  window.setTimeout(() => {
+    document.removeEventListener('visibilitychange', detectBackground);
+    if (!appOpened && !document.hidden) window.location.href = webUrl;
+  }, 1200);
+}
+
+function openNavigationTarget(id, source) {
+  if (id === 'apple') {
+    const url = appleMapsUrl(source);
+    if (url) window.location.href = url;
+    return;
+  }
+  const target = buildNavigationTargets(source)[id];
+  if (!target?.url) return;
+  launchWithFallback(target.appUrl, target.url);
+}
+
+function ensureNavigationPicker() {
+  if (navigationPicker) return navigationPicker;
+  const dialog = document.createElement('dialog');
+  dialog.id = 'navigation-picker-dialog';
+  dialog.className = 'v2-navigation-picker';
+  dialog.innerHTML = `
+    <div class="v2-settings-head"><div><small>NAVIGATION</small><h2>どのアプリで開きますか？</h2></div><button type="button" class="v2-settings-button" data-close>閉じる</button></div>
+    <div class="v2-navigation-body">
+      <p class="v2-navigation-destination" data-destination></p>
+      <button type="button" class="v2-navigation-option google" data-navigation="google"><strong>GOOGLE MAPS</strong><span>スポット情報とルートを確認</span></button>
+      <button type="button" class="v2-navigation-option yahoo" data-navigation="yahoo"><strong>YAHOO!カーナビ</strong><span data-yahoo-note>日本の道路案内を重視</span></button>
+      <button type="button" class="v2-navigation-option waze" data-navigation="waze"><strong>WAZE</strong><span>渋滞・事故情報を重視</span></button>
+      <label class="v2-navigation-remember"><input type="checkbox" data-remember><span>次回からこのアプリを使う</span></label>
+      <small>運転中は操作せず、安全な場所に停車して選択してください。</small>
+    </div>`;
+  document.body.append(dialog);
+  dialog.querySelector('[data-close]').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', event => {
+    if (event.target === dialog) dialog.close();
+    const button = event.target.closest('[data-navigation]');
+    if (!button || !dialog._navigationSource) return;
+    const id = button.dataset.navigation;
+    if (dialog.querySelector('[data-remember]').checked) safeStorage.set(settingKey('navigation-app'), id);
+    const source = dialog._navigationSource;
+    dialog.close();
+    openNavigationTarget(id, source);
+  });
+  navigationPicker = dialog;
+  return dialog;
+}
+
+function showNavigationPicker(source) {
+  const dialog = ensureNavigationPicker();
+  const targets = buildNavigationTargets(source);
+  dialog._navigationSource = source;
+  dialog.querySelector('[data-destination]').textContent = source.title || source.mapQuery || '目的地';
+  dialog.querySelector('[data-yahoo-note]').textContent = targets.yahoo.note;
+  dialog.querySelector('[data-remember]').checked = false;
+  dialog.showModal();
+}
+
+function handleMapButtonClick(event) {
+  const link = event.target.closest('a.j-btn');
+  if (!link || link.querySelector('.j-btn-label')?.textContent !== 'MAP') return;
+  const card = link.closest('.j-card');
+  if (!card) return;
+  const source = {
+    title: card.dataset.mapTitle || '',
+    mapQuery: card.dataset.mapQuery || '',
+    mapUrl: card.dataset.mapUrl || link.href
+  };
+  const preference = navigationPreference(safeStorage.get(settingKey('navigation-app'), 'ask'));
+  event.preventDefault();
+  if (preference === 'ask') showNavigationPicker(source);
+  else openNavigationTarget(preference, source);
+}
 function installSettingsButton() {
   const actions = document.querySelector('.now-actions');
   if (!actions || actions.querySelector('.v2-settings-button')) return;
@@ -163,7 +248,7 @@ function installSettingsButton() {
   button.addEventListener('click', () => {
     const dialog = ensureSettingsDialog();
     dialog.querySelector('#participant-theme').value = safeStorage.get(settingKey('theme'), activeTrip.theme?.mode || 'auto');
-    dialog.querySelector('#participant-map').value = safeStorage.get(settingKey('map'), /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'apple' : 'google');
+    dialog.querySelector('#participant-map').value = navigationPreference(safeStorage.get(settingKey('navigation-app'), 'ask'));
     dialog.querySelector('#participant-notifications').checked = activeTrip.features?.notifications === true && 'Notification' in window && Notification.permission === 'granted';
     dialog.showModal();
   });
@@ -289,6 +374,8 @@ export function activateParticipantV2(raw) {
   applyTheme(activeTrip);
   applyMapPreference();
   installSettingsButton();
+  document.removeEventListener('click', handleMapButtonClick);
+  document.addEventListener('click', handleMapButtonClick);
   document.getElementById('now-mode')?.toggleAttribute('hidden', activeTrip.features?.nowMode === false);
   document.getElementById('btn-expenses')?.toggleAttribute('hidden', activeTrip.features?.expenses === false);
   nowTimer && clearInterval(nowTimer);
@@ -324,13 +411,19 @@ export function deactivateParticipantV2() {
   document.getElementById('expense-amount')?.removeEventListener('input', updateExpenseSplitPreview);
   document.getElementById('expense-participants')?.removeEventListener('change', updateExpenseSplitPreview);
   window.removeEventListener('shiori-members-changed', renderExpenseParticipants);
+  document.removeEventListener('click', handleMapButtonClick);
+  if (navigationPicker?.open) navigationPicker.close();
   liveItinerary.deactivate();
   activeTrip = null;
 }
 
 export function preferredMapUrl(query, fallbackUrl = '') {
-  const preference = safeStorage.get(settingKey('map'), /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'apple' : 'google');
+  const preference = navigationPreference(safeStorage.get(settingKey('navigation-app'), 'ask'));
   const isDrivingRoute = /\/maps\/dir\//.test(String(fallbackUrl));
+  if (preference === 'yahoo' || preference === 'waze') {
+    const targets = buildNavigationTargets({ mapQuery: query });
+    return targets[preference]?.appUrl || targets[preference]?.url || fallbackUrl;
+  }
   return preference === 'apple' && query
     ? isDrivingRoute
       ? `https://maps.apple.com/?daddr=${encodeURIComponent(query)}&dirflg=d`

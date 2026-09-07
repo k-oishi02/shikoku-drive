@@ -143,6 +143,25 @@ html[data-trip-theme="light"] .now-route:focus-visible { outline-color: #795400;
 .v2-settings-body { display: grid; gap: .9rem; padding: 1rem; }
 .v2-settings-body label { display: grid; gap: .35rem; color: #aeb7c2; font-size: .72rem; }
 .v2-settings-body select { min-height: 2.8rem; padding: .6rem; border: 1px solid #424851; color: #fff; background: #20242a; }
+.v2-navigation-picker { width: min(92vw, 30rem); padding: 0; border: 1px solid #3b4149; border-radius: 1.35rem; color: #f5f5f5; background: #181b20; box-shadow: 0 1.4rem 4rem rgba(0,0,0,.4); }
+.v2-navigation-picker::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(7px); }
+.v2-navigation-body { display: grid; gap: .7rem; padding: 1rem; }
+.v2-navigation-destination { margin: 0 0 .15rem; overflow: hidden; color: #aeb7c2; font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }
+.v2-navigation-option { display: grid; gap: .18rem; min-height: 4.25rem; padding: .8rem .95rem; border: 1px solid #424851; border-radius: 1.05rem 1.05rem .38rem 1.05rem; color: #fff; background: #20242a; cursor: pointer; text-align: left; }
+.v2-navigation-option:hover,.v2-navigation-option:focus-visible { border-color: var(--v2-accent); background: #292e35; }
+.v2-navigation-option strong { font-size: .8rem; letter-spacing: .04em; }
+.v2-navigation-option span { color: #aeb7c2; font-size: .7rem; }
+.v2-navigation-option.google { border-left: .28rem solid #4285f4; }
+.v2-navigation-option.yahoo { border-left: .28rem solid #ff0033; }
+.v2-navigation-option.waze { border-left: .28rem solid #33ccff; }
+.v2-navigation-remember { display: flex; align-items: center; gap: .55rem; min-height: 2.75rem; color: #d8dde4; font-size: .74rem; }
+.v2-navigation-remember input { width: 1.1rem; min-height: auto; }
+.v2-navigation-body > small { color: #929ba6; font-size: .66rem; line-height: 1.55; }
+html[data-trip-theme="light"] .v2-navigation-picker { color: #211d19; background: #fffdf8; border-color: #c8c0b5; }
+html[data-trip-theme="light"] .v2-navigation-option { color: #211d19; background: #faf7f1; border-color: #c8c0b5; }
+html[data-trip-theme="light"] .v2-navigation-option:hover,html[data-trip-theme="light"] .v2-navigation-option:focus-visible { background: #f0ebe3; border-color: #81776c; }
+html[data-trip-theme="light"] .v2-navigation-option span,html[data-trip-theme="light"] .v2-navigation-destination,html[data-trip-theme="light"] .v2-navigation-body > small { color: #655d54; }
+html[data-trip-theme="light"] .v2-navigation-remember { color: #3f3831; }
 .v2-settings-toggle { display: flex !important; grid-template-columns: auto 1fr; align-items: center; }
 .v2-settings-toggle input { width: 1.1rem; }
 .expense-participants { display: flex; flex-wrap: wrap; gap: .45rem; grid-column: 1 / -1; }
