@@ -2,7 +2,7 @@ import { getTripNowState, migrateTripToV2, settlementTransfers } from './trip-v2
 import { resolveMapFields, mapHref, mapSearchQuery } from './map-links.js';
 import { createDiscussionPanel } from './discussion-ui.js';
 import { createLiveItineraryController } from './live-itinerary.js';
-import { appleMapsUrl, buildNavigationTargets, navigationPreference } from './navigation-picker.js';
+import { appleMapsUrl, buildNavigationTargets, navigationLaunchUrl, navigationPreference } from './navigation-picker.js';
 
 window.shioriMapFields = resolveMapFields;
 window.shioriMapHref = mapHref;
@@ -178,7 +178,16 @@ function openNavigationTarget(id, source) {
   }
   const target = buildNavigationTargets(source)[id];
   if (!target?.url) return;
-  launchWithFallback(target.appUrl, target.url);
+  if (target.id === 'yahoo' && target.needsSearch && target.copyText && navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(target.copyText).catch(() => {});
+  }
+  const launchUrl = navigationLaunchUrl(target, {
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    maxTouchPoints: navigator.maxTouchPoints
+  });
+  const usesAppLaunch = launchUrl && launchUrl !== target.url;
+  launchWithFallback(usesAppLaunch ? launchUrl : '', target.url);
 }
 
 function ensureNavigationPicker() {
@@ -187,14 +196,14 @@ function ensureNavigationPicker() {
   dialog.id = 'navigation-picker-dialog';
   dialog.className = 'v2-navigation-picker';
   dialog.innerHTML = `
-    <div class="v2-settings-head"><div><small>NAVIGATION</small><h2>どのアプリで開きますか？</h2></div><button type="button" class="v2-settings-button" data-close>閉じる</button></div>
+    <div class="v2-navigation-head"><div><small>NAVIGATION</small><h2>ナビを選ぶ</h2><p>この目的地を開くアプリを選択してください</p></div><button type="button" class="v2-navigation-close" data-close aria-label="閉じる">×</button></div>
     <div class="v2-navigation-body">
       <p class="v2-navigation-destination" data-destination></p>
-      <button type="button" class="v2-navigation-option google" data-navigation="google"><strong>GOOGLE MAPS</strong><span>スポット情報とルートを確認</span></button>
-      <button type="button" class="v2-navigation-option yahoo" data-navigation="yahoo"><strong>YAHOO!カーナビ</strong><span data-yahoo-note>日本の道路案内を重視</span></button>
-      <button type="button" class="v2-navigation-option waze" data-navigation="waze"><strong>WAZE</strong><span>渋滞・事故情報を重視</span></button>
+      <button type="button" class="v2-navigation-option google" data-navigation="google"><span class="v2-navigation-brand">G</span><span class="v2-navigation-copy"><strong>Google Maps</strong><small>施設情報も一緒に確認</small></span><span class="v2-navigation-arrow">↗</span></button>
+      <button type="button" class="v2-navigation-option yahoo" data-navigation="yahoo"><span class="v2-navigation-brand">Y!</span><span class="v2-navigation-copy"><strong>Yahoo!カーナビ</strong><small data-yahoo-note>日本の道路案内を重視</small></span><span class="v2-navigation-arrow">↗</span></button>
+      <button type="button" class="v2-navigation-option waze" data-navigation="waze"><span class="v2-navigation-brand">W</span><span class="v2-navigation-copy"><strong>Waze</strong><small>渋滞・事故情報を重視</small></span><span class="v2-navigation-arrow">↗</span></button>
       <label class="v2-navigation-remember"><input type="checkbox" data-remember><span>次回からこのアプリを使う</span></label>
-      <small>運転中は操作せず、安全な場所に停車して選択してください。</small>
+      <small class="v2-navigation-safety">運転中は操作せず、安全な場所に停車して選択してください。</small>
     </div>`;
   document.body.append(dialog);
   dialog.querySelector('[data-close]').addEventListener('click', () => dialog.close());

@@ -1,6 +1,8 @@
 const GOOGLE_MAPS_BASE = 'https://www.google.com/maps/dir/?api=1';
 const WAZE_BASE = 'https://waze.com/ul';
 const YAHOO_MAP_SEARCH = 'https://map.yahoo.co.jp/search';
+const YAHOO_CARNAVI_FALLBACK = 'https://carnavi.yahoo.co.jp/promo/';
+const YAHOO_CARNAVI_PACKAGE = 'jp.co.yahoo.android.apps.navi';
 
 function text(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -58,22 +60,41 @@ export function buildNavigationTargets(source = {}) {
       : destination.mapUrl;
   const yahooFallback = destination.query
     ? `${YAHOO_MAP_SEARCH}?q=${encodedQuery}`
-    : 'https://carnavi.yahoo.co.jp/';
+    : YAHOO_CARNAVI_FALLBACK;
   const yahooAppUrl = destination.coordinates
     ? `yjcarnavi://navi/select?lat=${encodeURIComponent(destination.coordinates.latitude)}&lon=${encodeURIComponent(destination.coordinates.longitude)}&name=${encodeURIComponent(destination.title)}`
-    : '';
+    : 'yjcarnavi://';
 
   return {
     google: { id: 'google', label: 'GOOGLE MAPS', url: googleUrl || destination.mapUrl },
     yahoo: {
       id: 'yahoo', label: 'YAHOO!カーナビ', url: yahooFallback,
       appUrl: yahooAppUrl,
-      note: yahooAppUrl ? '現在地からルート検索' : '座標未登録のためYahoo!地図で検索'
+      needsSearch: !destination.coordinates,
+      copyText: destination.query || destination.title,
+      note: destination.coordinates ? '目的地までのルートを開く' : '目的地をコピーしてアプリで検索'
     },
     waze: { id: 'waze', label: 'WAZE', url: wazeUrl || destination.mapUrl }
   };
 }
 
+export function navigationLaunchUrl(target, device = {}) {
+  if (!target?.url) return '';
+  if (!target.appUrl) return target.url;
+  const userAgent = text(device.userAgent);
+  const platform = text(device.platform);
+  const maxTouchPoints = Number(device.maxTouchPoints) || 0;
+  const isAndroid = /Android/i.test(userAgent);
+  const isIos = /iPhone|iPad|iPod/i.test(userAgent)
+    || (platform === 'MacIntel' && maxTouchPoints > 1);
+
+  if (target.id === 'yahoo' && isAndroid) {
+    const route = target.appUrl.replace(/^yjcarnavi:\/\//, '');
+    return `intent://${route}#Intent;scheme=yjcarnavi;package=${YAHOO_CARNAVI_PACKAGE};S.browser_fallback_url=${encodeURIComponent(YAHOO_CARNAVI_FALLBACK)};end`;
+  }
+  if (isIos) return target.appUrl;
+  return target.url;
+}
 export function navigationPreference(value) {
   return ['ask', 'google', 'yahoo', 'waze', 'apple'].includes(value) ? value : 'ask';
 }
