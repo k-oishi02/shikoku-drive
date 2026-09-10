@@ -1,0 +1,8 @@
+{
+  "app": "SHIORI",
+  "host": "localhost",
+  "port": 4173,
+  "url": "http://localhost:4173",
+  "reserved": true,
+  "notes": "SHIORI local preview port"
+}
