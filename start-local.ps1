@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 $shioriRoot = Split-Path -Parent $PSCommandPath

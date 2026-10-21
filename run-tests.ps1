@@ -1,4 +1,4 @@
-# SHIORI_app Test Runner
+﻿# SHIORI_app Test Runner
 # Executes test suites using Node.js built-in test runner (node:test)
 
 $ErrorActionPreference = "Stop"
