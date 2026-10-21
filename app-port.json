@@ -4,5 +4,6 @@
   "port": 4173,
   "url": "http://localhost:4173",
   "reserved": true,
-  "notes": "SHIORI local preview port"
+  "healthEndpoint": "/api/health",
+  "notes": "SHIORI local preview & PWA runtime port"
 }
