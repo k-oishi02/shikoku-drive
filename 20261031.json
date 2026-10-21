@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 2,
+  "tripId": "20261107",
+  "title": "茨城ドライブ 2026　Autumn",
+  "subtitle": "秋の味覚が俺たちを呼んでるぜ！！",
+  "catchphrase": "食欲の秋！！",
+  "startDate": "2026-11-07",
+  "endDate": "2026-11-07",
+  "archived": false,
+  "theme": {
+    "mode": "auto",
+    "accent": "#1f93db"
+  },
+  "features": {
+    "nowMode": true,
+    "expenses": true,
+    "notifications": true
+  },
+  "dayLabels": {
+    "day1": "11/7 (土) ひたちなか・日立・大洗ナイト"
+  },
+  "daySettings": {
+    "day1": {
+      "departureTime": "07:30",
+      "note": "朝07:30タイムズ上本郷駅前第２を出発。三郷ICより常磐道経由で那珂湊へ"
+    }
+  },
+  "days": {
+    "day1": [
+      {
+        "time": "07:15 - 07:30",
+        "badge": "レンタカー / 出発",
+        "title": "上本郷",
+        "desc": "カーシェア受取・日常点検・ナビ設定をして07:30出発。三郷ICへ向かいます。車両: ノート e-POWER（松戸 500 ワ 1218・グレー）。返却予定は24:00まで。",
+        "mapQuery": "タイムズ上本郷駅前第２",
+        "cardId": "day1-01-carshare",
+        "expenseShortcut": true,
+        "reservation": {
+          "number": "233227371",
+          "name": "タイムズ上本郷駅前第２",
+          "note": "ノート e-POWER (松戸 500 ワ 1218・グレー) / 返却 24:00"
+        },
+        "constraints": {
+          "reservationAt": "07:00",
+          "departureBy": "07:30"
+        }
+      },
+      {
+        "time": "09:15 - 10:45",
+        "badge": "朝食 / 買い物",
+        "title": "那珂湊おさかな市場",
+        "desc": "市場散策＆大ネタ回転寿司「市場寿し」で早めの贅沢海鮮寿司ブランチ。新鮮な魚介や浜焼きも人気です。",
+        "official": "https://nakaminato-osakanaichiba.jp/",
+        "mapQuery": "那珂湊おさかな市場",
+        "cardId": "day1-02-nakaminato",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 105,
+        "constraints": {
+          "opensAt": "08:00"
+        }
+      },
+      {
+        "time": "10:55 - 11:30",
+        "badge": "カフェ / お土産",
+        "title": "ume café WAON（梅カフェ）",
+        "desc": "老舗吉田屋直営の日本初梅専門カフェ。名物の特製「梅ソーダ」でさっぱり一息＆梅干し・お土産を購入。",
+        "official": "https://www.kk-yoshidaya.co.jp/",
+        "mapQuery": "茨城県東茨城郡大洗町磯浜町624 ume cafe WAON",
+        "cardId": "day1-03-waon",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 10,
+        "constraints": {
+          "opensAt": "10:00",
+          "closesAt": "18:00"
+        }
+      },
+      {
+        "time": "11:55 - 14:15",
+        "badge": "絶景 / 散策",
+        "title": "国営ひたち海浜公園",
+        "desc": "秋の風物詩！「みはらしの丘」のコキアと満開のコスモス畑を散策。約2時間20分たっぷり散策と写真撮影を満喫。",
+        "official": "https://hitachikaihin.jp/",
+        "mapQuery": "国営ひたち海浜公園 西口",
+        "cardId": "day1-04-hitachikaihin",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 25,
+        "constraints": {
+          "opensAt": "09:30",
+          "closesAt": "17:00"
+        }
+      },
+      {
+        "time": "14:50 - 16:30",
+        "badge": "絶景カフェ / 食事",
+        "title": "日立駅・シーバーズカフェ",
+        "desc": "全面ガラス張り「海に浮く駅舎」。青い太平洋を一望しながら、遅めのランチ（タコライス・パスタ等）＆珈琲で約1時間40分ゆったり休憩。",
+        "official": "https://www.instagram.com/seabirdscafe/",
+        "officialLabel": "公式Instagram",
+        "tabelog": "https://tabelog.com/ibaraki/A0805/A080501/8013059/",
+        "mapQuery": "日立駅 シーバーズカフェ",
+        "cardId": "day1-05-hitachistation",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 35,
+        "constraints": {
+          "opensAt": "07:00",
+          "closesAt": "22:00"
+        }
+      },
+      {
+        "time": "17:30 - 20:00",
+        "badge": "夜間限定 / 水族館",
+        "title": "アクアワールド大洗（NIGHT AQUAWORLD）",
+        "desc": "17:45開館！土曜夜限定の幻想的なライトアップ大水槽＆ナイトオーシャンライブを満喫（閉館20:00）。※事前WEBチケット購入必須。",
+        "official": "https://www.aquaworld-oarai.com/guide/night-aquaworld/",
+        "officialLabel": "ナイト公式案内",
+        "mapQuery": "アクアワールド茨城県大洗水族館",
+        "cardId": "day1-06-night-aquaworld",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 60,
+        "constraints": {
+          "opensAt": "17:45",
+          "closesAt": "20:00",
+          "lastEntryAt": "19:00"
+        }
+      },
+      {
+        "time": "21:05 - 22:00",
+        "badge": "夕食 / ハンバーグ",
+        "title": "フライングガーデン ひたち野うしく店",
+        "desc": "北関東名物「爆弾ハンバーグ」で熱々ジューシーな夕食！国道6号沿いでアクセス抜群（L.O. 21:30・閉店22:00）。大洗から高速利用で約65分。",
+        "official": "https://www.fgarden.co.jp/",
+        "tabelog": "https://tabelog.com/ibaraki/A0803/A080302/8001512/",
+        "mapQuery": "フライングガーデン ひたち野うしく店",
+        "cardId": "day1-07-dinner-flyinggarden",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 65,
+        "constraints": {
+          "opensAt": "11:00",
+          "closesAt": "22:00",
+          "lastEntryAt": "21:30"
+        }
+      },
+      {
+        "time": "22:50 - 23:10",
+        "badge": "給油 / レンタカー返却",
+        "title": "上本郷",
+        "desc": "国道6号をマイペースに南下（約50分）。近隣GSで満タン給油し、タイムズ上本郷駅前第２へ無事返却（予約期限 24:00）。1日お疲れ様でした！",
+        "mapQuery": "タイムズ上本郷駅前第２",
+        "cardId": "day1-08-return",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 50,
+        "reservation": {
+          "number": "233227371",
+          "name": "タイムズ上本郷駅前第２",
+          "note": "ノート e-POWER (松戸 500 ワ 1218・グレー) / 返却 24:00"
+        }
+      }
+    ]
+  },
+  "weatherLocations": {
+    "oarai": {
+      "label": "大洗",
+      "lat": 36.3134,
+      "lon": 140.575,
+      "tripDate": "2026-11-07",
+      "link": "https://weathernews.jp/onebox/tenki/ibaraki/08309/"
+    },
+    "hitachi": {
+      "label": "日立",
+      "lat": 36.5986,
+      "lon": 140.6558,
+      "tripDate": "2026-11-07",
+      "link": "https://weathernews.jp/onebox/tenki/ibaraki/08202/"
+    }
+  },
+  "checklist": [
+    {
+      "category": "DRIVE",
+      "items": [
+        {
+          "name": "運転免許証"
+        },
+        {
+          "name": "ETCカード"
+        },
+        {
+          "name": "タイムズカー会員カード / アプリ確認"
+        },
+        {
+          "name": "車載充電器・スマホホルダー"
+        },
+        {
+          "name": "保冷バッグ・保冷剤（魚介・お土産用）"
+        }
+      ]
+    },
+    {
+      "category": "TRAVEL",
+      "items": [
+        {
+          "name": "ナイトアクアワールド事前WEBチケット"
+        },
+        {
+          "name": "歩きやすい靴（ひたち海浜公園用）"
+        },
+        {
+          "name": "防寒用の上着（夜の海風対策）"
+        },
+        {
+          "name": "現金（小銭・コインパーキング等）"
+        }
+      ]
+    }
+  ]
+}

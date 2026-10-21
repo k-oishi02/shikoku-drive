@@ -1,35 +1,76 @@
-const CACHE_NAME = 'shiori-pwa-v403';
+const CACHE_VERSION = 'v404';
+const CACHE_NAME = `shiori-pwa-${CACHE_VERSION}`;
 const APP_SHELL = [
   './',
   './index.html',
+  './admin.html',
   './recap.html',
-  './src/enhancements.css',
-  './src/enhancements.js',
-  './src/firebase-sync.js',
-  './src/suggestion-sync.js',
-  './src/suggestion-validation.js',
-  './src/discussion-ui.js',
-  './src/discussion.css',
+  './20261107.json',
+  './20261031.json',
+  './recaps/shikoku-2026.json',
+  './manifest.webmanifest',
+  // Stylesheets
   './src/theme-v31.css',
   './src/design-v31.css',
   './src/expressive-v32.css',
+  './src/enhancements.css',
+  './src/discussion.css',
+  './src/participant-v2.css',
+  './src/recap.css',
+  './src/admin.css',
+  './src/admin-v2.css',
+  // Fonts
   './fonts/libre-franklin-latin-400-600.woff2',
   './fonts/libre-franklin-OFL.txt',
-  './src/participant-v2.css',
+  // Participant Viewer Modules (M1-M4)
+  './src/viewer-app.js',
+  './src/viewer-router.js',
+  './src/viewer-ui.js',
+  './src/trip-store.js',
+  './src/weather-service.js',
+  './src/pwa-manager.js',
+  './src/error-boundary.js',
+  './src/offline-expense-queue.js',
+  './src/itinerary-calc.js',
   './src/participant-v2.js',
   './src/navigation-picker.js',
   './src/live-itinerary.js',
   './src/timeline-worker.js',
   './src/journey-v4.js',
   './src/recap.js',
-  './src/recap.css',
-  './recaps/shikoku-2026.json',
+  './src/discussion-ui.js',
+  './src/enhancements.js',
+  './src/firebase-sync.js',
+  './src/suggestion-sync.js',
+  './src/suggestion-validation.js',
+  // Pure Domain & Calculation Core
   './src/trip-v2-core.js',
-  './src/map-links.js',
-  './src/draft-validation.js',
   './src/trip-v2-analysis.js',
   './src/trip-v2-index.js',
-  './manifest.webmanifest',
+  './src/draft-validation.js',
+  './src/map-links.js',
+  // Admin Modules (M2)
+  './src/admin.js',
+  './src/admin-store.js',
+  './src/admin-ui.js',
+  './src/admin-auth.js',
+  './src/admin-trip-service.js',
+  './src/admin-trip-store.js',
+  './src/admin-save-state.js',
+  './src/admin-draft-record.js',
+  './src/admin-transfer.js',
+  './src/admin-placement.js',
+  './src/admin-day-planner.js',
+  './src/admin-day-planner-ui.js',
+  './src/admin-candidate-state.js',
+  './src/admin-candidate-ui.js',
+  './src/admin-view-overview.js',
+  './src/admin-view-editor.js',
+  './src/admin-distribution-ui.js',
+  './src/admin-distribution-ledger.js',
+  './src/admin-roles-ui.js',
+  './src/admin-discussion-ui.js',
+  // Static Images & App Icons
   './images/shiori-icon-v2.svg',
   './images/shiori-icon-v2-192.png',
   './images/shiori-icon-v2-512.png',
@@ -78,19 +119,15 @@ self.addEventListener('fetch', event => {
   const requestUrl = new URL(event.request.url);
   if (requestUrl.hostname === 'api.open-meteo.com') return;
   const path = requestUrl.pathname;
-  const isAdminAsset = path.endsWith('/admin.html')
-    || path.endsWith('/src/admin.js')
-    || path.endsWith('/src/admin.css')
-    || path.endsWith('/src/admin-v2.css')
-    || path.endsWith('/firestore.rules')
+  const isServerOrToolAsset = path.endsWith('/firestore.rules')
     || path.endsWith('/firebase.json')
-    || path.includes('/scripts/');
-  if (isAdminAsset) return;
+    || path.endsWith('/package.json')
+    || path.includes('/scripts/')
+    || path.includes('/tests/');
+  if (isServerOrToolAsset) return;
   // Let external maps, tiles, fonts and app links use the browser's normal network path.
-  // Caching opaque third-party responses here would grow the cache without a safe limit.
   if (requestUrl.origin !== self.location.origin) return;
   const cacheKey = cacheKeyFor(event.request);
-  // Cache only the public shell, never arbitrary JSON responses or admin modules.
   if (!APP_SHELL.some(asset => new URL(asset, self.location.href).href === cacheKey)) return;
 
   const isWebAsset = requestUrl.pathname.endsWith('.html') ||
@@ -112,8 +149,20 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => caches.match(cacheKey).then(cached => {
-          if (cached || event.request.mode !== 'navigate') return cached;
-          return caches.match('./index.html');
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            if (requestUrl.pathname.endsWith('/admin.html')) {
+              return caches.match('./admin.html');
+            }
+            return caches.match('./index.html');
+          }
+          if (requestUrl.pathname.endsWith('.json')) {
+            return new Response(JSON.stringify({ error: 'offline', message: 'オフラインのためデータを取得できませんでした。' }), {
+              status: 503,
+              headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            });
+          }
+          return new Response('Offline', { status: 503, statusText: 'Offline' });
         }))
     );
     return;
@@ -131,7 +180,6 @@ self.addEventListener('fetch', event => {
     })
   );
 });
-
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();

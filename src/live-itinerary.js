@@ -1,4 +1,3 @@
-import { formatMinute, parseTimeRange } from './trip-v2-core.js';
 import { mapHref, resolveMapFields } from './map-links.js';
 import {
   applyJourneyStatus,
@@ -11,6 +10,12 @@ import {
   normalizeJourneyRecord,
   setJourneyNote
 } from './journey-v4.js';
+import {
+  shiftedTime,
+  buildTimeline,
+  activeItem,
+  cardMap
+} from './itinerary-calc.js';
 
 const LIVE_STATE_VERSION = 4;
 const VALID_STATUS = new Set(['arrived', 'done', 'skipped']);
@@ -114,9 +119,6 @@ function snapshotState(state) {
   return { selectedDay: state.selectedDay, days: safeCopy(state.days), records: safeCopy(state.records), updatedAt: state.updatedAt };
 }
 
-function cardMap(trip, state, dayKey) {
-  return new Map([...(trip.days?.[dayKey] || []), ...(state.days?.[dayKey]?.extraCards || [])].map(card => [card.cardId, card]));
-}
 
 function routeForCard(card) {
   const route = (card.links || []).find(link => link.kind === 'route' || link.label === 'ルート');
@@ -129,56 +131,6 @@ function routeForCard(card) {
   return window.shioriPreferredMapUrl?.(maps.mapQuery, google) || maps.mapUrl || google;
 }
 
-function shiftedTime(card, offset) {
-  const range = parseTimeRange(card.time);
-  if (!range) return { label: card.time || '', start: null, end: null };
-  return {
-    label: `${formatMinute(range.start + offset)} - ${formatMinute(range.end + offset)}`,
-    start: range.start + offset,
-    end: range.end + offset
-  };
-}
-
-function buildTimeline(trip, state, dayKey) {
-  const day = state.days[dayKey];
-  const cards = cardMap(trip, state, dayKey);
-  let offset = 0;
-  let delayStarted = false;
-  let previous = null;
-  const conflicts = [];
-  const items = day.order.map((id, orderIndex) => {
-    const card = cards.get(id);
-    if (!card) return null;
-    if (id === day.delay.fromCardId) {
-      delayStarted = true;
-      offset = day.delay.minutes;
-    }
-    if (delayStarted && card.timeLocked) offset = 0;
-    const time = shiftedTime(card, card.timeLocked ? 0 : offset);
-    if (previous?.time.end != null && time.start != null && previous.time.end > time.start) {
-      conflicts.push(`${previous.card.title}と${card.title}が${previous.time.end - time.start}分重なります`);
-    }
-    const record = normalizeJourneyRecord(state.records?.[id]);
-    const item = { card, time, orderIndex, status: record.status || day.status[id] || '', record, dayKey };
-    previous = item;
-    return item;
-  }).filter(Boolean);
-  return { items, conflicts };
-}
-
-function activeItem(timeline, dateKey, now = new Date()) {
-  const pending = timeline.items.filter(item => !['done', 'skipped'].includes(item.status));
-  if (!pending.length) return null;
-  const arrived = pending.find(item => item.status === 'arrived');
-  if (arrived) return arrived;
-  const minute = now.getHours() * 60 + now.getMinutes();
-  if (dateKey === localDateKey(now)) {
-    return pending.find(item => item.time.start != null && minute >= item.time.start && minute < item.time.end)
-      || pending.find(item => item.time.start != null && item.time.start > minute)
-      || pending[0];
-  }
-  return pending[0];
-}
 
 function element(tag, className, text) {
   const node = document.createElement(tag);

@@ -17,3 +17,12 @@ export {
   settlementTransfers
 } from './trip-v2-analysis.js';
 
+export {
+  parseCardLinks,
+  formatCardLinks
+} from './itinerary-calc.js';
+
+export {
+  validateTripInput
+} from './draft-validation.js';
+

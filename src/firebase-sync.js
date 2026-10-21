@@ -28,6 +28,26 @@ import {
     persistentMultipleTabManager
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { createSuggestionSyncService } from './suggestion-sync.js';
+import {
+    enqueueOfflineExpense,
+    getPendingExpenses,
+    isExpensePendingSync,
+    getPendingQueueCount,
+    updateQueuedExpenseStatus,
+    clearSyncedExpenses,
+    clearAllQueuedExpenses,
+    mergeWithOfflineQueue,
+    drainOfflineExpenseQueue
+} from './offline-expense-queue.js';
+
+if (typeof window !== 'undefined') {
+    window.shioriEnqueueOfflineExpense = enqueueOfflineExpense;
+    window.shioriGetPendingExpenses = getPendingExpenses;
+    window.shioriIsExpensePendingSync = isExpensePendingSync;
+    window.shioriGetPendingQueueCount = getPendingQueueCount;
+    window.shioriDrainOfflineExpenseQueue = drainOfflineExpenseQueue;
+    window.shioriMergeWithOfflineQueue = mergeWithOfflineQueue;
+}
 
 const firebaseConfig = {
     apiKey: 'AIzaSyCOh5MtRbplm-46FETshOQAGHqyQ4fD4tA',
@@ -121,9 +141,15 @@ function setSyncUi(mode, title, message) {
                 : 'MEMBERS: 接続中…';
     }
     if (expenseSubmit) {
-        expenseSubmit.textContent = mode === 'live' ? 'ADD & SHARE' : 'LOCKED';
-        expenseSubmit.disabled = mode !== 'live';
-        expenseSubmit.dataset.syncMode = mode;
+        if (mode === 'live') {
+            expenseSubmit.textContent = 'ADD & SHARE';
+            expenseSubmit.disabled = false;
+            expenseSubmit.dataset.syncMode = 'live';
+        } else {
+            expenseSubmit.textContent = 'ADD & QUEUE (📴 オフライン保存)';
+            expenseSubmit.disabled = false;
+            expenseSubmit.dataset.syncMode = 'offline';
+        }
     }
 }
 
@@ -133,6 +159,7 @@ function renderLiveSyncState() {
         || !Array.isArray(syncContext.verifiedExpenses) || !navigator.onLine) return;
     publishLedgerAccess(syncContext.uid, true);
     if (Array.isArray(syncContext.verifiedExpenses)) emitRemoteExpenses(syncContext.verifiedExpenses);
+    flushOfflineExpensesQueue().catch(() => {});
     const deviceCount = Number(syncContext.memberCount || 0);
     const peopleCount = Number(syncContext.logicalMemberCount ?? deviceCount);
     const capacity = Math.max(deviceCount, Number(syncContext.capacity || 2));
@@ -228,12 +255,24 @@ async function persistAction(action, queueWhenUnavailable = true) {
             && /^[A-Za-z0-9_-]{43}$/.test(actionLedgerToken)) {
             pendingActions.push({ ...action, tripId: actionTripId, ledgerToken: actionLedgerToken });
         }
+        if (action?.type === 'upsert' && action?.expense) {
+            enqueueOfflineExpense({
+                ...action.expense,
+                tripId: actionTripId,
+                ledgerToken: actionLedgerToken
+            });
+        }
         return false;
     }
 
     const { expensesCollection, uid } = syncContext;
     if (action.type === 'upsert' && action.expense && (!syncContext.participantsReady || !syncContext.roomReady)) {
         if (queueWhenUnavailable) pendingActions.push({ ...action, tripId: actionTripId, ledgerToken: actionLedgerToken });
+        enqueueOfflineExpense({
+            ...action.expense,
+            tripId: actionTripId,
+            ledgerToken: actionLedgerToken
+        });
         return false;
     }
     if (action.type === 'upsert' && action.expense) {
@@ -265,6 +304,34 @@ async function flushPendingActions(tripId, ledgerToken) {
         }
     }
     pendingActions.push(...retry);
+    await flushOfflineExpensesQueue();
+}
+
+export async function flushOfflineExpensesQueue() {
+    if (!syncContext?.expensesCollection || !navigator.onLine) return;
+    await drainOfflineExpenseQueue({
+        tripId: syncContext.tripId,
+        syncHandler: async (item) => {
+            const expense = expenseForCurrentRoom(item);
+            await setDoc(doc(syncContext.expensesCollection, expense.id), expense);
+            return true;
+        },
+        onProgress: ({ remaining }) => {
+            window.tripStore?.setSlice('syncState', {
+                mode: 'syncing',
+                status: 'draining',
+                pendingCount: remaining
+            });
+        }
+    });
+    window.tripStore?.setSlice('syncState', { mode: 'live', status: 'ready', pendingCount: 0 });
+    if (typeof window.recalculateExpenses === 'function') window.recalculateExpenses();
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener('shiori-trigger-queue-drain', () => {
+        flushOfflineExpensesQueue().catch(() => {});
+    });
 }
 
 window.addEventListener('shiori-expense-action', event => {

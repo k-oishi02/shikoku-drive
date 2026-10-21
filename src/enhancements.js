@@ -79,6 +79,34 @@
         const unlocked = expenseIsUnlocked();
         const card = document.querySelector('.expense-card');
         const guard = document.getElementById('expense-privacy-guard');
+
+        if (reason === 'revoked') {
+            card?.classList.add('expense-privacy-locked');
+            if (guard) {
+                guard.hidden = false;
+                const title = guard.querySelector('strong');
+                const copy = guard.querySelector('p');
+                if (title) title.textContent = 'この精算へのアクセスは停止されました';
+                if (copy) copy.textContent = '管理者から新しい配布IDを受け取ってください。精算内容は画面へ表示しません。';
+            }
+            clearExpenseDisplay();
+            return false;
+        }
+
+        const hasAccessStored = Boolean(window.currentTripId && window.localStorage?.getItem('participant-trip-access-v1'));
+        if (!navigator.onLine || !unlocked) {
+            if (hasAccessStored || safeLoad(EXPENSE_KEY, []).length > 0) {
+                card?.classList.remove('expense-privacy-locked');
+                if (guard) guard.hidden = true;
+                document.querySelectorAll('#tab-expenses input, #tab-expenses select, #tab-expenses button, #tab-expenses a').forEach(control => {
+                    if (guard?.contains(control)) return;
+                    if ('disabled' in control) control.disabled = false;
+                    control.setAttribute('aria-disabled', 'false');
+                });
+                return true;
+            }
+        }
+
         card?.classList.toggle('expense-privacy-locked', !unlocked);
         if (guard) {
             guard.hidden = unlocked;
@@ -410,6 +438,18 @@
             const amount = document.createElement('strong');
             const remove = document.createElement('button');
             title.textContent = expense.note || expense.category;
+            const isPending = expense.syncStatus === 'pending' ||
+                expense.pendingSync === true ||
+                (typeof window.shioriIsExpensePendingSync === 'function' &&
+                 window.shioriIsExpensePendingSync(expense.id, window.currentTripId));
+            if (isPending) {
+                const badge = document.createElement('span');
+                badge.className = 'expense-offline-badge';
+                badge.setAttribute('role', 'status');
+                badge.setAttribute('aria-label', 'オフライン保存中');
+                badge.textContent = '📴 オフライン（端末に保存中）';
+                title.appendChild(badge);
+            }
             detail.textContent = expenseLabel(expense);
             amount.textContent = formatYen(expense.amount);
             remove.type = 'button';
@@ -510,10 +550,6 @@
             form.dataset.expenseBound = 'true';
             form.addEventListener('submit', event => {
                 event.preventDefault();
-                if (!expenseIsUnlocked()) {
-                    window.alert('オフライン中は精算内容を追加できません。通信復帰後にお試しください。');
-                    return;
-                }
                 const amount = Number(document.getElementById('expense-amount').value);
                 if (!Number.isFinite(amount) || amount <= 0) return;
                 const expenses = safeLoad(EXPENSE_KEY, []);
@@ -526,18 +562,28 @@
                     window.alert('費用を分ける参加者を1人以上選んでください。');
                     return;
                 }
+                const isOnline = expenseIsUnlocked();
+                const isPending = !isOnline;
                 const expense = {
-                    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                    id: `exp-${Date.now()}-${Math.random().toString(16).slice(2)}`,
                     amount: Math.round(amount),
                     payer: document.getElementById('expense-payer').value,
                     category: document.getElementById('expense-category').value,
                     note: document.getElementById('expense-note').value.trim().slice(0, 120),
                     createdAt: new Date().toISOString(),
-                    creatorUid: access.uid,
+                    creatorUid: access.uid || safeLoad(deviceOwnerStorageKey(), '') || 'local-user',
                     splitMode,
                     participantIds,
-                    pendingSync: Boolean(window.currentTripLedgerToken)
+                    syncStatus: isPending ? 'pending' : 'synced',
+                    pendingSync: isPending
                 };
+                if (isPending && typeof window.shioriEnqueueOfflineExpense === 'function') {
+                    window.shioriEnqueueOfflineExpense({
+                        ...expense,
+                        tripId: window.currentTripId,
+                        ledgerToken: window.currentTripLedgerToken
+                    });
+                }
                 expenses.unshift(expense);
                 safeSave(EXPENSE_KEY, expenses);
                 form.reset();
@@ -546,7 +592,9 @@
                 window.shioriRenderExpenseParticipants?.();
                 if (payer) payer.value = deviceOwner?.value || safeLoad(deviceOwnerStorageKey(), '');
                 renderExpenses();
-                notifyExpenseAction({ type: 'upsert', expense });
+                if (isOnline) {
+                    notifyExpenseAction({ type: 'upsert', expense });
+                }
             });
         }
         if (!remoteExpensesBound) {
@@ -561,6 +609,20 @@
                 updateExpensePrivacy(event.detail?.reason || '');
                 renderExpenses();
             });
+            window.addEventListener('shiori-offline-queue-changed', () => {
+                renderExpenses();
+            });
+            const handleReconnection = () => {
+                if (navigator.onLine && typeof window.shioriDrainOfflineExpenseQueue === 'function') {
+                    window.dispatchEvent(new CustomEvent('shiori-trigger-queue-drain'));
+                }
+                renderExpenses();
+            };
+            window.addEventListener('online', handleReconnection);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') handleReconnection();
+            });
+            window.addEventListener('focus', handleReconnection);
         }
         renderExpenses();
     }

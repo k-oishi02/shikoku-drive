@@ -1,0 +1,16 @@
+{
+  "name": "shiori-app",
+  "version": "2.0.0",
+  "description": "SHIORI_app - PWA Travel Guide Application",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": [
+    "shiori",
+    "travel",
+    "pwa"
+  ],
+  "author": "",
+  "license": "ISC"
+}

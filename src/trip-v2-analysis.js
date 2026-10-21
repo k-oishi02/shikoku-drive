@@ -162,15 +162,17 @@ export function getTripNowState(raw, now = new Date()) {
 
 export function settlementTransfers(members, expenses) {
   const list = Array.isArray(members) ? members : [];
-  const ids = list.map(member => text(member?.id || member?.uid, 128)).filter(Boolean);
+  const ids = Array.from(new Set(list.map(member => text(member?.id || member?.uid, 128)).filter(Boolean)));
   const names = new Map(list.map(member => [text(member?.id || member?.uid, 128), text(member?.name || member?.nickname || '参加者', 40)]));
   const balance = new Map(ids.map(id => [id, 0]));
   (Array.isArray(expenses) ? expenses : []).forEach(expense => {
-    const amount = Math.max(0, Math.round(Number(expense?.amount) || 0));
+    const rawAmount = Number(expense?.amount);
+    if (!Number.isFinite(rawAmount)) return;
+    const amount = Math.max(0, Math.round(rawAmount));
     const payer = text(expense?.payer, 128);
     if (!amount || !balance.has(payer)) return;
     const selected = expense.splitMode === 'selected'
-      ? (Array.isArray(expense.participantIds) ? expense.participantIds : []).map(id => text(id, 128)).filter(id => balance.has(id))
+      ? Array.from(new Set((Array.isArray(expense.participantIds) ? expense.participantIds : []).map(id => text(id, 128)).filter(id => balance.has(id))))
       : ids;
     if (!selected.length) return;
     balance.set(payer, balance.get(payer) + amount);
@@ -185,6 +187,7 @@ export function settlementTransfers(members, expenses) {
   while (debtorIndex < debtors.length && creditorIndex < creditors.length) {
     const debtor = debtors[debtorIndex];
     const creditor = creditors[creditorIndex];
+    if (!Number.isFinite(debtor.value) || !Number.isFinite(creditor.value)) break;
     const amount = Math.min(debtor.value, creditor.value);
     if (amount >= 0.5) transfers.push({
       from: debtor.id,

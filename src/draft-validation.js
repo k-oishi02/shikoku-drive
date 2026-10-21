@@ -76,7 +76,7 @@ export function validateCandidateInput(c) {
 
   const rawId = c.id || c.candidateId;
   if (c.id && c.candidateId && c.id !== c.candidateId) errors.push('候補IDと旧候補IDが一致していません。');
-  const candidateFields = new Set(['id','candidateId','title','category','priority','durationMinutes','status','mapQuery','mapUrl','official','officialLabel','tabelog','jalan','notes','assignedDay','assignedCardId','createdAt','updatedAt','placementUndo','sourceSuggestion']);
+  const candidateFields = new Set(['id','candidateId','title','category','priority','durationMinutes','status','mapQuery','mapUrl','official','officialLabel','tabelog','jalan','asoview','notes','assignedDay','assignedCardId','createdAt','updatedAt','placementUndo','sourceSuggestion']);
   for (const key of Object.keys(c)) if (!candidateFields.has(key)) errors.push(`未対応の候補項目「${key}」があります。削除せずに読込を停止します。`);
   if (typeof rawId === 'string' && rawId !== '') {
     if (!/^[a-z0-9][a-z0-9_-]{3,79}$/i.test(rawId)) {
@@ -101,6 +101,7 @@ export function validateCandidateInput(c) {
   checkOptionalHttpsUrl(c.official, '公式URL', errors);
   checkOptionalHttpsUrl(c.tabelog, '食べログURL', errors);
   checkOptionalHttpsUrl(c.jalan, 'じゃらんURL', errors);
+  checkOptionalHttpsUrl(c.asoview, 'アソビューURL', errors);
 
   errors.push(...validateMapFields(c, { allowLegacy: true }));
 
@@ -243,6 +244,7 @@ export function validateTripInput(t) {
           checkOptionalHttpsUrl(card.official, `${label}の公式URL`, errors);
           checkOptionalHttpsUrl(card.tabelog, `${label}の食べログURL`, errors);
           checkOptionalHttpsUrl(card.jalan, `${label}のじゃらんURL`, errors);
+          checkOptionalHttpsUrl(card.asoview, `${label}のアソビューURL`, errors);
 
           if (card.links !== undefined) {
             if (!Array.isArray(card.links)) {
