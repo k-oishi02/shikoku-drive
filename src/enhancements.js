@@ -671,7 +671,7 @@
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'j-btn expense-shortcut';
-            button.textContent = 'ADD COST';
+            button.textContent = '+ COST';
             button.setAttribute('aria-label', `${rawTitle}の支出を追加`);
             button.addEventListener('click', () => {
                 window.openExpenseShortcut(expenseCategoryForBadge(badge, rawTitle), rawTitle);
