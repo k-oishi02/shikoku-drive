@@ -54,11 +54,22 @@ export function sortDayKeys(keys) {
 
 export function stableStorageId(value) {
   let hash = 2166136261;
-  for (const char of String(value || '')) {
-    hash ^= char.codePointAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
+  for (const char of String(value || '')) { hash ^= char.codePointAt(0); hash = Math.imul(hash, 16777619); }
   return (hash >>> 0).toString(36);
+}
+
+export function formatTripDateRange(startDate, endDate) {
+  const parse = s => {
+    const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return null;
+    const d = new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00Z`);
+    return Number.isNaN(d.getTime()) ? null : { raw: `${m[1]}.${m[2]}.${m[3]}`, short: `${m[2]}.${m[3]}`, year: m[1], dow: '日月火水木金土'[d.getUTCDay()] };
+  };
+  const s = parse(startDate), e = parse(endDate);
+  if (!s && !e) return '--';
+  if (s && (!e || startDate === endDate)) return `${s.raw} (${s.dow}) · 日帰り`;
+  if (!s && e) return `${e.raw} (${e.dow})`;
+  return `${s.raw} (${s.dow}) — ${s.year === e.year ? e.short : e.raw} (${e.dow})`;
 }
 
 export function androidCustomSchemeIntent(value, app) {
@@ -85,32 +96,34 @@ export function mobileAppLaunchUrl(value, app) {
 }
 
 export const ACTION_LABELS = Object.freeze({
-  '地図': 'MAP', '港': 'MAP', '乗り場': 'MAP', 'バス停': 'MAP', '駐車場': 'MAP',
-  '候補': 'MAP', 'ホテル': 'MAP', '駅': 'MAP', '返却店': 'MAP', '空港': 'MAP',
-  '公式': 'WEB', '公式サイト': 'WEB', 'ANA': 'ANA', 'レンタカー': 'RENTAL', '配船': 'FERRY',
-  '潮見表': 'TIDES', '時刻表': 'TIMETABLE', '店舗情報': 'SHOP',
-  '街歩き': 'GUIDE', '入浴案内': 'BATH', '朝食': 'BREAKFAST',
-  '施設案内': 'GUIDE', '空港案内': 'AIRPORT',
-  'お弁当予約': 'BOOK BENTO', '駅弁候補': 'BENTO', 'ルート': 'ROUTE',
-  '自転車': 'BIKE', '返却予約': 'RETURN', '徒歩予備': 'WALK',
-  'プログラム': 'PROGRAM', 'チケット': 'TICKETS', '館内案内': 'FLOOR GUIDE',
-  '乗換': 'TRANSIT', '予約確認': 'RESERVATION', '食事・買い物': 'SHOP / DINE',
-  '公式Instagram': 'INSTA', 'Instagram': 'INSTA', 'インスタ': 'INSTA',
-  'アソビュー': 'ASOVIEW', 'asoview': 'ASOVIEW', 'WEBチケット': 'TICKET'
+  '地図': '地図', '港': '地図', '乗り場': '地図', 'バス停': '地図', '駐車場': '地図',
+  '候補': '地図', 'ホテル': '地図', '駅': '地図', '返却店': '地図', '空港': '地図',
+  '公式': '公式', '公式サイト': '公式', 'ナイト公式案内': '公式',
+  'ANA': 'ANA', 'レンタカー': 'レンタカー', '配船': 'フェリー',
+  '潮見表': '潮見表', '時刻表': '時刻表', '店舗情報': '店舗',
+  '街歩き': '案内', '入浴案内': '入浴', '朝食': '朝食',
+  '施設案内': '案内', '空港案内': '空港',
+  'お弁当予約': '弁当予約', '駅弁候補': '駅弁', 'ルート': 'ルート',
+  '自転車': '自転車', '返却予約': '返却', '徒歩予備': '徒歩',
+  'プログラム': '予定表', 'チケット': 'チケット', '館内案内': '館内図',
+  '乗換': '乗換', '予約確認': '予約', '食事・買い物': 'グルメ',
+  '公式Instagram': 'インスタ', 'Instagram': 'インスタ', 'インスタ': 'インスタ',
+  'アソビュー': 'アソビュー', 'asoview': 'アソビュー', 'WEBチケット': 'チケット'
 });
 
-export function actionLabel(rawLabel, fallback = 'INFO') {
+export function actionLabel(rawLabel, fallback = '詳細') {
   const raw = String(rawLabel || '').trim();
   if (!raw) return fallback;
   if (ACTION_LABELS[raw]) return ACTION_LABELS[raw];
-  if (/instagram|インスタ/i.test(raw)) return 'INSTA';
-  return /^[\x20-\x7E]{1,18}$/.test(raw) ? raw.toUpperCase() : fallback;
+  if (/instagram|インスタ/i.test(raw)) return 'インスタ';
+  if (/公式/.test(raw)) return '公式';
+  return raw.length <= 6 ? raw : fallback;
 }
 
 export function renderActionLink(url, rawLabel, options = {}) {
   const href = safeExternalUrl(url);
   if (!href) return '';
-  const visibleLabel = options.visibleLabel || actionLabel(rawLabel, options.fallback || 'INFO');
+  const visibleLabel = options.visibleLabel || actionLabel(rawLabel, options.fallback || '詳細');
   const ariaLabel = options.ariaLabel || `${String(rawLabel || visibleLabel).trim()}を開く`;
   const classes = ['j-btn', options.primary ? 'primary' : '', options.className || ''].filter(Boolean).join(' ');
   const isAndroidIntent = typeof options.appUrl === 'string' && options.appUrl.startsWith('intent://');
@@ -128,25 +141,19 @@ export function buildShioriUI(data) {
 
   document.getElementById('hero-title').textContent = data.title || '';
   document.getElementById('hero-catchphrase').textContent = data.catchphrase || '';
-  const sDate = String(data.startDate || '').replace(/-/g, '.').slice(5);
-  const eDate = String(data.endDate || '').replace(/-/g, '.').slice(5);
-  document.getElementById('hero-date').textContent = `DATE: ${sDate || '--'} — ${eDate || '--'}`;
+  document.getElementById('hero-date').textContent = `日程: ${formatTripDateRange(data.startDate, data.endDate)}`;
 
   const wNav = document.getElementById('weather-nav-container');
   let wHtml = '';
   if (data.weatherLocations) {
-    const keys = Object.keys(data.weatherLocations).filter(isValidDataKey);
-    keys.forEach((k, idx) => {
+    Object.keys(data.weatherLocations).filter(isValidDataKey).forEach((k, idx) => {
       const loc = data.weatherLocations[k];
-      const activeClass = idx === 0 ? 'active' : '';
-      wHtml += `<button type="button" class="w-tab ${activeClass}" data-weather-key="${escapeHtml(k)}" aria-pressed="${idx === 0}" onclick="updateWeather('${k}', this)">${escapeHtml(String(loc.label || k).split(' ').pop())}</button>`;
+      wHtml += `<button type="button" class="w-tab ${idx === 0 ? 'active' : ''}" data-weather-key="${escapeHtml(k)}" aria-pressed="${idx === 0}" onclick="updateWeather('${k}', this)">${escapeHtml(String(loc.label || k).split(' ').pop())}</button>`;
     });
   }
   if (wNav) wNav.innerHTML = wHtml;
   const firstWeatherKey = data.weatherLocations ? Object.keys(data.weatherLocations).filter(isValidDataKey)[0] : null;
-  if (firstWeatherKey && typeof window !== 'undefined' && window.updateWeather) {
-    window.updateWeather(firstWeatherKey, wNav?.querySelector('.w-tab'));
-  }
+  if (firstWeatherKey && typeof window !== 'undefined' && window.updateWeather) window.updateWeather(firstWeatherKey, wNav?.querySelector('.w-tab'));
   if (weatherPanel) weatherPanel.hidden = !firstWeatherKey;
 
   const navBar = document.getElementById('nav-bar');
@@ -154,16 +161,16 @@ export function buildShioriUI(data) {
   const dayKeys = sortDayKeys(Object.keys(data.days || {}));
   dayKeys.forEach((key, idx) => {
     const dayNum = idx + 1;
-    tabHeadersHtml += `<button type="button" id="btn-${key}" class="j-tab-btn ${idx === 0 ? 'active' : ''}" role="tab" aria-selected="${idx === 0}" aria-controls="tab-${key}" onclick="switchTab('tab-${key}', this)" aria-label="${dayNum}日目">DAY ${dayNum}</button>`;
+    tabHeadersHtml += `<button type="button" id="btn-${key}" class="j-tab-btn ${idx === 0 ? 'active' : ''}" role="tab" aria-selected="${idx === 0}" aria-controls="tab-${key}" onclick="switchTab('tab-${key}', this)" aria-label="${dayNum}日目">${dayNum}日目</button>`;
   });
-  tabHeadersHtml += `<button type="button" id="btn-checklist" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" onclick="switchTab('tab-checklist', this)" aria-label="持ち物">PACK</button>`;
+  tabHeadersHtml += `<button type="button" id="btn-checklist" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-checklist" onclick="switchTab('tab-checklist', this)" aria-label="持ち物">持ち物</button>`;
   if (data.features?.expenses !== false) {
-    tabHeadersHtml += `<button type="button" id="btn-expenses" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-expenses" onclick="switchTab('tab-expenses', this)" aria-label="精算">COST</button>`;
+    tabHeadersHtml += `<button type="button" id="btn-expenses" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-expenses" onclick="switchTab('tab-expenses', this)" aria-label="精算">精算</button>`;
   }
-  tabHeadersHtml += `<button type="button" id="btn-talk" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-talk" onclick="switchTab('tab-talk', this)" aria-label="相談・提案">TALK</button>`;
+  tabHeadersHtml += `<button type="button" id="btn-talk" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-talk" onclick="switchTab('tab-talk', this)" aria-label="相談・提案">相談</button>`;
   const publicRecap = (typeof window !== 'undefined' && window.shioriFindRecapForTrip) ? window.shioriFindRecapForTrip(data) : null;
   if (publicRecap) {
-    tabHeadersHtml += `<button type="button" id="btn-recap" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-recap" onclick="switchTab('tab-recap', this)" aria-label="旅の記録">RECAP</button>`;
+    tabHeadersHtml += `<button type="button" id="btn-recap" class="j-tab-btn" role="tab" aria-selected="false" aria-controls="tab-recap" onclick="switchTab('tab-recap', this)" aria-label="旅の記録">旅の記録</button>`;
   }
   if (navBar) navBar.innerHTML = tabHeadersHtml;
 
@@ -176,12 +183,12 @@ export function buildShioriUI(data) {
       const title = document.createElement('strong');
       title.textContent = `${publicRecap.title}の旅の記録`;
       const copy = document.createElement('p');
-      copy.textContent = '予定から変わった時間も、その場で見つけた味も、実際に歩いた3日間として残しました。';
+      copy.textContent = '予定から変わった時間も、その場で見つけた味も、実際に歩いた旅の記録として残しました。';
       const link = document.createElement('a');
-      link.className = 'j-btn';
+      link.className = 'j-btn primary';
       link.href = publicRecap.href;
-      link.textContent = 'OPEN RECAP';
-      link.setAttribute('aria-label', '旅のRECAPを開く');
+      link.textContent = '旅の記録を開く →';
+      link.setAttribute('aria-label', '旅の記録を開く');
       recapPreview.append(title, copy, link);
     }
   }
@@ -190,7 +197,7 @@ export function buildShioriUI(data) {
   let panelsHtml = '';
   dayKeys.forEach((key, idx) => {
     const dayNum = idx + 1;
-    const label = data.dayLabels?.[key] || `DAY ${String(idx + 1).padStart(2, '0')}`;
+    const label = data.dayLabels?.[key] || `${dayNum}日目`;
     let cardsHtml = '';
     (Array.isArray(data.days[key]) ? data.days[key] : []).forEach((card, cardIndex) => {
       const cardTitle = String(card?.title || '');
@@ -198,15 +205,13 @@ export function buildShioriUI(data) {
       const cardDesc = rawDesc.length > 75 ? `${rawDesc.slice(0, 75).trimEnd()}…` : rawDesc;
       const imgHtml = card.image ? `<img class="j-card-img" src="images/${escapeHtml(card.image)}" alt="${escapeHtml(cardTitle)}" loading="lazy">` : '';
       const mapFields = (typeof window !== 'undefined' && window.shioriMapFields) ? window.shioriMapFields(card) : { mapQuery: '', mapUrl: '' };
-      const mapQuery = mapFields.mapQuery;
-      const mapSharedUrl = mapFields.mapUrl;
+      const mapQuery = mapFields.mapQuery, mapSharedUrl = mapFields.mapUrl;
       const travelMin = Math.max(0, Math.round(Number(card.travelMinutesFromPrevious) || 0));
       const sMatch = String(card.time || '').match(/^(\d{2}):(\d{2})/);
       const sMin = sMatch ? Number(sMatch[1]) * 60 + Number(sMatch[2]) : null;
       const depMin = sMin == null ? null : sMin - travelMin;
       const depLabel = depMin == null ? '' : `${String(Math.floor((depMin + 1440) % 1440 / 60)).padStart(2, '0')}:${String((depMin + 1440) % 60).padStart(2, '0')}までに出発`;
-      const routeHint = String(card?.routeHint || '').trim();
-      const waypoints = String(card?.waypoints || '').trim();
+      const routeHint = String(card?.routeHint || '').trim(), waypoints = String(card?.waypoints || '').trim();
       const routeHintChip = routeHint ? `<span class="v2-route-chip">経由: ${escapeHtml(routeHint)}</span>` : '';
       const travelHintHtml = cardIndex > 0 && (travelMin || routeHint) ? `<div class="v2-travel-hint">${travelMin ? `<strong>移動 約${travelMin}分</strong>` : ''}${depLabel ? `<span>${depLabel}</span>` : ''}${routeHintChip}</div>` : '';
 
@@ -215,34 +220,33 @@ export function buildShioriUI(data) {
         const res = card.reservation;
         const rows = [['予約番号', res.number], ['予約名義', res.name], ['電話', res.phone], ['キャンセル期限', res.deadline], ['メモ', res.note]]
           .filter(([, v]) => v).map(([l, v]) => `<div class="v2-reservation-row"><span>${l}</span><strong>${escapeHtml(v)}</strong></div>`).join('');
-        const resUrl = safeExternalUrl(res.url);
-        const phone = String(res.phone || '').replace(/[^0-9+]/g, '');
+        const resUrl = safeExternalUrl(res.url), phone = String(res.phone || '').replace(/[^0-9+]/g, '');
         const actions = [
-          phone ? `<a class="j-btn" href="tel:${escapeHtml(phone)}" aria-label="電話をかける">CALL</a>` : '',
-          resUrl ? `<a class="j-btn" href="${escapeHtml(resUrl)}" target="_blank" rel="noopener noreferrer" aria-label="予約を確認">BOOKING ↗</a>` : ''
+          phone ? `<a class="j-btn" href="tel:${escapeHtml(phone)}" aria-label="電話をかける">電話する</a>` : '',
+          resUrl ? `<a class="j-btn" href="${escapeHtml(resUrl)}" target="_blank" rel="noopener noreferrer" aria-label="予約を確認">予約確認 ↗</a>` : ''
         ].join('');
-        resHtml = `<details class="v2-reservation"><summary>予約情報</summary><div class="v2-reservation-body">${rows}<div class="v2-reservation-actions">${actions}</div></div></details>`;
+        resHtml = `<details class="v2-reservation"><summary>予約情報</summary><div class="v2-reservation-body">${rows}${actions ? `<div class="v2-reservation-actions">${actions}</div>` : ''}</div></details>`;
       }
 
       const cardLinks = Array.isArray(card.links) ? card.links : [];
       const routeLink = cardLinks.find(link => (link?.kind === 'route' || link?.label === 'ルート') && safeExternalUrl(link?.url));
       let linksHtml = '';
       if (routeLink) {
-        linksHtml += renderActionLink(routeLink.url, routeLink.label, { primary: true, ariaLabel: `${cardTitle || '目的地'}までのルートを開く` });
+        linksHtml += renderActionLink(routeLink.url, routeLink.label, { primary: true, visibleLabel: 'ルート', ariaLabel: `${cardTitle || '目的地'}までのルートを開く` });
       } else if (mapQuery || mapSharedUrl) {
         const defMapUrl = (typeof window !== 'undefined' && window.shioriMapHref) ? window.shioriMapHref(card) : '';
         const wpUrl = mapQuery && waypoints ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapQuery)}&waypoints=${encodeURIComponent(waypoints)}&travelmode=driving` : defMapUrl;
         const prefMapUrl = (typeof window !== 'undefined' && window.shioriPreferredMapUrl) ? window.shioriPreferredMapUrl(mapQuery, wpUrl) : wpUrl;
-        linksHtml += renderActionLink(mapSharedUrl || prefMapUrl, '地図', { primary: true, visibleLabel: 'MAP', ariaLabel: `${cardTitle || '目的地'}を地図で開く` });
+        linksHtml += renderActionLink(mapSharedUrl || prefMapUrl, '地図', { primary: true, visibleLabel: '地図', ariaLabel: `${cardTitle || '目的地'}を地図で開く` });
       }
       if (card.tabelog && safeExternalUrl(card.tabelog)) {
-        linksHtml += renderActionLink(card.tabelog, '食べログ', { visibleLabel: 'TABELOG', className: 'app-accent', ariaLabel: '食べログを開く', iconHtml: `<img src="${APP_ICONS.tabelog}" class="j-app-icon" alt="">` });
+        linksHtml += renderActionLink(card.tabelog, '食べログ', { visibleLabel: '食べログ', className: 'app-accent', ariaLabel: '食べログを開く', iconHtml: `<img src="${APP_ICONS.tabelog}" class="j-app-icon" alt="">` });
       }
       if (card.jalan && safeExternalUrl(card.jalan)) {
-        linksHtml += renderActionLink(card.jalan, 'じゃらん', { visibleLabel: 'JALAN', className: 'app-accent', ariaLabel: 'じゃらんを開く', appUrl: mobileAppLaunchUrl(card.jalan, MOBILE_APP_TARGETS.jalan), sameContext: true, iconHtml: `<img src="${APP_ICONS.jalan}" class="j-app-icon" alt="">` });
+        linksHtml += renderActionLink(card.jalan, 'じゃらん', { visibleLabel: 'じゃらん', className: 'app-accent', ariaLabel: 'じゃらんを開く', appUrl: mobileAppLaunchUrl(card.jalan, MOBILE_APP_TARGETS.jalan), sameContext: true, iconHtml: `<img src="${APP_ICONS.jalan}" class="j-app-icon" alt="">` });
       }
       if (card.asoview && safeExternalUrl(card.asoview)) {
-        linksHtml += renderActionLink(card.asoview, 'アソビュー', { visibleLabel: 'ASOVIEW', className: 'app-accent', ariaLabel: 'アソビューを開く' });
+        linksHtml += renderActionLink(card.asoview, 'アソビュー', { visibleLabel: 'アソビュー', className: 'app-accent', ariaLabel: 'アソビューを開く' });
       }
       const offUrl = safeExternalUrl(card.official);
       if (offUrl && !cardLinks.some(l => safeExternalUrl(l?.url) && new URL(safeExternalUrl(l.url)).origin === new URL(offUrl).origin)) {
@@ -256,7 +260,7 @@ export function buildShioriUI(data) {
         const appIcon = confIcon || (link.label === 'ANA' ? APP_ICONS.ana : link.label === 'TOYOTA' ? APP_ICONS.toyota : isBike ? APP_ICONS.helloCycling : '');
         const genAppUrl = link.androidUrl || link.iosUrl ? (IS_ANDROID_DEVICE ? link.androidUrl || '' : IS_IOS_DEVICE ? link.iosUrl || '' : '') : '';
         const appUrl = genAppUrl || (link.label === 'TOYOTA' && sUrl === TOYOTA_RENTAL_APP.webUrl ? (IS_ANDROID_DEVICE ? TOYOTA_RENTAL_APP.androidIntent : IS_IOS_DEVICE ? TOYOTA_RENTAL_APP.iosUrl : '') : isBike ? mobileAppLaunchUrl(sUrl, MOBILE_APP_TARGETS.helloCycling) : '');
-        linksHtml += renderActionLink(link.url, link.label, { appUrl, visibleLabel: isBike ? 'HELLO' : undefined, sameContext: isBike, className: appIcon ? 'app-accent' : '', iconHtml: appIcon ? `<img src="${appIcon}" class="j-app-icon" alt="">` : '' });
+        linksHtml += renderActionLink(link.url, link.label, { appUrl, visibleLabel: isBike ? '自転車' : undefined, sameContext: isBike, className: appIcon ? 'app-accent' : '', iconHtml: appIcon ? `<img src="${appIcon}" class="j-app-icon" alt="">` : '' });
       });
 
       const cst = card.constraints || {};
@@ -280,7 +284,7 @@ export function buildShioriUI(data) {
     panelsHtml += `
       <div id="tab-${key}" class="j-tab-panel ${idx === 0 ? 'active' : ''} j-tab-pnl" role="tabpanel" aria-labelledby="btn-${key}" aria-hidden="${idx !== 0}">
         <section class="j-sec-header">
-          <h2 class="j-sec-en">DAY ${String(dayNum).padStart(2, '0')}</h2>
+          <h2 class="j-sec-en">${dayNum}日目の旅程</h2>
           <div class="j-sec-ja"><span>${escapeHtml(label)}</span><i class="j-sec-line"></i></div>
         </section>
         ${cardsHtml}
@@ -289,6 +293,7 @@ export function buildShioriUI(data) {
   if (panelsContainer) panelsContainer.innerHTML = panelsHtml;
 
   const checklistContainer = document.getElementById('checklist-grid-container');
+  const categoryLabels = { DRIVE: 'ドライブ・車まわり', TRAVEL: '旅の持ち物', CHECKLIST: '持ち物リスト' };
   let checklistHtml = '';
   (Array.isArray(data.checklist) ? data.checklist : []).forEach(group => {
     let itemsHtml = '';
@@ -300,7 +305,7 @@ export function buildShioriUI(data) {
       const checkId = isValidDataKey(suppliedId) ? suppliedId : `check-${stableStorageId(`${category}:${name}`)}`;
       itemsHtml += `<label class="checklist-item"><input type="checkbox" data-check-id="${escapeHtml(checkId)}"><span>${escapeHtml(name)}</span></label>`;
     });
-    checklistHtml += `<div class="checklist-group"><div class="checklist-group-title">${escapeHtml(category)}</div>${itemsHtml}</div>`;
+    checklistHtml += `<div class="checklist-group"><div class="checklist-group-title">${escapeHtml(categoryLabels[category] || category)}</div>${itemsHtml}</div>`;
   });
   if (checklistContainer) checklistContainer.innerHTML = checklistHtml;
 
@@ -309,9 +314,7 @@ export function buildShioriUI(data) {
   let ownerOptions = '';
   (Array.isArray(data.members) ? data.members : []).forEach(m => {
     const mId = String(m?.id || '');
-    if (isValidDataKey(mId)) {
-      ownerOptions += `<option value="${escapeHtml(mId)}">${escapeHtml(String(m?.name || mId))}</option>`;
-    }
+    if (isValidDataKey(mId)) ownerOptions += `<option value="${escapeHtml(mId)}">${escapeHtml(String(m?.name || mId))}</option>`;
   });
   if (deviceOwner) deviceOwner.innerHTML = ownerOptions;
   if (expensePayer) expensePayer.innerHTML = ownerOptions;
@@ -324,20 +327,15 @@ export function switchTab(panelId, btnEl) {
     panel.classList.toggle('active', isTarget);
     panel.setAttribute('aria-hidden', String(!isTarget));
   });
-
   document.querySelectorAll('.j-tab-btn').forEach(button => {
     const isTarget = button === btnEl || button.getAttribute('aria-controls') === panelId;
     button.classList.toggle('active', isTarget);
     button.setAttribute('aria-selected', String(isTarget));
   });
-
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('shiori-tab-changed', { detail: { panelId } }));
-  }
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('shiori-tab-changed', { detail: { panelId } }));
   const navEl = document.getElementById('nav-bar');
   if (navEl && typeof window !== 'undefined') {
-    const y = navEl.getBoundingClientRect().top + window.pageYOffset - 10;
-    window.scrollTo({ top: y, behavior: 'smooth' });
+    window.scrollTo({ top: navEl.getBoundingClientRect().top + window.pageYOffset - 10, behavior: 'smooth' });
   }
 }
 
@@ -353,9 +351,7 @@ export function setupDaySwipe(getTripDataFn) {
   surface.addEventListener('touchstart', (event) => {
     tracking = !event.target.closest('a, button, input, select, textarea, label');
     if (!tracking) return;
-    startX = event.touches[0].clientX;
-    startY = event.touches[0].clientY;
-    startTime = Date.now();
+    startX = event.touches[0].clientX; startY = event.touches[0].clientY; startTime = Date.now();
   }, { passive: true });
 
   surface.addEventListener('touchend', (event) => {
@@ -365,8 +361,7 @@ export function setupDaySwipe(getTripDataFn) {
     const tripData = getTripDataFn ? getTripDataFn() : (typeof window !== 'undefined' ? window.currentTripData : null);
     const dayPanelIds = sortDayKeys(Object.keys(tripData?.days || {})).map(key => 'tab-' + key);
     const currentIndex = dayPanelIds.indexOf(activePanel?.id);
-    const deltaX = event.changedTouches[0].clientX - startX;
-    const deltaY = event.changedTouches[0].clientY - startY;
+    const deltaX = event.changedTouches[0].clientX - startX, deltaY = event.changedTouches[0].clientY - startY;
     const elapsed = Date.now() - startTime;
     if (currentIndex < 0 || elapsed > 900 || Math.abs(deltaX) < 60 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.25) return;
     const nextIndex = deltaX < 0 ? currentIndex + 1 : currentIndex - 1;
@@ -378,10 +373,6 @@ export function setupDaySwipe(getTripDataFn) {
   }, { passive: true });
 }
 
-export function resetDaySwipe() {
-  daySwipeInitialized = false;
-}
+export function resetDaySwipe() { daySwipeInitialized = false; }
 
-if (typeof window !== 'undefined') {
-  window.switchTab = switchTab;
-}
+if (typeof window !== 'undefined') { window.switchTab = switchTab; }

@@ -9,13 +9,13 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
-    <link rel="stylesheet" href="src/participant-v2.css?v=405">
-    <link rel="stylesheet" href="src/recap.css?v=405">
-    <link rel="stylesheet" href="src/enhancements.css?v=405">
-    <link rel="stylesheet" href="src/discussion.css?v=405">
-    <link rel="stylesheet" href="src/theme-v31.css?v=405">
-    <link rel="stylesheet" href="src/design-v31.css?v=405">
-    <link rel="stylesheet" href="src/expressive-v32.css?v=405">
+    <link rel="stylesheet" href="src/participant-v2.css?v=406">
+    <link rel="stylesheet" href="src/recap.css?v=406">
+    <link rel="stylesheet" href="src/enhancements.css?v=406">
+    <link rel="stylesheet" href="src/discussion.css?v=406">
+    <link rel="stylesheet" href="src/theme-v31.css?v=406">
+    <link rel="stylesheet" href="src/design-v31.css?v=406">
+    <link rel="stylesheet" href="src/expressive-v32.css?v=406">
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -32,7 +32,7 @@
         .portal-inner, .welcome-inner { max-width: 540px; margin: 0 auto; padding: 56px 20px 80px; }
         .portal-cards { display: flex; flex-direction: column; gap: 16px; }
         .j-app-icon { width: 16px; height: 16px; border-radius: 4px; object-fit: cover; flex-shrink: 0; display: inline-block; vertical-align: middle; }
-        .update-prompt { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 12px 20px; z-index: 11000; gap: 12px; align-items: center; border-radius: 999px; background: var(--sh-ink); color: var(--sh-surface); box-shadow: 0 12px 32px rgba(0,0,0,0.28); font-size: 0.78rem; font-weight: 600; }
+        .update-prompt { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 12px 20px; z-index: 11000; gap: 12px; align-items: center; border-radius: 999px; background: var(--sh-ink); color: var(--sh-surface); box-shadow: 0 12px 32px rgba(0,0,0,0.28); font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
         .update-prompt.active { display: flex; }
         .update-prompt button { background: var(--sh-accent); border: 0; border-radius: 999px; color: var(--sh-on-accent); padding: 6px 14px; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
     </style>
@@ -44,13 +44,13 @@
         <div class="welcome-inner">
             <span class="welcome-badge">旅のしおり</span>
             <h1 class="welcome-title">SHIORI</h1>
-            <p class="welcome-sub">ニックネームを設定してください</p>
+            <p class="welcome-sub">旅のメンバーに表示するニックネームを設定してください</p>
             <form id="welcome-form" class="welcome-form" onsubmit="handleOnboardingSubmit(event)">
                 <label class="welcome-label">
                     <span>あなたのニックネーム</span>
                     <input id="welcome-nickname" type="text" placeholder="例：たびびと" required maxlength="15">
                 </label>
-                            <button type="submit" class="welcome-submit-btn" aria-label="登録してしおり棚を開く">OPEN SHIORI →</button>
+                <button type="submit" class="welcome-submit-btn" aria-label="登録してしおり棚を開く">しおり棚を開く →</button>
             </form>
         </div>
     </div>
@@ -72,18 +72,18 @@
 
             <!-- ADD NEW TRIP INLINE FORM -->
             <div class="portal-add-section">
-                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%;" onclick="showAddTripInput()" aria-label="配布IDでしおりを追加">＋ ADD SHIORI</button>
+                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%;" onclick="showAddTripInput()" aria-label="配布IDでしおりを追加">＋ 配布IDでしおりを追加</button>
 
-                <div id="add-trip-container" style="display: none; margin-top: 16px;">
-                    <form onsubmit="handleAddTripSubmit(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                <div id="add-trip-container" style="display: none; margin-top: 16px;" hidden>
+                    <form onsubmit="handleAddTripSubmit(event)" class="portal-add-form">
                         <label class="welcome-label">
                             <span>管理者から届いた配布IDを入力</span>
                             <input id="new-trip-id" type="text" placeholder="例：ABCD-EFGH-JKLM" required maxlength="20" autocomplete="off" autocapitalize="characters">
                         </label>
-                        <div id="add-trip-error" class="welcome-error" style="display: none; margin-top: 0;"></div>
-                        <div style="display: flex; gap: 8px;">
-                            <button type="submit" class="j-btn primary" style="flex: 1;" aria-label="しおりを追加">ADD</button>
-                            <button type="button" class="j-btn" style="flex: 1;" onclick="hideAddTripInput()" aria-label="追加をキャンセル">CANCEL</button>
+                        <div id="add-trip-error" class="welcome-error" style="display: none;" hidden></div>
+                        <div class="portal-add-actions">
+                            <button type="submit" class="j-btn primary" aria-label="しおりを追加">追加する</button>
+                            <button type="button" class="j-btn" onclick="hideAddTripInput()" aria-label="追加をキャンセル">キャンセル</button>
                         </div>
                     </form>
                 </div>
@@ -98,13 +98,13 @@
 
             <!-- Compact trip header -->
             <header class="j-hero">
-                <button type="button" class="j-btn j-back-btn" onclick="backToPortal()" aria-label="しおり棚へ戻る">← SHELF</button>
+                <button type="button" class="j-btn j-back-btn" onclick="backToPortal()" aria-label="しおり棚へ戻る">← しおり一覧</button>
                 <span class="j-hero-badge">旅のしおり</span>
                 <h1 class="j-hero-bebas" id="hero-title">SHIORI</h1>
                 <div class="j-hero-ja" id="hero-catchphrase">旅の感動を、みんなの思い出に。</div>
                 <div class="j-hero-meta">
-                    <span id="hero-date">DATE: --</span>
-                    <span id="hero-participants" aria-live="polite">MEMBERS: 接続準備中…</span>
+                    <span id="hero-date">日程: --</span>
+                    <span id="hero-participants" aria-live="polite">参加メンバー: 接続準備中…</span>
                 </div>
             </header>
 
@@ -120,7 +120,7 @@
                         <span class="now-kicker">いま確認したい予定</span>
                         <h2 id="now-mode-title">現在の旅程</h2>
                     </div>
-                    <span id="offline-status" class="network-status" aria-live="polite">ONLINE</span>
+                    <span id="offline-status" class="network-status" aria-live="polite">オンライン</span>
                 </div>
                 <div id="legacy-now-body" class="now-body">
                     <span id="now-day" class="now-day">旅行前</span>
@@ -130,34 +130,34 @@
                         <span id="now-countdown">出発時刻を計算中</span>
                     </div>
                     <div class="now-actions">
-                        <a id="now-route" class="now-route" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" aria-label="地図で案内を開始">ROUTE</a>
-                        <button type="button" class="now-secondary" onclick="jumpToCurrentTripDay()" aria-label="今日の日程を表示">TODAY</button>
+                        <a id="now-route" class="now-route" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" aria-label="地図で案内を開始">地図を確認</a>
+                        <button type="button" class="now-secondary" onclick="jumpToCurrentTripDay()" aria-label="今日の日程を表示">日程へ移動</button>
                     </div>
                 </div>
                 <div id="live-itinerary" class="live-itinerary" hidden>
-                    <div class="live-overline"><span data-live="phase">PLAN · LIVE · RECAP</span><span data-live="delay-badge" class="live-delay-badge" hidden></span></div>
+                    <div class="live-overline"><span data-live="phase">出発前の確認</span><span data-live="delay-badge" class="live-delay-badge" hidden></span></div>
                     <span data-live="day" class="live-day"></span>
                     <h3 data-live="title" class="live-title">次の予定</h3>
                     <div class="live-time-row"><strong data-live="time">--:--</strong><span data-live="status"></span></div>
-                    <p data-live="offline-note" class="live-offline-note" hidden>OFFLINE · 変更はこの端末に保存されます</p>
-                    <div class="live-primary-actions" role="group" aria-label="現在の予定を操作">
-                        <a data-live="route" class="live-action live-route" target="_blank" rel="noopener noreferrer" aria-label="地図アプリで次の目的地までの運転案内を開始">DRIVE</a>
-                        <button data-live="arrive" class="live-action" type="button" aria-label="目的地へ到着">ARRIVE</button>
-                        <button data-live="done" class="live-action live-accent" type="button" aria-label="この予定を完了">DONE</button>
-                        <button data-live="skip" class="live-action" type="button" aria-label="この予定をスキップ">SKIP</button>
+                    <p data-live="offline-note" class="live-offline-note" hidden>オフライン · 変更はこの端末に保存されます</p>
+                    <div class="live-actions-bar">
+                        <div class="live-primary-actions" role="group" aria-label="現在の予定を操作">
+                            <a data-live="route" class="live-action live-route" target="_blank" rel="noopener noreferrer" aria-label="地図アプリで次の目的地までの案内を開く">地図を確認</a>
+                            <button data-live="arrive" class="live-action" type="button" aria-label="目的地へ到着">到着</button>
+                            <button data-live="done" class="live-action live-accent" type="button" aria-label="この予定を完了">完了</button>
+                            <button data-live="skip" class="live-action" type="button" aria-label="この予定を見送り">見送り</button>
+                        </div>
+                        <div class="live-secondary-actions">
+                            <button data-live="today" type="button" aria-label="選択日の旅程を見る">日程</button>
+                            <button data-live="plan" type="button" aria-label="旅行中の予定を変更">予定・遅れ調整</button>
+                            <button data-live="memo" type="button" aria-label="現在の予定に旅メモを追加">ひとこと記録</button>
+                            <button data-live="cost" type="button" aria-label="旅費精算を開く">精算</button>
+                            <button data-live="recap" type="button" aria-label="実際の記録から旅の記録を作る">旅の記録を作成</button>
+                        </div>
                     </div>
-                    <div class="live-secondary-actions">
-                        <button data-live="today" type="button" aria-label="選択日の旅程を見る">TODAY</button>
-                        <button data-live="plan" type="button" aria-label="旅行中の予定を変更">PLAN</button>
-                        <button data-live="memo" type="button" aria-label="現在の予定に旅メモを追加">MEMO</button>
-                        <button data-live="cost" type="button" aria-label="旅費精算を開く">COST</button>
-                        <button data-live="recap" type="button" aria-label="実際の記録からRECAPを作る">RECAP</button>
-                    </div>
-                    <p class="live-local-note">予定は残したまま、実際の到着・完了・見送り・現地追加をこの端末へ記録します。</p>
+                    <p class="live-local-note">公開旅程は残したまま、実際の到着・完了・見送り・現地追加をこの端末へ記録します。</p>
                 </div>
             </section>
-
-
 
             <!-- Day Panels Container -->
             <div id="day-panels-container"></div>
@@ -168,8 +168,8 @@
 
             <section id="tab-recap" class="j-tab-panel j-tab-pnl" role="tabpanel" aria-labelledby="btn-recap" aria-hidden="true" hidden>
                 <section class="j-sec-header">
-                    <h2 class="j-sec-en">RECAP</h2>
-                    <div class="j-sec-ja"><span>旅の記録</span><i class="j-sec-line"></i></div>
+                    <h2 class="j-sec-en">旅の記録</h2>
+                    <div class="j-sec-ja"><span>思い出の振り返り</span><i class="j-sec-line"></i></div>
                 </section>
                 <div id="recap-preview" class="recap-preview"></div>
             </section>
@@ -177,9 +177,9 @@
             <!-- Packing Checklist Tab Panel -->
             <div id="tab-checklist" class="j-tab-panel j-tab-pnl" role="tabpanel" aria-labelledby="btn-checklist" aria-hidden="true">
                 <section class="j-sec-header">
-                    <h2 class="j-sec-en">持ち物</h2>
+                    <h2 class="j-sec-en">持ち物リスト</h2>
                     <div class="j-sec-ja">
-                        <span>旅の準備</span>
+                        <span>出発前の準備チェック</span>
                         <i class="j-sec-line"></i>
                     </div>
                 </section>
@@ -188,9 +188,9 @@
                     <div class="checklist-head">
                         <div>
                             <span class="now-kicker">この端末に保存</span>
-                            <strong id="checklist-progress">0 / 0 COMPLETE</strong>
+                            <strong id="checklist-progress">0 / 0 準備完了</strong>
                         </div>
-                        <button type="button" class="mini-button" onclick="resetChecklist()">RESET</button>
+                        <button type="button" class="mini-button" onclick="resetChecklist()">リセット</button>
                     </div>
                     <div class="checklist-grid" id="checklist-grid-container">
                         <!-- Rendered dynamically -->
@@ -203,7 +203,7 @@
                 <section class="j-sec-header">
                     <h2 class="j-sec-en">旅費の精算</h2>
                     <div class="j-sec-ja">
-                        <span>旅費・立替精算</span>
+                        <span>立替記録・割り勘計算</span>
                         <i class="j-sec-line"></i>
                     </div>
                 </section>
@@ -220,11 +220,9 @@
                                 <span class="now-kicker">グループ割り勘台帳</span>
                                 <strong id="sync-title">共有ルームへ接続中…</strong>
                             </div>
-                            <span id="sync-badge" class="sync-badge">CONNECTING</span>
+                            <span id="sync-badge" class="sync-badge">接続中</span>
                         </div>
                         <p id="sync-status" class="sync-status" aria-live="polite">共有を準備しています。</p>
-
-
                         <p id="sync-note" class="sync-note" hidden>管理者の登録リンクを各端末で開くと、参加者全員の入力がリアルタイム同期されます。</p>
                     </div>
                     <label class="device-owner-panel">
@@ -268,7 +266,7 @@
                             <span>内容</span>
                             <input id="expense-note" type="text" maxlength="120" placeholder="例：五志喜 予約分">
                         </label>
-                        <button type="submit" class="expense-submit" aria-label="この支出を登録して共有">ADD &amp; SHARE</button>
+                        <button type="submit" class="expense-submit" aria-label="この支出を登録して共有">立替を登録して共有</button>
                     </form>
                     <div class="expense-summary" aria-live="polite">
                         <div><span>登録済み支出合計</span><strong id="expense-total">¥0</strong></div>
@@ -276,121 +274,127 @@
                         <div class="expense-settlement"><span>最終的な受け渡し</span><strong id="expense-settlement">まだ支出はありません</strong></div>
                     </div>
                     <ul id="expense-list" class="expense-list" aria-label="支出一覧"></ul>
-                    <button type="button" class="j-btn expense-export" onclick="downloadExpensesCsv()" aria-label="精算内容をCSVで書き出す">EXPORT CSV</button>
+                    <button type="button" class="j-btn expense-export" onclick="downloadExpensesCsv()" aria-label="精算内容をCSVで書き出す">CSV出力</button>
                 </div>
 
                 <!-- Optional PayPay handoff -->
                 <div class="j-widget" style="margin-top:14px;">
                     <div>
-                        <h3 class="j-widget-title">PAYPAY</h3>
+                        <h3 class="j-widget-title">PayPayで送金</h3>
                         <p class="j-widget-desc">上の精算額を確認し、PayPay側で送金内容を入力します。</p>
                     </div>
                     <div style="display:flex; gap:8px;">
                         <a href="https://paypay.ne.jp/" data-app-url="paypay://launch" onclick="openAppWithFallback(event, this)" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
                             <img src="images/paypay.png" class="j-app-icon" alt="">
-                            <span class="j-btn-label">PAYPAY</span><span class="j-btn-mark">↗</span>
+                            <span class="j-btn-label">PayPayを開く</span><span class="j-btn-mark">↗</span>
                         </a>
                     </div>
                 </div>
             </div>
+
             <!-- Weather details -->
             <details class="weather-disclosure">
-                <summary><span>WEATHER</span><span id="weather-summary" aria-live="polite">天気を取得中…</span></summary>
-            <div class="weather-card">
-                <div class="weather-header">
-                    <span class="weather-title">WEATHER CHECK</span>
-                    <div class="weather-tabs" id="weather-nav-container">
-                        <!-- Rendered dynamically -->
-                    </div>
-                </div>
-
-                <div class="weather-body">
-                    <div>
-                        <div id="w-location" class="weather-location">取得中...</div>
-                        <div class="weather-temp-group">
-                            <span id="w-temp" class="weather-temp-main">--°C</span>
-                            <span id="w-range" class="weather-temp-sub">--</span>
+                <summary><span>天気予報</span><span id="weather-summary" aria-live="polite">天気を取得中…</span></summary>
+                <div class="weather-card">
+                    <div class="weather-header">
+                        <span class="weather-title">現地の天気予報</span>
+                        <div class="weather-tabs" id="weather-nav-container">
+                            <!-- Rendered dynamically -->
                         </div>
                     </div>
-                    <div id="w-icon" class="weather-icon-box" aria-hidden="true">--</div>
-                </div>
 
-                <div class="weather-details">
-                    <div>
-                        <div>POP (降水確率)</div>
-                        <div id="w-pop" class="w-detail-val">--%</div>
+                    <div class="weather-body">
+                        <div>
+                            <div id="w-location" class="weather-location">取得中...</div>
+                            <div class="weather-temp-group">
+                                <span id="w-temp" class="weather-temp-main">--°C</span>
+                                <span id="w-range" class="weather-temp-sub">--</span>
+                            </div>
+                        </div>
+                        <div id="w-icon" class="weather-icon-box" aria-hidden="true">--</div>
                     </div>
-                    <div>
-                        <div>SUNSET (夕日)</div>
-                        <div id="w-sunset" class="w-detail-val">--:--</div>
+
+                    <div class="weather-details">
+                        <div>
+                            <div>降水確率</div>
+                            <div id="w-pop" class="w-detail-val">--%</div>
+                        </div>
+                        <div>
+                            <div>日の入り</div>
+                            <div id="w-sunset" class="w-detail-val">--:--</div>
+                        </div>
+                        <div>
+                            <div>天気</div>
+                            <div id="w-cond" class="w-detail-val">--</div>
+                        </div>
                     </div>
-                    <div>
-                        <div>CONDITION</div>
-                        <div id="w-cond" class="w-detail-val">--</div>
+                    <p class="weather-note">旅行日の予報です。30分ごと・画面復帰時に自動更新します（Open-Meteo）。</p>
+                    <div class="weather-footer">
+                        <span class="weather-status">
+                            <span class="weather-latest-label">最終更新</span>
+                            <span id="w-updated" class="weather-updated" aria-live="polite">取得中...</span>
+                        </span>
+                        <div class="weather-footer-actions">
+                            <button type="button" class="j-btn" onclick="refreshWeather()" aria-label="天気を再取得">更新</button>
+                            <a href="https://weathernews.jp/onebox/tenki/kagawa/" id="w-app-link" data-app-url="wni://" onclick="openAppWithFallback(event, this)" target="_blank" rel="noopener noreferrer" class="j-btn app-accent" aria-label="ウェザーニュースを開く">
+                                <img src="images/weather.png" class="j-app-icon" alt="">
+                                <span class="j-btn-label">詳細予報</span><span class="j-btn-mark">↗</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
-                <p class="weather-note">旅行日の予報です。30分ごと・画面復帰時に再取得します（Open-Meteo）。</p>
-                <div class="weather-footer">
-                    <span class="weather-status">
-                        <span class="weather-latest-label">LATEST FORECAST</span>
-                        <span id="w-updated" class="weather-updated" aria-live="polite">取得中...</span>
-                    </span>
-                    <div class="weather-footer-actions">
-                        <button type="button" class="j-btn" onclick="refreshWeather()" aria-label="天気を再取得">REFRESH</button>
-                        <a href="https://weathernews.jp/onebox/tenki/kagawa/" id="w-app-link" data-app-url="wni://" onclick="openAppWithFallback(event, this)" target="_blank" rel="noopener noreferrer" class="j-btn app-accent" aria-label="ウェザーニュースアプリを開く">
-                            <img src="images/weather.png" class="j-app-icon" alt="">
-                            <span class="j-btn-label">WNI</span><span class="j-btn-mark">↗</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
             </details>
         </div>
     </div>
 
     <dialog id="live-plan-dialog" class="live-plan-dialog" aria-labelledby="live-plan-title">
         <div class="live-dialog-head">
-            <div><span class="live-dialog-kicker">FLEXIBLE DAY PLAN</span><h2 id="live-plan-title">旅行中の予定を調整</h2></div>
-            <button data-live="close" type="button" aria-label="予定変更を閉じる">CLOSE</button>
+            <div><span class="live-dialog-kicker">スケジュール調整</span><h2 id="live-plan-title">予定・遅れの調整</h2></div>
+            <button data-live="close" type="button" aria-label="予定変更を閉じる">閉じる</button>
         </div>
         <div class="live-dialog-body">
-            <label class="live-day-picker">DAY<select data-live="day-select" aria-label="変更する日"></select></label>
+            <label class="live-day-picker"><span>対象日</span><select data-live="day-select" aria-label="変更する日"></select></label>
             <section class="live-delay-section" aria-labelledby="live-delay-title">
-                <div><strong id="live-delay-title">DELAY</strong><span>選択時点以降をずらし、固定予定で止めます</span></div>
+                <div><strong id="live-delay-title">進行の遅れを反映</strong><span>選択時点以降の予定をずらし、予約・固定予定で止めます</span></div>
                 <div class="live-delay-actions" role="group" aria-label="遅れを反映">
-                    <button type="button" data-live-delay="0" aria-label="遅れを解除して予定どおりに戻す">ON TIME</button>
-                    <button type="button" data-live-delay="15" aria-label="15分遅れを反映">+15</button>
-                    <button type="button" data-live-delay="30" aria-label="30分遅れを反映">+30</button>
-                    <button type="button" data-live-delay="60" aria-label="60分遅れを反映">+60</button>
+                    <button type="button" data-live-delay="0" aria-label="遅れを解除して予定どおりに戻す">予定通り</button>
+                    <button type="button" data-live-delay="15" aria-label="15分遅れを反映">+15分</button>
+                    <button type="button" data-live-delay="30" aria-label="30分遅れを反映">+30分</button>
+                    <button type="button" data-live-delay="60" aria-label="60分遅れを反映">+60分</button>
                 </div>
             </section>
-            <form data-live="add-stop-form" class="live-add-stop">
-                <div class="live-section-copy"><strong>ADD STOP</strong><span>その場で決めた立ち寄り先を実績へ追加</span></div>
-                <div class="live-add-stop-fields">
-                    <label>場所<input data-live="add-stop-title" maxlength="120" required placeholder="例：海辺のカフェ"></label>
-                    <label>ひとこと<input data-live="add-stop-note" maxlength="500" placeholder="食べたもの・印象など"></label>
-                    <label>地図検索<input data-live="add-stop-map" maxlength="200" placeholder="店名・住所（任意）"></label>
-                    <button type="submit">ADD</button>
-                </div>
-            </form>
+            <p data-live="conflict" class="live-conflict" role="alert" hidden></p>
+            <div class="live-plan-section">
+                <div class="live-section-copy"><strong>当日の予定一覧</strong><span>順番の入れ替え・見送り・ひとことメモの編集ができます</span></div>
+                <ol data-live="plan-list" class="live-plan-list" aria-label="当日の予定一覧"></ol>
+            </div>
+            <details class="live-add-stop-details">
+                <summary class="live-section-copy"><strong>＋ 立ち寄り先を現地追加</strong><span>その場で決めたカフェや寄り道を記録へ追加</span></summary>
+                <form data-live="add-stop-form" class="live-add-stop">
+                    <div class="live-add-stop-fields">
+                        <label>場所<input data-live="add-stop-title" maxlength="120" required placeholder="例：海辺のカフェ"></label>
+                        <label>ひとこと<input data-live="add-stop-note" maxlength="500" placeholder="食べたもの・印象など"></label>
+                        <label>地図検索<input data-live="add-stop-map" maxlength="200" placeholder="店名・住所（任意）"></label>
+                        <button type="submit">立ち寄り先を追加</button>
+                    </div>
+                </form>
+            </details>
             <details class="live-timeline-import" aria-labelledby="live-timeline-title">
-                <summary class="live-section-copy"><strong id="live-timeline-title">高度な設定 · Timeline JSON取込</strong><span>Google Maps Timeline JSONから訪問履歴を取り込む場合はこちら</span></summary>
-                <label class="live-file-action" aria-label="Google Maps Timeline JSONを選択">SELECT JSON<input data-live="timeline-file" type="file" accept="application/json,.json"></label>
+                <summary class="live-section-copy"><strong id="live-timeline-title">Timeline JSON取込（上級者向け）</strong><span>Google Maps Timelineから訪問履歴を取り込む</span></summary>
+                <label class="live-file-action" aria-label="Google Maps Timeline JSONを選択">JSONファイルを選択<input data-live="timeline-file" type="file" accept="application/json,.json"></label>
                 <output data-live="timeline-result" aria-live="polite"></output>
             </details>
-            <p data-live="conflict" class="live-conflict" role="alert" hidden></p>
-            <ol data-live="plan-list" class="live-plan-list" aria-label="当日の予定一覧"></ol>
         </div>
         <div class="live-dialog-actions">
-            <button data-live="undo" type="button" aria-label="直前の変更を取り消す">UNDO</button>
-            <button data-live="reset" class="live-reset" type="button" aria-label="この端末での当日の変更をすべて元に戻す">RESET DAY</button>
+            <button data-live="undo" type="button" aria-label="直前の変更を取り消す">1つ戻す</button>
+            <button data-live="reset" class="live-reset" type="button" aria-label="この端末での当日の変更をすべて元に戻す">初期予定に戻す</button>
         </div>
     </dialog>
 
     <!-- ============ UPDATE NOTIFICATION PROMPT ============ -->
     <div id="update-prompt" class="update-prompt">
-        <span>NEW UPDATE AVAILABLE.</span>
-        <button onclick="triggerPwaUpdate()">UPDATE NOW</button>
+        <span>新しいバージョンがあります</span>
+        <button onclick="triggerPwaUpdate()">今すぐ更新</button>
     </div>
     <div id="error-boundary-root" class="shiori-error-boundary-container" hidden></div>
 
@@ -398,8 +402,8 @@
     <script type="module" src="src/viewer-app.js"></script>
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
-    <script src="src/enhancements.js?v=400"></script>
-    <script type="module" src="src/recap.js?v=400"></script>
-    <script type="module" src="src/firebase-sync.js?v=400"></script>
+    <script src="src/enhancements.js?v=406"></script>
+    <script type="module" src="src/recap.js?v=406"></script>
+    <script type="module" src="src/firebase-sync.js?v=406"></script>
 </body>
 </html>

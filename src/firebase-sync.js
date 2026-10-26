@@ -128,25 +128,25 @@ function setSyncUi(mode, title, message) {
         badge.classList.toggle('live', mode === 'live');
         badge.classList.toggle('error', mode === 'error');
         badge.classList.toggle('local', mode === 'local');
-        badge.textContent = mode === 'live' ? 'LIVE SYNC' : mode === 'error' ? 'ACTION NEEDED' : mode === 'local' ? 'LOCAL ONLY' : 'CONNECTING';
+        badge.textContent = mode === 'live' ? '同期中' : mode === 'error' ? '要確認' : mode === 'local' ? '端末のみ' : '接続中';
     }
     if (titleEl) titleEl.textContent = title;
     if (status) status.textContent = message;
     if (note) note.hidden = mode !== 'live';
     if (members && mode !== 'live') {
         members.textContent = mode === 'error'
-            ? 'MEMBERS: 同期なし'
+            ? '参加メンバー: 同期なし'
             : mode === 'local'
-                ? 'MEMBERS: この端末のみ'
-                : 'MEMBERS: 接続中…';
+                ? '参加メンバー: この端末のみ'
+                : '参加メンバー: 接続中…';
     }
     if (expenseSubmit) {
         if (mode === 'live') {
-            expenseSubmit.textContent = 'ADD & SHARE';
+            expenseSubmit.textContent = '立替を登録して共有';
             expenseSubmit.disabled = false;
             expenseSubmit.dataset.syncMode = 'live';
         } else {
-            expenseSubmit.textContent = 'ADD & QUEUE (📴 オフライン保存)';
+            expenseSubmit.textContent = 'この端末に保存（通信復帰後に自動共有）';
             expenseSubmit.disabled = false;
             expenseSubmit.dataset.syncMode = 'offline';
         }
@@ -452,7 +452,7 @@ export async function initSyncEngine(tripId) {
             setIdentityControlLocked(false);
             EXPENSE_KEY = `expenses-${tripId}-local-v2`;
             window.setExpenseStorageScope?.(tripId, null);
-            setSyncUi('local', 'しおり未登録', 'しおり棚のADDへ、管理者から届いた配布IDを入力してください。');
+            setSyncUi('local', 'しおり未登録', 'しおり一覧の「＋ 配布IDでしおりを追加」から、管理者から届いた配布IDを入力してください。');
             return;
         }
         const { roomId, accessId, ledgerToken } = roomParameters;
@@ -578,7 +578,7 @@ export async function initSyncEngine(tripId) {
 
             const pElem = document.getElementById('hero-participants');
             const displayNames = names.length > 0 ? names : [nickname];
-            if (pElem) pElem.textContent = 'MEMBERS: ' + displayNames.join(', ');
+            if (pElem) pElem.textContent = '参加メンバー: ' + displayNames.join('・');
             const participantsWereReady = syncContext.participantsReady;
             syncContext.participantsReady = true;
             renderLiveSyncState();

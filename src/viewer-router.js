@@ -2,7 +2,7 @@
  * Viewer Router: Trip Access Persistence, Join Token Redemption & Shelf Portal Dashboard
  */
 
-import { escapeHtml, isValidDataKey } from './viewer-ui.js';
+import { escapeHtml, isValidDataKey, formatTripDateRange } from './viewer-ui.js';
 
 export const TRIP_ACCESS_KEY = 'participant-trip-access-v1';
 export const PENDING_ACCESS_ID_KEY = 'participant-pending-access-id-v1';
@@ -104,10 +104,7 @@ export async function fetchTripConfig(tripId) {
     if (typeof localStorage !== 'undefined') localStorage.setItem(key, JSON.stringify(managedTrip));
     return managedTrip;
   } catch (error) {
-    if (String(error?.code || '').includes('access/revoked') || String(error?.code || '').includes('access/invalid')) {
-      forgetTripAccess(tripId);
-      throw error;
-    }
+    if (String(error?.code || '').includes('access/revoked') || String(error?.code || '').includes('access/invalid')) { forgetTripAccess(tripId); throw error; }
     const cached = readCachedTripConfig(tripId);
     if (cached) return cached;
     throw error;
@@ -115,15 +112,11 @@ export async function fetchTripConfig(tripId) {
 }
 
 export function accessRegistrationErrorMessage(error) {
-  return String(error?.code || '').includes('access/full')
-    ? 'この配布先は定員に達しています。管理者へ連絡してください。'
-    : '配布IDが無効か、管理者によって停止されています。';
+  return String(error?.code || '').includes('access/full') ? 'この配布先は定員に達しています。管理者へ連絡してください。' : '配布IDが無効か、管理者によって停止されています。';
 }
 
 export async function redeemAndStoreAccess(accessId) {
-  if (typeof window === 'undefined' || typeof window._redeemAccessId !== 'function') {
-    throw new Error('配布ID確認サービスを準備しています。少し待って再度お試しください。');
-  }
+  if (typeof window === 'undefined' || typeof window._redeemAccessId !== 'function') throw new Error('配布ID確認サービスを準備しています。少し待って再度お試しください。');
   const result = await window._redeemAccessId(accessId);
   saveTripAccess(result.tripId, { ledger: result.ledgerToken, accessId, grantId: result.grantId });
   if (typeof localStorage !== 'undefined') localStorage.setItem(`${MANAGED_TRIP_CACHE_PREFIX}${result.tripId}:${result.grantId}`, JSON.stringify(result.trip));
@@ -148,14 +141,13 @@ export async function beginAutomaticAccessRegistration(accessId) {
     renderPortalDashboard(); showAddTripInput();
     const input = document.getElementById('new-trip-id'); if (input) input.value = accessId;
     const errEl = document.getElementById('add-trip-error');
-    if (errEl) { errEl.textContent = accessRegistrationErrorMessage(error); errEl.style.display = 'block'; }
+    if (errEl) { errEl.textContent = accessRegistrationErrorMessage(error); errEl.style.display = 'block'; errEl.hidden = false; }
   }
 }
 
 export function handleOnboardingSubmit(event) {
   if (event?.preventDefault) event.preventDefault();
-  const input = typeof document !== 'undefined' ? document.getElementById('welcome-nickname') : null;
-  const nick = input ? input.value.trim() : '';
+  const nick = (typeof document !== 'undefined' ? document.getElementById('welcome-nickname') : null)?.value.trim() || '';
   if (!nick) return;
   if (typeof localStorage !== 'undefined') localStorage.setItem('user_nickname', nick);
   initAppRouter();
@@ -165,7 +157,7 @@ export function publicRecapSummaries(joined = []) {
   const recaps = (typeof window !== 'undefined' && Array.isArray(window.shioriPublicRecaps)) ? window.shioriPublicRecaps : [];
   return recaps.map(r => {
     const o = joined.find(t => t.recapId === r.id);
-    return { id: `recap-${r.id}`, title: r.title, subtitle: r.subtitle, date: `${r.startDate} - ${r.endDate}`, href: o ? `${r.href}&trip=${encodeURIComponent(o.id)}` : r.href, sourceTripId: o?.id || '', isPast: true, isRecap: true };
+    return { id: `recap-${r.id}`, title: r.title, subtitle: r.subtitle, date: formatTripDateRange(r.startDate, r.endDate), startDate: r.startDate, endDate: r.endDate, href: o ? `${r.href}&trip=${encodeURIComponent(o.id)}` : r.href, sourceTripId: o?.id || '', isPast: true, isRecap: true };
   });
 }
 
@@ -176,7 +168,7 @@ export function localRecapSummaries(joined = [], publicRecaps = []) {
     try {
       const r = JSON.parse(localStorage.getItem(`shiori-recap-v4:${t.id}`) || 'null');
       if (r?.schema !== 'shiori-recap-v1' || r.visibility !== 'local' || r.sourceTripId !== t.id) return [];
-      return [{ id: `local-recap-${t.id}`, title: r.title || t.title, subtitle: 'この端末で作った旅の記録 · RECAP', date: `${r.startDate || t.startDate} - ${r.endDate || t.endDate}`, href: `./recap.html?local=${encodeURIComponent(t.id)}`, sourceTripId: t.id, isPast: true, isRecap: true }];
+      return [{ id: `local-recap-${t.id}`, title: r.title || t.title, subtitle: 'この端末で作った旅の記録', date: formatTripDateRange(r.startDate || t.startDate, r.endDate || t.endDate), href: `./recap.html?local=${encodeURIComponent(t.id)}`, sourceTripId: t.id, isPast: true, isRecap: true }];
     } catch { return []; }
   });
 }
@@ -190,7 +182,7 @@ export function combinePortalTrips(joined = []) {
 export function portalTripSummary(tripId, data, todayStr = tokyoDateKey()) {
   if (!validTripConfig(data, tripId)) return null;
   const recap = (typeof window !== 'undefined' && window.shioriFindRecapForTrip) ? window.shioriFindRecapForTrip(data) : null;
-  return { id: tripId, title: data.title, subtitle: data.subtitle || '', date: `${data.startDate} - ${data.endDate}`, startDate: data.startDate || '', endDate: data.endDate || '', recapId: recap?.id || '', isPast: data.archived === true || (data.endDate ? data.endDate < todayStr : false) };
+  return { id: tripId, title: data.title, subtitle: data.subtitle || '', date: formatTripDateRange(data.startDate, data.endDate), startDate: data.startDate || '', endDate: data.endDate || '', recapId: recap?.id || '', isPast: data.archived === true || (data.endDate ? data.endDate < todayStr : false) };
 }
 
 export function updatePortalOwnerLabel() {
@@ -231,8 +223,9 @@ export function renderPortalDashboard() {
 export function switchPortalCategory(cat) {
   currentPortalCategory = cat;
   if (typeof document !== 'undefined') {
-    document.getElementById('portal-tab-upcoming')?.classList.toggle('active', cat === 'upcoming');
-    document.getElementById('portal-tab-past')?.classList.toggle('active', cat === 'past');
+    const up = document.getElementById('portal-tab-upcoming'), past = document.getElementById('portal-tab-past');
+    up?.classList.toggle('active', cat === 'upcoming'); up?.setAttribute('aria-selected', String(cat === 'upcoming'));
+    past?.classList.toggle('active', cat === 'past'); past?.setAttribute('aria-selected', String(cat === 'past'));
   }
   filterAndRenderPortalCards();
 }
@@ -244,24 +237,26 @@ export function filterAndRenderPortalCards() {
   const filtered = portalTripsCache.filter(t => currentPortalCategory === 'past' ? t.isPast : !t.isPast);
   if (!filtered.length) {
     const msg = currentPortalCategory === 'past' ? '過去の旅行履歴はまだありません。' : 'これからの旅行予定はまだありません。';
-    container.innerHTML = `<div style="color:var(--text-sub); font-size:0.85rem; padding:24px 0; text-align:center; font-style:italic;">${msg}</div>`;
+    container.innerHTML = `<div style="color:var(--text-sub); font-size:0.85rem; padding:24px 0; text-align:center;">${msg}</div>`;
     return;
   }
-  container.innerHTML = filtered.map(t =>
-    `<a href="${escapeHtml(t.href || buildTripHref(t.id))}" class="portal-card"><div class="portal-card-title">${escapeHtml(t.title)}</div><div class="portal-card-meta">${escapeHtml(t.subtitle ? t.subtitle + ' — ' : '')}${escapeHtml(t.date)}</div><div class="portal-card-arrow" aria-label="${t.isRecap ? '旅の記録を開く' : t.isPast ? '思い出を開く' : 'しおりを開く'}">${t.isRecap ? 'OPEN RECAP →' : t.isPast ? 'OPEN MEMORY →' : 'OPEN SHIORI →'}</div></a>`
-  ).join('');
+  container.innerHTML = filtered.map(t => {
+    const tag = t.isRecap ? '旅の記録' : t.isPast ? '思い出の旅' : (t.startDate && t.startDate === t.endDate ? '日帰り旅' : 'これからの旅');
+    const cta = t.isRecap ? '旅の記録を開く →' : t.isPast ? '思い出を開く →' : 'しおりを開く →';
+    return `<a href="${escapeHtml(t.href || buildTripHref(t.id))}" class="portal-card"><span class="portal-card-tag">${tag}</span><div class="portal-card-title">${escapeHtml(t.title)}</div><div class="portal-card-meta">${escapeHtml(t.subtitle ? t.subtitle + ' — ' : '')}${escapeHtml(t.date)}</div><div class="portal-card-arrow" aria-label="${cta.replace(' →', '')}">${cta}</div></a>`;
+  }).join('');
 }
 
 export function showAddTripInput() {
   if (typeof document === 'undefined') return;
-  const s = (id, d) => { const el = document.getElementById(id); if (el) el.style.display = d; };
+  const s = (id, d) => { const el = document.getElementById(id); if (el) { el.style.display = d; el.hidden = d === 'none'; } };
   s('btn-show-add-trip', 'none'); s('add-trip-container', 'block'); s('add-trip-error', 'none');
   const input = document.getElementById('new-trip-id'); if (input) { input.value = ''; input.focus(); }
 }
 
 export function hideAddTripInput() {
   if (typeof document === 'undefined') return;
-  const s = (id, d) => { const el = document.getElementById(id); if (el) el.style.display = d; };
+  const s = (id, d) => { const el = document.getElementById(id); if (el) { el.style.display = d; el.hidden = d === 'none'; } };
   s('btn-show-add-trip', 'block'); s('add-trip-container', 'none');
 }
 
@@ -271,10 +266,10 @@ export async function handleAddTripSubmit(e) {
   const input = document.getElementById('new-trip-id'), errEl = document.getElementById('add-trip-error');
   const accessId = normalizeAccessId(input?.value), btn = e?.currentTarget?.querySelector?.('button[type="submit"]');
   if (!ACCESS_ID_PATTERN.test(accessId)) {
-    if (errEl) { errEl.textContent = '配布IDは12文字です。管理者から届いたIDを確認してください。'; errEl.style.display = 'block'; }
+    if (errEl) { errEl.textContent = '配布IDは12文字です。管理者から届いたIDを確認してください。'; errEl.style.display = 'block'; errEl.hidden = false; }
     return;
   }
-  if (errEl) errEl.style.display = 'none';
+  if (errEl) { errEl.style.display = 'none'; errEl.hidden = true; }
   if (btn) { btn.disabled = true; btn.textContent = '確認中…'; }
   try {
     const res = await redeemAndStoreAccess(accessId);
@@ -282,9 +277,9 @@ export async function handleAddTripSubmit(e) {
     if (typeof history !== 'undefined') history.pushState(null, '', buildTripHref(res.tripId));
     initAppRouter();
   } catch (error) {
-    if (errEl) { errEl.textContent = accessRegistrationErrorMessage(error); errEl.style.display = 'block'; }
+    if (errEl) { errEl.textContent = accessRegistrationErrorMessage(error); errEl.style.display = 'block'; errEl.hidden = false; }
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'ADD'; }
+    if (btn) { btn.disabled = false; btn.textContent = '追加する'; }
   }
 }
 
@@ -342,7 +337,5 @@ export function initAppRouter() {
 }
 
 if (typeof window !== 'undefined') {
-  Object.assign(window, {
-    handleOnboardingSubmit, switchPortalCategory, showAddTripInput, hideAddTripInput, handleAddTripSubmit, backToPortal
-  });
+  Object.assign(window, { handleOnboardingSubmit, switchPortalCategory, showAddTripInput, hideAddTripInput, handleAddTripSubmit, backToPortal });
 }

@@ -144,9 +144,9 @@ function actualRecordLabel(record) {
   const time = value => value
     ? new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' }).format(new Date(value))
     : '';
-  if (record?.arrivedAt) values.push(`ARRIVE ${time(record.arrivedAt)}`);
-  if (record?.doneAt) values.push(`DONE ${time(record.doneAt)}`);
-  if (record?.skippedAt) values.push(`SKIP ${time(record.skippedAt)}`);
+  if (record?.arrivedAt) values.push(`到着 ${time(record.arrivedAt)}`);
+  if (record?.doneAt) values.push(`完了 ${time(record.doneAt)}`);
+  if (record?.skippedAt) values.push(`見送り ${time(record.skippedAt)}`);
   if (record?.note) values.push(record.note);
   return values.join(' · ');
 }
@@ -335,7 +335,7 @@ export function createLiveItineraryController() {
           state.records = applyJourneyStatus(state.records, added.cardId, 'done', added.addedAt); addedCount += 1;
         });
       });
-      output.textContent = `${addedCount}件を追加しました。名称やメモはEDITから整えられます。`;
+      output.textContent = `${addedCount}件を追加しました。名称やメモは「メモ」ボタンから整えられます。`;
     };
     output.textContent = 'Timelineを読み込み中…';
     try {
@@ -369,7 +369,7 @@ export function createLiveItineraryController() {
       return;
     }
     if (!hasActual) {
-      window.alert('まだ実際の記録がありません。ARRIVE・DONE・SKIP、またはADD STOPで旅の記録を残してください。');
+      window.alert('まだ実際の記録がありません。「到着」「完了」「見送り」、または「立ち寄り先を現地追加」で旅の記録を残してください。');
       dialog?.showModal();
       return;
     }
@@ -413,7 +413,7 @@ export function createLiveItineraryController() {
     const dayKey = selectedDayKey();
     const select = dialog.querySelector('[data-live="day-select"]');
     select.replaceChildren(...Object.keys(trip.days || {}).sort((a, b) => dayNumber(a) - dayNumber(b)).map(key => {
-      const option = new Option(`${key.toUpperCase()} · ${trip.dayLabels?.[key] || ''}`, key);
+      const option = new Option(`${dayNumber(key)}日目 · ${trip.dayLabels?.[key] || ''}`, key);
       option.selected = key === dayKey;
       return option;
     }));
@@ -428,18 +428,18 @@ export function createLiveItineraryController() {
       const actual = actualRecordLabel(item.record);
       if (actual) copy.append(element('span', 'live-plan-record', actual));
       const actions = element('div', 'live-plan-row-actions');
-      const up = element('button', 'live-mini-action', 'UP');
+      const up = element('button', 'live-mini-action', '↑');
       up.type = 'button'; up.disabled = index === 0; up.setAttribute('aria-label', `${item.card.title}を上へ移動`);
       up.addEventListener('click', () => moveCard(item.card.cardId, -1), { signal: bindings.signal });
-      const down = element('button', 'live-mini-action', 'DOWN');
+      const down = element('button', 'live-mini-action', '↓');
       down.type = 'button'; down.disabled = index === timeline.items.length - 1; down.setAttribute('aria-label', `${item.card.title}を下へ移動`);
       down.addEventListener('click', () => moveCard(item.card.cardId, 1), { signal: bindings.signal });
-      const toggleLabel = item.card.isJourneyExtra ? 'REMOVE' : item.status === 'skipped' ? 'RESTORE' : 'SKIP';
+      const toggleLabel = item.card.isJourneyExtra ? '削除' : item.status === 'skipped' ? '戻す' : '見送り';
       const toggle = element('button', 'live-mini-action', toggleLabel);
       toggle.type = 'button';
-      toggle.setAttribute('aria-label', item.card.isJourneyExtra ? `${item.card.title}を現地追加から削除` : item.status === 'skipped' ? `${item.card.title}を予定へ戻す` : `${item.card.title}をスキップ`);
+      toggle.setAttribute('aria-label', item.card.isJourneyExtra ? `${item.card.title}を現地追加から削除` : item.status === 'skipped' ? `${item.card.title}を予定へ戻す` : `${item.card.title}を見送り`);
       toggle.addEventListener('click', () => item.card.isJourneyExtra ? removeExtraItem(item) : setStatus(item.card.cardId, item.status === 'skipped' ? '' : 'skipped'), { signal: bindings.signal });
-      const edit = element('button', 'live-mini-action', 'EDIT');
+      const edit = element('button', 'live-mini-action', 'メモ');
       edit.type = 'button'; edit.setAttribute('aria-label', `${item.card.title}の名称または旅メモを編集`);
       edit.addEventListener('click', () => editJourneyItem(item), { signal: bindings.signal });
       actions.append(up, down, toggle, edit);
@@ -475,37 +475,37 @@ export function createLiveItineraryController() {
     const phase = journeyPhase(trip);
     const isPlan = phase === 'plan';
     root.dataset.phase = phase;
-    root.querySelector('[data-live="phase"]').textContent = phase === 'plan' ? 'PLAN · 旅の準備' : phase === 'recap' ? 'RECAP · 旅の振り返り' : 'LIVE · 旅行中';
+    root.querySelector('[data-live="phase"]').textContent = phase === 'plan' ? '出発前の確認' : phase === 'recap' ? '旅の振り返り' : '旅行中';
     const recapButton = root.querySelector('[data-live="recap"]');
-    recapButton.textContent = phase === 'recap' ? 'CREATE RECAP' : 'RECAP';
+    recapButton.textContent = '旅の記録を作成';
     recapButton.hidden = isPlan;
     root.querySelector('[data-live="memo"]').hidden = isPlan;
     root.querySelector('[data-live="cost"]').hidden = !document.getElementById('btn-expenses');
-    dayLabel.textContent = `${dayKey.toUpperCase()} · ${trip.dayLabels?.[dayKey] || ''}`;
+    dayLabel.textContent = `${dayNumber(dayKey)}日目 · ${trip.dayLabels?.[dayKey] || ''}`;
     if (!active) {
       title.textContent = '今日の予定は完了しました';
-      time.textContent = 'ALL DONE';
+      time.textContent = '全行程完了';
       status.textContent = '実際に回った記録は、この端末に保存されています。';
       route.hidden = true; arrive.hidden = true; done.hidden = true; skip.hidden = true;
     } else {
       title.textContent = active.card.title;
-      time.textContent = active.time.label || 'TIME TBD';
+      time.textContent = active.time.label || '時刻未定';
       status.textContent = active.status === 'arrived'
-        ? '到着済みです。楽しんだらDONEへ。'
-        : delay ? `${delay}分の遅れを反映中。固定予定は動かしません。` : '公開旅程を元に、この端末で柔軟に変更できます。';
+        ? '到着済みです。楽しんだら「完了」をタップしてください。'
+        : delay ? `${delay}分の遅れを反映中（固定予定は維持）` : '公開旅程を元に、この端末で柔軟に調整できます。';
       const url = routeForCard(active.card);
       route.hidden = !url;
-      route.textContent = isPlan ? 'MAP' : 'DRIVE';
+      route.textContent = isPlan ? '地図を確認' : 'ナビ開始';
       if (url) route.href = url;
       arrive.hidden = isPlan || active.status === 'arrived';
       done.hidden = isPlan; skip.hidden = isPlan;
       arrive.dataset.cardId = active.card.cardId;
       done.dataset.cardId = active.card.cardId;
       skip.dataset.cardId = active.card.cardId;
-      if (isPlan) status.textContent = '旅行前はPLANで順序や立ち寄り先を確認できます。実績の記録は旅行開始後に表示します。';
+      if (isPlan) status.textContent = '最初の予定 · 順番調整や立ち寄り追加もできます';
     }
     root.querySelector('[data-live="delay-badge"]').hidden = !delay;
-    root.querySelector('[data-live="delay-badge"]').textContent = delay ? `+${delay} MIN` : '';
+    root.querySelector('[data-live="delay-badge"]').textContent = delay ? `+${delay}分` : '';
     renderNetworkState();
     renderCards(timeline);
     renderDialog(timeline);

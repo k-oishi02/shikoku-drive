@@ -175,7 +175,7 @@
             titleClone?.querySelector('.j-tag-badge')?.remove();
             const title = titleClone?.textContent.replace(/\s+/g, ' ').trim() || '予定';
             const route = Array.from(card.querySelectorAll('a[href]')).find(link =>
-                /^ROUTE\s*↗?$/i.test(link.textContent.trim())
+                /^(ROUTE|ルート)\s*↗?$/i.test(link.textContent.trim())
             );
             const map = card.querySelector('.j-btn.primary, a[href*="google.com/maps"]');
             const action = route || map;
@@ -185,7 +185,7 @@
                 timeEl,
                 title,
                 route: action?.href || '',
-                routeLabel: route ? 'NEXT ROUTE' : map ? 'NEXT MAP' : '',
+                routeLabel: route ? '次のルート' : map ? '次の地図' : '',
                 startMinute: parsed.startMinute,
                 endMinute: parsed.endMinute,
                 start: dateAtMinute(day.date, parsed.startMinute),
@@ -253,15 +253,15 @@
         if (now < tripStart) {
             panelId = Object.keys(TRIP_DAYS).sort((a, b) => TRIP_DAYS[a].date.localeCompare(TRIP_DAYS[b].date))[0];
             entry = getEntries(panelId)[0];
-            dayEl.textContent = `${TRIP_DAYS[panelId]?.label || 'DAY 01'} · 旅行前`;
+            dayEl.textContent = `${TRIP_DAYS[panelId]?.label || '1日目'} · 旅行前`;
             countdownEl.textContent = `出発まで ${formatDuration(tripStart - now)}`;
             if (getTokyoDateKey(now) === TRIP_DAYS[panelId]?.date && entry) {
                 routeEntry = entry;
             }
         } else if (now > tripEnd) {
-            dayEl.textContent = 'TRIP COMPLETE';
+            dayEl.textContent = '旅行完了';
             titleEl.textContent = '旅行、おつかれさまでした！';
-            timeEl.textContent = 'MEMORIES SAVED';
+            timeEl.textContent = '全行程完了';
             countdownEl.textContent = '';
             routeEl.hidden = true;
             return;
@@ -271,7 +271,7 @@
             const current = currentIndex >= 0 ? entries[currentIndex] : null;
             const next = current ? entries[currentIndex + 1] : entries.find(item => item.start > now);
             entry = current || next || entries.at(-1);
-            dayEl.textContent = `${TRIP_DAYS[panelId].label} · ${current ? 'NOW' : 'NEXT'}`;
+            dayEl.textContent = `${TRIP_DAYS[panelId].label} · ${current ? '現在' : '次の予定'}`;
             countdownEl.textContent = current
                 ? `終了まで ${formatDuration(entry.end - now)}`
                 : `出発まで ${formatDuration(entry.start - now)}`;
@@ -283,7 +283,7 @@
                 .find(candidate => candidate.item.start > now);
             panelId = future?.panelId || Object.keys(TRIP_DAYS).at(-1);
             entry = future?.item || getEntries(panelId).at(-1);
-            dayEl.textContent = `${TRIP_DAYS[panelId]?.label || 'DAY'} · NEXT`;
+            dayEl.textContent = `${TRIP_DAYS[panelId]?.label || '日程'} · 次の予定`;
             countdownEl.textContent = entry ? `出発まで ${formatDuration(entry.start - now)}` : '';
             if (entry) {
                 routeEntry = entry;
@@ -299,7 +299,7 @@
         if (routeEntry?.route || entry.route) {
             const actionEntry = routeEntry?.route ? routeEntry : entry;
             routeEl.href = actionEntry.route;
-            routeEl.textContent = (actionEntry.routeLabel || 'NEXT MAP') + ' →';
+            routeEl.textContent = (actionEntry.routeLabel || '地図を確認') + ' →';
             routeEl.hidden = false;
         } else {
             routeEl.hidden = true;
@@ -310,7 +310,7 @@
         const checks = Array.from(document.querySelectorAll('[data-check-id]'));
         const completed = checks.filter(input => input.checked).length;
         const progress = document.getElementById('checklist-progress');
-        if (progress) progress.textContent = `${completed} / ${checks.length} COMPLETE`;
+        if (progress) progress.textContent = `${completed} / ${checks.length} 準備完了`;
     }
 
     function setupChecklist() {
@@ -671,7 +671,7 @@
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'j-btn expense-shortcut';
-            button.textContent = '+ COST';
+            button.textContent = '+ 立替';
             button.setAttribute('aria-label', `${rawTitle}の支出を追加`);
             button.addEventListener('click', () => {
                 window.openExpenseShortcut(expenseCategoryForBadge(badge, rawTitle), rawTitle);
@@ -691,10 +691,10 @@
         if (bar) {
             const updateNetworkStatus = () => {
                 if (navigator.onLine) {
-                    bar.textContent = 'ONLINE';
+                    bar.textContent = 'オンライン';
                     bar.classList.remove('offline');
                 } else {
-                    bar.textContent = 'OFFLINE MODE';
+                    bar.textContent = 'オフライン';
                     bar.classList.add('offline');
                 }
                 updateExpensePrivacy(navigator.onLine ? '' : 'offline');
