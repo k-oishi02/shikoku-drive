@@ -230,7 +230,7 @@ function showNavigationPicker(source) {
   const hintNode = dialog.querySelector('[data-route-hint]');
   if (hintNode) {
     const hintText = source.routeHint || (source.waypoints ? `経由: ${source.waypoints}` : '');
-    hintNode.textContent = hintText ? `🛣️ 推奨ルート: ${hintText}` : '';
+    hintNode.textContent = hintText ? `推奨ルート: ${hintText}` : '';
     hintNode.hidden = !hintText;
   }
   dialog.querySelector('[data-yahoo-note]').textContent = targets.yahoo.note;

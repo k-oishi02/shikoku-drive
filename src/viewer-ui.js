@@ -206,8 +206,8 @@ export function buildShioriUI(data) {
       const depLabel = depMin == null ? '' : `${String(Math.floor((depMin + 1440) % 1440 / 60)).padStart(2, '0')}:${String((depMin + 1440) % 60).padStart(2, '0')}までに出発`;
       const routeHint = String(card?.routeHint || '').trim();
       const waypoints = String(card?.waypoints || '').trim();
-      const routeHintChip = routeHint ? `<span class="v2-route-chip">🛣️ ${escapeHtml(routeHint)}</span>` : '';
-      const travelHintHtml = cardIndex > 0 && (travelMin || routeHint) ? `<div class="v2-travel-hint">${travelMin ? `<strong>🚗 移動 約${travelMin}分</strong>` : ''}${depLabel ? `<span>${depLabel}</span>` : ''}${routeHintChip}</div>` : '';
+      const routeHintChip = routeHint ? `<span class="v2-route-chip">経由: ${escapeHtml(routeHint)}</span>` : '';
+      const travelHintHtml = cardIndex > 0 && (travelMin || routeHint) ? `<div class="v2-travel-hint">${travelMin ? `<strong>移動 約${travelMin}分</strong>` : ''}${depLabel ? `<span>${depLabel}</span>` : ''}${routeHintChip}</div>` : '';
 
       let resHtml = '';
       if (card.reservation && typeof card.reservation === 'object') {

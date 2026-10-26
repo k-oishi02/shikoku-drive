@@ -9,18 +9,19 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
-    <link rel="stylesheet" href="src/participant-v2.css?v=403">
-    <link rel="stylesheet" href="src/recap.css?v=400">
-    <link rel="stylesheet" href="src/enhancements.css">
-    <link rel="stylesheet" href="src/discussion.css">
-    <link rel="stylesheet" href="src/theme-v31.css?v=320">
-    <link rel="stylesheet" href="src/design-v31.css?v=320">
-    <link rel="stylesheet" href="src/expressive-v32.css?v=400">
+    <link rel="stylesheet" href="src/participant-v2.css?v=405">
+    <link rel="stylesheet" href="src/recap.css?v=405">
+    <link rel="stylesheet" href="src/enhancements.css?v=405">
+    <link rel="stylesheet" href="src/discussion.css?v=405">
+    <link rel="stylesheet" href="src/theme-v31.css?v=405">
+    <link rel="stylesheet" href="src/design-v31.css?v=405">
+    <link rel="stylesheet" href="src/expressive-v32.css?v=405">
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
-        body { line-height: 1.7; padding-bottom: 64px; overflow-x: hidden; }
+        body { line-height: 1.7; padding-bottom: 72px; overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; }
         .l-container { width: 100%; max-width: 680px; margin: 0 auto; padding: 0 20px; position: relative; }
         .j-tab-panel { display: none !important; touch-action: pan-y; }
         .j-tab-panel.active { display: block !important; animation: fadeIn 0.22s ease; }
@@ -30,8 +31,6 @@
         .portal-overlay.active, .welcome-overlay.active { display: block; }
         .portal-inner, .welcome-inner { max-width: 540px; margin: 0 auto; padding: 56px 20px 80px; }
         .portal-cards { display: flex; flex-direction: column; gap: 16px; }
-        .portal-tab-bar { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--sh-line); padding-bottom: 8px; }
-        .portal-tab-btn { background: transparent; border: none; padding: 8px 14px; cursor: pointer; }
         .j-app-icon { width: 16px; height: 16px; border-radius: 4px; object-fit: cover; flex-shrink: 0; display: inline-block; vertical-align: middle; }
         .update-prompt { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 12px 20px; z-index: 11000; gap: 12px; align-items: center; border-radius: 999px; background: var(--sh-ink); color: var(--sh-surface); box-shadow: 0 12px 32px rgba(0,0,0,0.28); font-size: 0.78rem; font-weight: 600; }
         .update-prompt.active { display: flex; }
@@ -72,19 +71,19 @@
             <div id="portal-cards" class="portal-cards"></div>
 
             <!-- ADD NEW TRIP INLINE FORM -->
-            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-line);">
-                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%; padding: 14px;" onclick="showAddTripInput()" aria-label="配布IDでしおりを追加">＋ ADD SHIORI</button>
+            <div class="portal-add-section">
+                <button type="button" id="btn-show-add-trip" class="j-btn primary" style="width: 100%;" onclick="showAddTripInput()" aria-label="配布IDでしおりを追加">＋ ADD SHIORI</button>
 
                 <div id="add-trip-container" style="display: none; margin-top: 16px;">
                     <form onsubmit="handleAddTripSubmit(event)" style="display: flex; flex-direction: column; gap: 12px;">
                         <label class="welcome-label">
                             <span>管理者から届いた配布IDを入力</span>
-                            <input id="new-trip-id" type="text" placeholder="例：ABCD-EFGH-JKLM" required maxlength="20" autocomplete="off" autocapitalize="characters" style="width: 100%; background: #242424; border: 1px solid var(--border-line); color: #ffffff; padding: 12px 14px; font-family: var(--font-gothic); font-size: 0.92rem; outline: none;">
+                            <input id="new-trip-id" type="text" placeholder="例：ABCD-EFGH-JKLM" required maxlength="20" autocomplete="off" autocapitalize="characters">
                         </label>
                         <div id="add-trip-error" class="welcome-error" style="display: none; margin-top: 0;"></div>
                         <div style="display: flex; gap: 8px;">
-                            <button type="submit" class="j-btn primary" style="flex: 1; padding: 10px;" aria-label="しおりを追加">ADD</button>
-                            <button type="button" class="j-btn" style="flex: 1; padding: 10px;" onclick="hideAddTripInput()" aria-label="追加をキャンセル">CANCEL</button>
+                            <button type="submit" class="j-btn primary" style="flex: 1;" aria-label="しおりを追加">ADD</button>
+                            <button type="button" class="j-btn" style="flex: 1;" onclick="hideAddTripInput()" aria-label="追加をキャンセル">CANCEL</button>
                         </div>
                     </form>
                 </div>
@@ -98,8 +97,8 @@
         <div class="l-container">
 
             <!-- Compact trip header -->
-            <header class="j-hero" style="display: flex; flex-direction: column; position: relative;">
-                <button type="button" class="j-btn" onclick="backToPortal()" style="margin-bottom: 16px; width: auto; align-self: flex-start; padding: 4px 12px;" aria-label="しおり棚へ戻る">← SHELF</button>
+            <header class="j-hero">
+                <button type="button" class="j-btn j-back-btn" onclick="backToPortal()" aria-label="しおり棚へ戻る">← SHELF</button>
                 <span class="j-hero-badge">旅のしおり</span>
                 <h1 class="j-hero-bebas" id="hero-title">SHIORI</h1>
                 <div class="j-hero-ja" id="hero-catchphrase">旅の感動を、みんなの思い出に。</div>
@@ -235,7 +234,7 @@
                         </select>
                         <small>この端末を使っている人です。自分が立て替えた支出を登録するときの初期値になります。</small>
                     </label>
-                    <div class="expense-quick-presets" role="group" aria-label="クイック費目入力"><button type="button" class="expense-preset-chip" onclick="window.openExpenseShortcut('交通', '高速道路・ETC料金')">🚗 高速・ETC</button><button type="button" class="expense-preset-chip" onclick="window.openExpenseShortcut('交通', 'ガソリン・給油代')">⛽ ガソリン代</button><button type="button" class="expense-preset-chip" onclick="window.openExpenseShortcut('交通', '駐車場代')">🅿️ 駐車場代</button><button type="button" class="expense-preset-chip" onclick="window.openExpenseShortcut('交通', 'レンタカー・カーシェア代')">🚙 レンタカー</button><button type="button" class="expense-preset-chip" onclick="window.openExpenseShortcut('食事', '食事・カフェ代')">🍽️ 食事・カフェ</button></div>
+                    <div class="expense-quick-presets" role="group" aria-label="クイック費目入力"><button type="button" class="expense-preset-chip" onclick="window.openExpenseShortcut('交通', '高速道路・ETC料金')">高速・ETC</button><button type="button" class="expense-preset-chip" onclick="window.openExpenseShortcut('交通', 'ガソリン・給油代')">ガソリン代</button><button type="button" class="expense-preset-chip" onclick="window.openExpenseShortcut('交通', '駐車場代')">駐車場代</button><button type="button" class="expense-preset-chip" onclick="window.openExpenseShortcut('交通', 'レンタカー・カーシェア代')">レンタカー</button><button type="button" class="expense-preset-chip" onclick="window.openExpenseShortcut('食事', '食事・カフェ代')">食事・カフェ</button></div>
                     <form id="expense-form" class="expense-form">
                         <label>
                             <span>金額</span>
@@ -281,15 +280,15 @@
                 </div>
 
                 <!-- Optional PayPay handoff -->
-                <div class="j-widget" style="margin-top:12px;">
+                <div class="j-widget" style="margin-top:14px;">
                     <div>
-                        <h3 style="font-family:var(--font-bebas); font-size:1.6rem; letter-spacing:1px; color:#ffffff;">PAYPAY</h3>
-                        <p style="font-size:0.78rem; color:var(--text-sub);">上の精算額を確認し、PayPay側で送金内容を入力します。</p>
+                        <h3 class="j-widget-title">PAYPAY</h3>
+                        <p class="j-widget-desc">上の精算額を確認し、PayPay側で送金内容を入力します。</p>
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <a href="https://paypay.ne.jp/" data-app-url="paypay://launch" onclick="openAppWithFallback(event, this)" target="_blank" rel="noopener noreferrer" class="j-btn app-accent" style="padding:10px 16px;">
+                        <a href="https://paypay.ne.jp/" data-app-url="paypay://launch" onclick="openAppWithFallback(event, this)" target="_blank" rel="noopener noreferrer" class="j-btn app-accent">
                             <img src="images/paypay.png" class="j-app-icon" alt="">
-                            <span>PAYPAY</span><span class="j-btn-mark">↗</span>
+                            <span class="j-btn-label">PAYPAY</span><span class="j-btn-mark">↗</span>
                         </a>
                     </div>
                 </div>
@@ -307,8 +306,8 @@
 
                 <div class="weather-body">
                     <div>
-                        <div id="w-location" style="font-family:var(--font-gothic); font-weight:800; font-size:1.05rem; color:#ffffff;">取得中...</div>
-                        <div class="weather-temp-group" style="margin-top:4px;">
+                        <div id="w-location" class="weather-location">取得中...</div>
+                        <div class="weather-temp-group">
                             <span id="w-temp" class="weather-temp-main">--°C</span>
                             <span id="w-range" class="weather-temp-sub">--</span>
                         </div>
@@ -331,17 +330,16 @@
                     </div>
                 </div>
                 <p class="weather-note">旅行日の予報です。30分ごと・画面復帰時に再取得します（Open-Meteo）。</p>
-                <button type="button" class="j-btn" onclick="refreshWeather()" aria-label="天気を再取得">REFRESH</button>
-
                 <div class="weather-footer">
                     <span class="weather-status">
-                        <span style="font-family:var(--font-mont); font-size:0.68rem; color:var(--text-sub);">LATEST FORECAST</span>
+                        <span class="weather-latest-label">LATEST FORECAST</span>
                         <span id="w-updated" class="weather-updated" aria-live="polite">取得中...</span>
                     </span>
-                    <div style="display:flex; gap:4px;">
+                    <div class="weather-footer-actions">
+                        <button type="button" class="j-btn" onclick="refreshWeather()" aria-label="天気を再取得">REFRESH</button>
                         <a href="https://weathernews.jp/onebox/tenki/kagawa/" id="w-app-link" data-app-url="wni://" onclick="openAppWithFallback(event, this)" target="_blank" rel="noopener noreferrer" class="j-btn app-accent" aria-label="ウェザーニュースアプリを開く">
                             <img src="images/weather.png" class="j-app-icon" alt="">
-                            <span>WNI</span><span class="j-btn-mark">↗</span>
+                            <span class="j-btn-label">WNI</span><span class="j-btn-mark">↗</span>
                         </a>
                     </div>
                 </div>
