@@ -273,7 +273,7 @@
                 <label>開始時刻<input id="adopt-start-time" type="time" required></label>
                 <label>滞在時間（分）<input id="adopt-duration-minutes" type="number" min="1" max="1440" value="60" required></label>
                 <label class="span-2">終了時刻（自動算出）<input id="adopt-end-time" type="time" readonly></label>
-                <label class="span-2">参加者向け説明（公開用）<textarea id="adopt-card-desc" rows="3" maxlength="240" required placeholder="参加者しおりに掲載する説明文（相談用メモとは別に入力）"></textarea></label>
+                <label class="span-2">参加者向け説明（公開用）<textarea id="adopt-card-desc" rows="3" maxlength="75" required placeholder="参加者しおりに掲載する説明文（最大75文字）"></textarea></label>
             </div>
             <div id="adopt-preview" class="adopt-preview-box" role="status" aria-live="polite"></div>
             <div class="dialog-actions">
@@ -294,7 +294,7 @@
                 <label>時刻<input id="card-time" maxlength="17" placeholder="09:00 - 10:00"></label>
                 <label>バッジ<input id="card-badge" maxlength="30" placeholder="GOURMET"></label>
                 <label class="span-2">タイトル<input id="card-title" maxlength="120" required></label>
-                <label class="span-2">説明<textarea id="card-desc" rows="4" maxlength="240" required></textarea></label>
+                <label class="span-2">説明<textarea id="card-desc" rows="3" maxlength="75" required placeholder="スポットの説明（最大75文字）"></textarea></label>
                 <label class="span-2">地図の検索語・住所<input id="card-map-query" maxlength="300"></label>
                 <label class="span-2">Google Maps共有URL<input id="card-map-url" type="url" maxlength="2048"></label>
                 <label>推奨ルート・道順メモ（任意）<input id="card-route-hint" maxlength="160" placeholder="例: 常磐道 桜土浦IC → 国道354号バイパス経由"></label>

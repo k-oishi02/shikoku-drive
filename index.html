@@ -62,9 +62,9 @@
             <h1 class="portal-title">SHIORI</h1>
             <p class="portal-sub">旅のしおりを選択してください</p>
 
-            <div class="portal-tab-bar">
-                <button type="button" class="portal-tab-btn active" id="portal-tab-upcoming" onclick="switchPortalCategory('upcoming')" aria-label="これからの旅">UPCOMING</button>
-                <button type="button" class="portal-tab-btn" id="portal-tab-past" onclick="switchPortalCategory('past')" aria-label="思い出の旅">MEMORIES</button>
+            <div class="portal-tab-bar" role="tablist" aria-label="しおり分類">
+                <button type="button" class="portal-tab-btn active" id="portal-tab-upcoming" role="tab" aria-selected="true" onclick="switchPortalCategory('upcoming')" aria-label="これからの旅">これからの旅</button>
+                <button type="button" class="portal-tab-btn" id="portal-tab-past" role="tab" aria-selected="false" onclick="switchPortalCategory('past')" aria-label="思い出の旅">思い出の旅</button>
             </div>
 
             <div id="portal-status" class="portal-status" role="alert" hidden></div>

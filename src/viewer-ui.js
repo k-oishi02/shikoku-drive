@@ -194,7 +194,8 @@ export function buildShioriUI(data) {
     let cardsHtml = '';
     (Array.isArray(data.days[key]) ? data.days[key] : []).forEach((card, cardIndex) => {
       const cardTitle = String(card?.title || '');
-      const cardDesc = String(card?.desc || '');
+      const rawDesc = String(card?.desc || '').trim();
+      const cardDesc = rawDesc.length > 75 ? `${rawDesc.slice(0, 75).trimEnd()}…` : rawDesc;
       const imgHtml = card.image ? `<img class="j-card-img" src="images/${escapeHtml(card.image)}" alt="${escapeHtml(cardTitle)}" loading="lazy">` : '';
       const mapFields = (typeof window !== 'undefined' && window.shioriMapFields) ? window.shioriMapFields(card) : { mapQuery: '', mapUrl: '' };
       const mapQuery = mapFields.mapQuery;

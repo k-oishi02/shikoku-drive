@@ -535,9 +535,15 @@ body:has(#tab-recap.active) #now-mode {
 }
 .j-card-desc {
   margin: 0 !important;
-  font-size: .81rem !important;
-  line-height: 1.68 !important;
+  font-size: .73rem !important;
+  line-height: 1.62 !important;
   color: var(--sh-muted) !important;
+  letter-spacing: .01em !important;
+  word-break: break-word !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .j-card-img {
   display: block;
@@ -897,6 +903,53 @@ html[data-trip-theme] .j-btn.expense-shortcut:hover,
 }
 
 /* 11. Welcome & Portal Shelf */
+.portal-tab-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px !important;
+  margin: 18px 0 22px !important;
+  background: var(--sh-surface-soft) !important;
+  border: 1px solid var(--sh-line) !important;
+  border-radius: 999px !important;
+  max-width: 320px;
+}
+.portal-tab-btn {
+  flex: 1 1 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 38px !important;
+  padding: 0 16px !important;
+  border: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--sh-muted) !important;
+  font: 700 .78rem/1 var(--sh-font) !important;
+  letter-spacing: .03em !important;
+  cursor: pointer !important;
+  user-select: none;
+  transition: background-color .16s ease, color .16s ease, box-shadow .16s ease !important;
+  white-space: nowrap !important;
+  text-decoration: none !important;
+}
+.portal-tab-btn:hover {
+  color: var(--sh-ink) !important;
+}
+.portal-tab-btn.active {
+  background: var(--sh-surface) !important;
+  border-bottom: 0 !important;
+  color: var(--sh-accent) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .08) !important;
+}
+html[data-trip-theme="light"] .portal-tab-btn.active {
+  background: #ffffff !important;
+  color: var(--sh-accent) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .06) !important;
+}
+
 .portal-card {
   display: flex !important;
   flex-direction: column;
