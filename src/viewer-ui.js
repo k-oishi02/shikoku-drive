@@ -87,7 +87,7 @@ export function mobileAppLaunchUrl(value, app) {
 export const ACTION_LABELS = Object.freeze({
   '地図': 'MAP', '港': 'MAP', '乗り場': 'MAP', 'バス停': 'MAP', '駐車場': 'MAP',
   '候補': 'MAP', 'ホテル': 'MAP', '駅': 'MAP', '返却店': 'MAP', '空港': 'MAP',
-  '公式': 'OFFICIAL', 'ANA': 'ANA', 'レンタカー': 'RENTAL', '配船': 'FERRY',
+  '公式': 'WEB', '公式サイト': 'WEB', 'ANA': 'ANA', 'レンタカー': 'RENTAL', '配船': 'FERRY',
   '潮見表': 'TIDES', '時刻表': 'TIMETABLE', '店舗情報': 'SHOP',
   '街歩き': 'GUIDE', '入浴案内': 'BATH', '朝食': 'BREAKFAST',
   '施設案内': 'GUIDE', '空港案内': 'AIRPORT',
@@ -95,7 +95,7 @@ export const ACTION_LABELS = Object.freeze({
   '自転車': 'BIKE', '返却予約': 'RETURN', '徒歩予備': 'WALK',
   'プログラム': 'PROGRAM', 'チケット': 'TICKETS', '館内案内': 'FLOOR GUIDE',
   '乗換': 'TRANSIT', '予約確認': 'RESERVATION', '食事・買い物': 'SHOP / DINE',
-  '公式Instagram': 'INSTAGRAM', 'Instagram': 'INSTAGRAM', 'インスタ': 'INSTAGRAM',
+  '公式Instagram': 'INSTA', 'Instagram': 'INSTA', 'インスタ': 'INSTA',
   'アソビュー': 'ASOVIEW', 'asoview': 'ASOVIEW', 'WEBチケット': 'TICKET'
 });
 
@@ -103,7 +103,7 @@ export function actionLabel(rawLabel, fallback = 'INFO') {
   const raw = String(rawLabel || '').trim();
   if (!raw) return fallback;
   if (ACTION_LABELS[raw]) return ACTION_LABELS[raw];
-  if (/instagram|インスタ/i.test(raw)) return 'INSTAGRAM';
+  if (/instagram|インスタ/i.test(raw)) return 'INSTA';
   return /^[\x20-\x7E]{1,18}$/.test(raw) ? raw.toUpperCase() : fallback;
 }
 
