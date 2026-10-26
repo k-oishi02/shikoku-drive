@@ -199,6 +199,7 @@ function ensureNavigationPicker() {
     <div class="v2-navigation-head"><div><small>NAVIGATION</small><h2>ナビを選ぶ</h2><p>この目的地を開くアプリを選択してください</p></div><button type="button" class="v2-navigation-close" data-close aria-label="閉じる">×</button></div>
     <div class="v2-navigation-body">
       <p class="v2-navigation-destination" data-destination></p>
+      <p class="v2-navigation-route-hint" data-route-hint hidden></p>
       <button type="button" class="v2-navigation-option google" data-navigation="google"><span class="v2-navigation-brand">G</span><span class="v2-navigation-copy"><strong>Google Maps</strong><small>施設情報も一緒に確認</small></span><span class="v2-navigation-arrow">↗</span></button>
       <button type="button" class="v2-navigation-option yahoo" data-navigation="yahoo"><span class="v2-navigation-brand">Y!</span><span class="v2-navigation-copy"><strong>Yahoo!カーナビ</strong><small data-yahoo-note>日本の道路案内を重視</small></span><span class="v2-navigation-arrow">↗</span></button>
       <button type="button" class="v2-navigation-option waze" data-navigation="waze"><span class="v2-navigation-brand">W</span><span class="v2-navigation-copy"><strong>Waze</strong><small>渋滞・事故情報を重視</small></span><span class="v2-navigation-arrow">↗</span></button>
@@ -226,6 +227,12 @@ function showNavigationPicker(source) {
   const targets = buildNavigationTargets(source);
   dialog._navigationSource = source;
   dialog.querySelector('[data-destination]').textContent = source.title || source.mapQuery || '目的地';
+  const hintNode = dialog.querySelector('[data-route-hint]');
+  if (hintNode) {
+    const hintText = source.routeHint || (source.waypoints ? `経由: ${source.waypoints}` : '');
+    hintNode.textContent = hintText ? `🛣️ 推奨ルート: ${hintText}` : '';
+    hintNode.hidden = !hintText;
+  }
   dialog.querySelector('[data-yahoo-note]').textContent = targets.yahoo.note;
   dialog.querySelector('[data-remember]').checked = false;
   dialog.showModal();
@@ -239,7 +246,9 @@ function handleMapButtonClick(event) {
   const source = {
     title: card.dataset.mapTitle || '',
     mapQuery: card.dataset.mapQuery || '',
-    mapUrl: card.dataset.mapUrl || link.href
+    mapUrl: card.dataset.mapUrl || link.href,
+    routeHint: card.dataset.routeHint || '',
+    waypoints: card.dataset.waypoints || ''
   };
   const preference = navigationPreference(safeStorage.get(settingKey('navigation-app'), 'ask'));
   event.preventDefault();

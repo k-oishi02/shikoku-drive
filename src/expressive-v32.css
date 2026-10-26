@@ -254,7 +254,24 @@
 #tab-expenses [aria-disabled="true"] { pointer-events: none; opacity: .45; }
 #tab-expenses:has(.expense-privacy-locked) > .j-widget { display: none !important; }
 
-/* Expressive containment without bringing the old card wall back. */
+/* Expressive containment & Editorial Pro Cards */
+.j-card:not(.checklist-card):not(.expense-card) { background: var(--sh-surface) !important; border: 1px solid var(--sh-line) !important; border-radius: var(--sh-radius-lg) !important; box-shadow: 0 8px 26px rgba(24, 38, 35, .045) !important; margin: 0 0 14px 42px !important; padding: 20px 22px !important; transition: border-color .2s ease, box-shadow .2s ease; }
+.j-card:not(.checklist-card):not(.expense-card):hover { border-color: color-mix(in srgb, var(--sh-accent) 45%, var(--sh-line)) !important; }
+.j-card:not(.checklist-card):not(.expense-card)::before { left: -30px !important; top: 24px !important; width: 11px !important; height: 11px !important; }
+.j-card:not(.checklist-card):not(.expense-card)::after { left: -25px !important; top: 38px !important; bottom: -24px !important; width: 2px !important; }
+.j-card-time-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.j-card-time-row .j-card-time { margin-bottom: 0 !important; }
+.j-constraint-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--sh-radius-pill); background: var(--sh-tertiary-container); color: var(--sh-on-tertiary-container); font: 650 .66rem/1.4 var(--sh-font); letter-spacing: .03em; }
+.j-tag-badge { display: inline-flex !important; align-items: center; padding: 3px 10px !important; border-radius: var(--sh-radius-pill) !important; background: var(--sh-primary-container) !important; color: var(--sh-on-primary-container) !important; font-size: .68rem !important; font-weight: 700 !important; margin-right: 6px !important; }
+.v2-travel-hint { display: flex !important; align-items: center; gap: 8px !important; margin: 4px 0 12px 42px !important; padding: 8px 14px; border-radius: var(--sh-radius); background: color-mix(in srgb, var(--sh-surface-soft) 78%, transparent); border: 1px dashed var(--sh-line); color: var(--sh-muted) !important; font-size: .75rem !important; }
+.v2-route-chip { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: var(--sh-radius-pill); background: var(--sh-surface); border: 1px solid var(--sh-line); color: var(--sh-ink); font-size: .71rem; font-weight: 600; }
+.v2-navigation-route-hint { margin: 0 0 4px; padding: 9px 12px; border-radius: var(--sh-radius-sm); background: var(--sh-primary-container); color: var(--sh-on-primary-container); font-size: .74rem; font-weight: 600; line-height: 1.5; }
+.expense-quick-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.expense-preset-chip { padding: 6px 12px; border: 1px solid var(--sh-line); border-radius: var(--sh-radius-pill); background: var(--sh-surface-soft); color: var(--sh-ink); font: 600 .72rem/1.3 var(--sh-font); cursor: pointer; transition: background-color .15s ease, border-color .15s ease, transform .15s ease; }
+.expense-preset-chip:hover { background: var(--sh-primary-container); color: var(--sh-on-primary-container); border-color: transparent; }
+.expense-preset-chip:active { transform: scale(.96); }
+.live-timeline-import summary { cursor: pointer; list-style: none; }
+.live-timeline-import summary::-webkit-details-marker { display: none; }
 .checklist-card,
 .expense-card,
 .talk-card,

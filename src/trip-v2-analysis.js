@@ -96,7 +96,7 @@ export function analyzeTrip(raw) {
       if (/へ移動$|移動のみ/.test(card.title)) issues.push(issue('warning', 'move-card', `${label}: 移動専用カードは目的地カードへ統合してください。`, path));
       if (/レンタカー/.test(`${card.title} ${card.desc}`) && /フェリー.*(載|乗せ)|車両航送/.test(card.desc)) issues.push(issue('error', 'car-ferry', `${label}: レンタカーをフェリーへ載せる記述があります。`, path));
       if (card.image && !IMAGE_PATTERN.test(card.image)) issues.push(issue('error', 'image', `${label}: 画像ファイル名が不正です。`, `${path}.image`));
-      ['official', 'tabelog', 'jalan'].forEach(key => {
+      ['official', 'tabelog', 'jalan', 'asoview'].forEach(key => {
         if (!validHttpsUrl(card[key])) issues.push(issue('error', 'url', `${label}: ${key}はHTTPS URLにしてください。`, `${path}.${key}`));
       });
       (card.links || []).forEach((link, linkIndex) => {

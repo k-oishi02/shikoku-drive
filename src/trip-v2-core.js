@@ -98,8 +98,8 @@ function cleanLink(link) {
 export function cleanCard(card, dayKey = 'day1', index = 0) {
   const source = card && typeof card === 'object' && !Array.isArray(card) ? card : {};
   const cleaned = {};
-  ['time', 'badge', 'title', 'desc', 'mapQuery', 'official', 'officialLabel', 'tabelog', 'jalan', 'image'].forEach(key => {
-    const max = key === 'desc' ? 240 : key === 'title' ? 120 : key === 'time' ? 17 : 2000;
+  ['time', 'badge', 'title', 'desc', 'mapQuery', 'routeHint', 'waypoints', 'official', 'officialLabel', 'tabelog', 'jalan', 'asoview', 'image'].forEach(key => {
+    const max = key === 'desc' ? 240 : key === 'routeHint' ? 160 : key === 'waypoints' ? 200 : key === 'title' ? 120 : key === 'time' ? 17 : 2000;
     const value = string(source[key], max);
     if (value) cleaned[key] = value;
   });
@@ -212,6 +212,9 @@ export function cleanCandidate(source, index = 0) {
   const officialLabel = string(source.officialLabel, 40);
   const tabelog = cleanUrl(source.tabelog);
   const jalan = cleanUrl(source.jalan);
+  const asoview = cleanUrl(source.asoview);
+  const routeHint = string(source.routeHint, 160);
+  const waypoints = string(source.waypoints, 200);
   const notes = string(source.notes, 2000);
   const assignedDay = string(source.assignedDay, 20);
   const assignedCardId = string(source.assignedCardId, 80);
@@ -235,6 +238,9 @@ export function cleanCandidate(source, index = 0) {
   if (officialLabel) cleaned.officialLabel = officialLabel;
   if (tabelog) cleaned.tabelog = tabelog;
   if (jalan) cleaned.jalan = jalan;
+  if (asoview) cleaned.asoview = asoview;
+  if (routeHint) cleaned.routeHint = routeHint;
+  if (waypoints) cleaned.waypoints = waypoints;
   if (notes) cleaned.notes = notes;
   if (status === 'assigned' || assignedCardId) {
     if (assignedDay) cleaned.assignedDay = assignedDay;

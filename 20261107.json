@@ -57,7 +57,9 @@
         "travelMinutesFromPrevious": 105,
         "constraints": {
           "opensAt": "08:00"
-        }
+        },
+        "routeHint": "三郷IC → 常磐道・北関東道 → ひたちなかIC経由（全線快走路）",
+        "waypoints": "ひたちなかIC"
       },
       {
         "time": "10:55 - 11:30",
@@ -72,7 +74,9 @@
         "constraints": {
           "opensAt": "10:00",
           "closesAt": "18:00"
-        }
+        },
+        "routeHint": "海門橋・県道108号 海岸ルート",
+        "waypoints": "海門橋"
       },
       {
         "time": "11:55 - 14:15",
@@ -87,7 +91,9 @@
         "constraints": {
           "opensAt": "09:30",
           "closesAt": "17:00"
-        }
+        },
+        "routeHint": "新那珂川大橋 → 4車線海岸バイパス直進（渋滞回避）",
+        "waypoints": "新那珂川大橋"
       },
       {
         "time": "14:50 - 16:30",
@@ -104,7 +110,9 @@
         "constraints": {
           "opensAt": "07:00",
           "closesAt": "22:00"
-        }
+        },
+        "routeHint": "国道245号 → 国道6号 日立シーサイドロード（海上高架絶景ルート）",
+        "waypoints": "日立バイパス"
       },
       {
         "time": "17:30 - 20:00",
@@ -121,7 +129,10 @@
           "opensAt": "17:45",
           "closesAt": "20:00",
           "lastEntryAt": "19:00"
-        }
+        },
+        "routeHint": "日立中央IC → 常磐道・北関東道 → 水戸大洗IC（夕方のR245渋滞回避）",
+        "waypoints": "日立中央IC|水戸大洗IC",
+        "asoview": "https://www.asoview.com/base/150223/"
       },
       {
         "time": "21:05 - 22:00",
@@ -138,7 +149,9 @@
           "opensAt": "11:00",
           "closesAt": "22:00",
           "lastEntryAt": "21:30"
-        }
+        },
+        "routeHint": "水戸大洗IC → 常磐道 桜土浦IC下車 → 国道354号・6号バイパス経由",
+        "waypoints": "桜土浦IC"
       },
       {
         "time": "22:50 - 23:10",
@@ -153,7 +166,8 @@
           "number": "233227371",
           "name": "タイムズ上本郷駅前第２",
           "note": "ノート e-POWER (松戸 500 ワ 1218・グレー) / 返却 24:00"
-        }
+        },
+        "routeHint": "国道6号 水戸街道 直進ルート（牛久・取手・柏経由）"
       }
     ]
   },

@@ -69,6 +69,8 @@ export function validateCandidateInput(c) {
   checkOptionalString(c.candidateId, 80, '候補ID（candidateId）', errors);
   checkOptionalString(c.notes, 2000, '候補メモ', errors);
   checkOptionalString(c.officialLabel, 40, '公式ラベル', errors);
+  checkOptionalString(c.routeHint, 160, '推奨ルート補足', errors);
+  checkOptionalString(c.waypoints, 200, '経由地', errors);
   checkOptionalString(c.assignedDay, 20, '配置日', errors);
   checkOptionalString(c.assignedCardId, 80, '配置カードID', errors);
   checkOptionalString(c.createdAt, 40, '作成日時', errors);
@@ -76,7 +78,7 @@ export function validateCandidateInput(c) {
 
   const rawId = c.id || c.candidateId;
   if (c.id && c.candidateId && c.id !== c.candidateId) errors.push('候補IDと旧候補IDが一致していません。');
-  const candidateFields = new Set(['id','candidateId','title','category','priority','durationMinutes','status','mapQuery','mapUrl','official','officialLabel','tabelog','jalan','asoview','notes','assignedDay','assignedCardId','createdAt','updatedAt','placementUndo','sourceSuggestion']);
+  const candidateFields = new Set(['id','candidateId','title','category','priority','durationMinutes','status','mapQuery','mapUrl','routeHint','waypoints','official','officialLabel','tabelog','jalan','asoview','notes','assignedDay','assignedCardId','createdAt','updatedAt','placementUndo','sourceSuggestion']);
   for (const key of Object.keys(c)) if (!candidateFields.has(key)) errors.push(`未対応の候補項目「${key}」があります。削除せずに読込を停止します。`);
   if (typeof rawId === 'string' && rawId !== '') {
     if (!/^[a-z0-9][a-z0-9_-]{3,79}$/i.test(rawId)) {
@@ -222,6 +224,8 @@ export function validateTripInput(t) {
           checkOptionalString(card.title, 120, `${label}のタイトル`, errors);
           checkOptionalString(card.desc, 240, `${label}の説明`, errors);
           checkOptionalString(card.officialLabel, 2000, `${label}の公式ラベル`, errors);
+          checkOptionalString(card.routeHint, 160, `${label}の推奨ルート補足`, errors);
+          checkOptionalString(card.waypoints, 200, `${label}の経由地`, errors);
           checkOptionalString(card.image, 2000, `${label}の画像URL`, errors);
 
           if (card.cardId !== undefined) {

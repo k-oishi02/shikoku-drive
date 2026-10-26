@@ -204,7 +204,10 @@ export function buildShioriUI(data) {
       const sMin = sMatch ? Number(sMatch[1]) * 60 + Number(sMatch[2]) : null;
       const depMin = sMin == null ? null : sMin - travelMin;
       const depLabel = depMin == null ? '' : `${String(Math.floor((depMin + 1440) % 1440 / 60)).padStart(2, '0')}:${String((depMin + 1440) % 60).padStart(2, '0')}までに出発`;
-      const travelHintHtml = cardIndex > 0 && travelMin ? `<div class="v2-travel-hint"><strong>移動 約${travelMin}分</strong><span>${depLabel}</span></div>` : '';
+      const routeHint = String(card?.routeHint || '').trim();
+      const waypoints = String(card?.waypoints || '').trim();
+      const routeHintChip = routeHint ? `<span class="v2-route-chip">🛣️ ${escapeHtml(routeHint)}</span>` : '';
+      const travelHintHtml = cardIndex > 0 && (travelMin || routeHint) ? `<div class="v2-travel-hint">${travelMin ? `<strong>🚗 移動 約${travelMin}分</strong>` : ''}${depLabel ? `<span>${depLabel}</span>` : ''}${routeHintChip}</div>` : '';
 
       let resHtml = '';
       if (card.reservation && typeof card.reservation === 'object') {
@@ -227,7 +230,8 @@ export function buildShioriUI(data) {
         linksHtml += renderActionLink(routeLink.url, routeLink.label, { primary: true, ariaLabel: `${cardTitle || '目的地'}までのルートを開く` });
       } else if (mapQuery || mapSharedUrl) {
         const defMapUrl = (typeof window !== 'undefined' && window.shioriMapHref) ? window.shioriMapHref(card) : '';
-        const prefMapUrl = (typeof window !== 'undefined' && window.shioriPreferredMapUrl) ? window.shioriPreferredMapUrl(mapQuery, defMapUrl) : defMapUrl;
+        const wpUrl = mapQuery && waypoints ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapQuery)}&waypoints=${encodeURIComponent(waypoints)}&travelmode=driving` : defMapUrl;
+        const prefMapUrl = (typeof window !== 'undefined' && window.shioriPreferredMapUrl) ? window.shioriPreferredMapUrl(mapQuery, wpUrl) : wpUrl;
         linksHtml += renderActionLink(mapSharedUrl || prefMapUrl, '地図', { primary: true, visibleLabel: 'MAP', ariaLabel: `${cardTitle || '目的地'}を地図で開く` });
       }
       if (card.tabelog && safeExternalUrl(card.tabelog)) {
@@ -254,11 +258,18 @@ export function buildShioriUI(data) {
         linksHtml += renderActionLink(link.url, link.label, { appUrl, visibleLabel: isBike ? 'HELLO' : undefined, sameContext: isBike, className: appIcon ? 'app-accent' : '', iconHtml: appIcon ? `<img src="${appIcon}" class="j-app-icon" alt="">` : '' });
       });
 
+      const cst = card.constraints || {};
+      const cstBadges = [
+        cst.reservationAt ? `予約 ${cst.reservationAt}` : '',
+        cst.departureBy ? `出発期限 ${cst.departureBy}` : '',
+        cst.lastEntryAt ? `最終受付/L.O. ${cst.lastEntryAt}` : '',
+        cst.closesAt ? `営業〜${cst.closesAt}` : ''
+      ].filter(Boolean).map(b => `<span class="j-constraint-pill">${escapeHtml(b)}</span>`).join('');
       const btnRowHtml = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
       cardsHtml += `
         ${travelHintHtml}
-        <div class="j-card" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
-          <span class="j-card-time">${escapeHtml(card.time)}</span>
+        <div class="j-card" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
+          <div class="j-card-time-row"><span class="j-card-time">${escapeHtml(card.time)}</span>${cstBadges}</div>
           <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span>${escapeHtml(cardTitle)}</div>
           <div class="j-card-desc">${escapeHtml(cardDesc)}</div>
           ${resHtml}${imgHtml}${btnRowHtml}

@@ -37,9 +37,11 @@ export function navigationDestination(source = {}) {
   const mapQuery = text(source.mapQuery);
   const mapUrl = httpUrl(source.mapUrl);
   const title = text(source.title);
+  const routeHint = text(source.routeHint);
+  const waypoints = text(source.waypoints);
   const coordinates = coordinatePair(mapQuery) || coordinatePair(mapUrl);
   const query = mapQuery || title;
-  return { query, mapUrl, title: title || query || '目的地', coordinates };
+  return { query, mapUrl, title: title || query || '目的地', coordinates, routeHint, waypoints };
 }
 
 export function buildNavigationTargets(source = {}) {
@@ -49,8 +51,9 @@ export function buildNavigationTargets(source = {}) {
     ? `${destination.coordinates.latitude},${destination.coordinates.longitude}`
     : '';
   const googleDestination = coordinateText || destination.query;
+  const wpParam = destination.waypoints ? `&waypoints=${encodeURIComponent(destination.waypoints)}` : '';
   const generatedGoogleUrl = googleDestination
-    ? `${GOOGLE_MAPS_BASE}&destination=${encodeURIComponent(googleDestination)}&travelmode=driving&dir_action=navigate`
+    ? `${GOOGLE_MAPS_BASE}&destination=${encodeURIComponent(googleDestination)}${wpParam}&travelmode=driving&dir_action=navigate`
     : destination.mapUrl;
   const googleUrl = destination.mapUrl || generatedGoogleUrl;
   const wazeUrl = coordinateText

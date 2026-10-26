@@ -126,7 +126,7 @@ function routeForCard(card) {
   const maps = resolveMapFields(card);
   if (!maps.mapQuery && !maps.mapUrl) return '';
   const google = maps.mapQuery
-    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(maps.mapQuery)}&travelmode=driving`
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(maps.mapQuery)}${card.waypoints ? `&waypoints=${encodeURIComponent(card.waypoints)}` : ''}&travelmode=driving`
     : mapHref(card);
   return window.shioriPreferredMapUrl?.(maps.mapQuery, google) || maps.mapUrl || google;
 }

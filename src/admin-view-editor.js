@@ -183,9 +183,9 @@ export function addPresetLink(presetKey) {
 export function cardFieldMap() {
   return {
     time: $('card-time').value.trim(), badge: $('card-badge').value.trim(), title: $('card-title').value.trim(),
-    desc: $('card-desc').value.trim(), mapQuery: $('card-map-query').value.trim(), mapUrl: $('card-map-url').value.trim(),
+    desc: $('card-desc').value.trim(), mapQuery: $('card-map-query').value.trim(), mapUrl: $('card-map-url').value.trim(), routeHint: $('card-route-hint')?.value.trim() || '', waypoints: $('card-waypoints')?.value.trim() || '',
     official: $('card-official').value.trim(), officialLabel: $('card-official-label').value.trim(), tabelog: $('card-tabelog').value.trim(),
-    jalan: $('card-jalan').value.trim(), image: $('card-image').value.trim(), links: parseCardLinks($('card-links').value),
+    jalan: $('card-jalan').value.trim(), asoview: $('card-asoview')?.value.trim() || '', image: $('card-image').value.trim(), links: parseCardLinks($('card-links').value),
     timeLocked: $('card-time-locked').checked, expenseShortcut: $('card-expense').checked, travelMinutesFromPrevious: Number($('card-travel-minutes').value),
     notifyBeforeMinutes: $('card-notify').value.split(',').filter(v => v.trim() !== '').map(v => Number(v.trim())),
     constraints: { opensAt: $('card-opens-at').value, closesAt: $('card-closes-at').value, reservationAt: $('card-reservation-at').value, lastEntryAt: $('card-last-entry-at').value, departureBy: $('card-departure-by').value, arrivalBufferMinutes: Number($('card-arrival-buffer').value) },
@@ -198,7 +198,7 @@ export function openCardDialog(store, index = -1) {
   const card = index >= 0 ? cards[index] : {};
   $('card-index').value = String(index);
   $('card-dialog-title').textContent = index >= 0 ? 'カードを編集' : 'カードを追加';
-  ['time', 'badge', 'title', 'desc', 'mapQuery', 'mapUrl', 'official', 'officialLabel', 'tabelog', 'jalan', 'image'].forEach(k => { $(`card-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}`).value = text(card[k]); });
+  ['time', 'badge', 'title', 'desc', 'mapQuery', 'mapUrl', 'routeHint', 'waypoints', 'official', 'officialLabel', 'tabelog', 'jalan', 'asoview', 'image'].forEach(k => { const el = $(`card-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}`); if (el) el.value = text(card[k]); });
   ['opensAt', 'closesAt', 'reservationAt', 'lastEntryAt', 'departureBy'].forEach(k => { $(`card-${k.replace(/([A-Z])/g, '-$1').toLowerCase()}`).value = card.constraints?.[k] || ''; });
   ['number', 'name', 'phone', 'deadline', 'url', 'note'].forEach(k => { $(`card-reservation-${k}`).value = card.reservation?.[k] || ''; });
   $('card-links').value = formatCardLinks(card.links);
