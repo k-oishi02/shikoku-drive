@@ -14,17 +14,17 @@
 <body class="recap-page">
   <div id="recap-app" class="recap-shell">
     <nav class="recap-toolbar" aria-label="RECAPの操作">
-      <a class="recap-button" href="./" aria-label="しおり棚へ戻る">← SHELF</a>
+      <a class="recap-button" href="./" aria-label="しおり一覧へ戻る">← しおり一覧</a>
       <div class="recap-toolbar-actions">
-        <button id="recap-share" class="recap-button" type="button">SHARE</button>
-        <button id="recap-print" class="recap-button" type="button">PRINT</button>
-        <button id="recap-theme" class="recap-button" type="button" aria-label="表示テーマを切り替える">AUTO</button>
+        <button id="recap-share" class="recap-button" type="button" aria-label="記録を共有">共有</button>
+        <button id="recap-print" class="recap-button" type="button" aria-label="記録を印刷">印刷</button>
+        <button id="recap-theme" class="recap-button" type="button" aria-label="表示テーマを切り替える">自動</button>
       </div>
     </nav>
     <div id="recap-loading" class="recap-loading" role="status" aria-live="polite">旅の記録をひらいています…</div>
     <main id="recap-main" hidden>
       <header class="recap-cover">
-        <span class="recap-kicker">SHIORI · TRAVEL RECAP</span>
+        <span class="recap-kicker">旅の記録 · RECAP</span>
         <h1 id="recap-title">旅の記録</h1>
         <p id="recap-subtitle"></p>
         <time id="recap-date" class="recap-date"></time>
@@ -35,18 +35,18 @@
           <p id="recap-summary"></p>
         </div>
         <dl class="recap-stats" aria-label="旅の記録数">
-          <div><dt>DAYS</dt><dd id="recap-days">0</dd></div>
-          <div><dt>STOPS</dt><dd id="recap-events">0</dd></div>
-          <div><dt>CHANGES</dt><dd id="recap-changes">0</dd></div>
+          <div><dt>日数</dt><dd id="recap-days">0</dd></div>
+          <div><dt>立ち寄り</dt><dd id="recap-events">0</dd></div>
+          <div><dt>予定変更</dt><dd id="recap-changes">0</dd></div>
         </dl>
       </section>
       <a id="recap-original" class="recap-original" href="./" hidden>
-        <span class="recap-original-label">ORIGINAL SHIORI</span>
+        <span class="recap-original-label">旅のしおり</span>
         <span class="recap-original-copy">
           <strong>旅行前に作ったしおりを見る</strong>
           <small>予定と実際を見比べられます</small>
         </span>
-        <span class="recap-original-arrow" aria-hidden="true">OPEN →</span>
+        <span class="recap-original-arrow" aria-hidden="true">しおりを開く →</span>
       </a>
       <section class="recap-highlights-wrap" aria-labelledby="recap-highlights-title">
         <h2 id="recap-highlights-title">旅のハイライト</h2>
@@ -56,8 +56,8 @@
       <div id="recap-chapters" class="recap-chapters"></div>
       <p id="recap-source-note" class="recap-source"></p>
       <div class="recap-footer-actions">
-        <a class="recap-button" href="./">SHELF</a>
-        <button class="recap-button" type="button" onclick="window.scrollTo({top:0,behavior:'smooth'})">TOP</button>
+        <a class="recap-button" href="./">しおり一覧</a>
+        <button class="recap-button" type="button" onclick="window.scrollTo({top:0,behavior:'smooth'})">先頭へ</button>
       </div>
     </main>
   </div>

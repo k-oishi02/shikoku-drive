@@ -628,12 +628,12 @@
     }
 
     function expenseCategoryForBadge(badge, title = '') {
-        if (badge === 'POKÉMON' && /フェリー/.test(title)) return '交通';
-        if (['GOURMET', 'DINNER', 'FOOD LIST'].includes(badge)) return '食事';
-        if (['FLIGHT', 'RENTAL CAR', 'FERRY'].includes(badge)) return '交通';
-        if (['AQUARIUM', 'VIEWPOINT', 'MUSEUM', 'SPA', 'PARK', 'STATION'].includes(badge)) return '観光';
-        if (['SHOPPING', 'POKÉMON'].includes(badge)) return '買い物';
-        if (badge === 'HOTEL') return '宿泊';
+        const combined = (String(badge || '') + ' ' + String(title || '')).toUpperCase();
+        if (/HOTEL|宿泊|ホテル|旅館|宿/.test(combined)) return '宿泊';
+        if (/GOURMET|DINNER|FOOD|食事|朝食|昼食|夕食|ランチ|カフェ|ハンバーグ|グルメ|寿司|回転寿司|酒|レストラン/.test(combined)) return '食事';
+        if (/フェリー|FLIGHT|RENTAL CAR|FERRY|レンタカー|給油|交通|高速|ドライブ|IC|駅|ガソリン|車|カーシェア/.test(combined)) return '交通';
+        if (/AQUARIUM|VIEWPOINT|MUSEUM|SPA|PARK|STATION|水族館|絶景|散策|観光|見学|公園|神社|温泉|ナイト/.test(combined)) return '観光';
+        if (/SHOPPING|買い物|お土産|土産|ショップ/.test(combined)) return '買い物';
         return 'その他';
     }
 

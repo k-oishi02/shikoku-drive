@@ -141,13 +141,19 @@ function ensureSettingsDialog() {
   return dialog;
 }
 
+function isMapButton(link) {
+  if (!link) return false;
+  const label = link.querySelector('.j-btn-label')?.textContent?.trim();
+  return label === '地図' || label === 'MAP';
+}
+
 function applyMapPreference() {
   document.querySelectorAll('.j-card[data-map-query]').forEach(card => {
     const source = { mapQuery: card.dataset.mapQuery || '', mapUrl: card.dataset.mapUrl || '' };
     const maps = resolveMapFields(source);
     const query = maps.mapQuery;
     if (!query && !maps.mapUrl) return;
-    const mapLink = [...card.querySelectorAll('a.j-btn')].find(link => link.querySelector('.j-btn-label')?.textContent === 'MAP');
+    const mapLink = [...card.querySelectorAll('a.j-btn')].find(isMapButton);
     if (!mapLink) return;
     const google = mapHref(source);
     mapLink.href = maps.mapUrl || preferredMapUrl(query, google);
@@ -240,7 +246,7 @@ function showNavigationPicker(source) {
 
 function handleMapButtonClick(event) {
   const link = event.target.closest('a.j-btn');
-  if (!link || link.querySelector('.j-btn-label')?.textContent !== 'MAP') return;
+  if (!isMapButton(link)) return;
   const card = link.closest('.j-card');
   if (!card) return;
   const source = {
@@ -255,7 +261,18 @@ function handleMapButtonClick(event) {
   if (preference === 'ask') showNavigationPicker(source);
   else openNavigationTarget(preference, source);
 }
+
+function openSettingsDialog() {
+  if (!activeTrip) return;
+  const dialog = ensureSettingsDialog();
+  dialog.querySelector('#participant-theme').value = safeStorage.get(settingKey('theme'), activeTrip.theme?.mode || 'auto');
+  dialog.querySelector('#participant-map').value = navigationPreference(safeStorage.get(settingKey('navigation-app'), 'ask'));
+  dialog.querySelector('#participant-notifications').checked = activeTrip.features?.notifications === true && 'Notification' in window && Notification.permission === 'granted';
+  dialog.showModal();
+}
+
 function installSettingsButton() {
+  window.openTripSettings = openSettingsDialog;
   const actions = document.querySelector('.now-actions');
   if (!actions || actions.querySelector('.v2-settings-button')) return;
   const button = document.createElement('button');
@@ -263,13 +280,7 @@ function installSettingsButton() {
   button.className = 'v2-settings-button';
   button.textContent = 'SETTINGS';
   button.setAttribute('aria-label', 'しおり設定を開く');
-  button.addEventListener('click', () => {
-    const dialog = ensureSettingsDialog();
-    dialog.querySelector('#participant-theme').value = safeStorage.get(settingKey('theme'), activeTrip.theme?.mode || 'auto');
-    dialog.querySelector('#participant-map').value = navigationPreference(safeStorage.get(settingKey('navigation-app'), 'ask'));
-    dialog.querySelector('#participant-notifications').checked = activeTrip.features?.notifications === true && 'Notification' in window && Notification.permission === 'granted';
-    dialog.showModal();
-  });
+  button.addEventListener('click', openSettingsDialog);
   actions.append(button);
 }
 

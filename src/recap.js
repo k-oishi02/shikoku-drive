@@ -90,7 +90,7 @@ function applyTheme(mode) {
 
 function updateThemeLabel(mode) {
   const button = document.getElementById('recap-theme');
-  if (button) button.textContent = mode === 'auto' ? 'AUTO' : mode.toUpperCase();
+  if (button) button.textContent = mode === 'auto' ? '自動' : mode === 'light' ? 'ライト' : 'ダーク';
 }
 
 function cycleTheme() {
@@ -139,7 +139,7 @@ function renderDay(day, index) {
   section.id = `day-${index + 1}`;
   const head = document.createElement('header');
   head.className = 'recap-day-head';
-  appendText(head, 'span', 'recap-day-number', `DAY ${String(index + 1).padStart(2, '0')}`);
+  appendText(head, 'span', 'recap-day-number', `${index + 1}日目`);
   const heading = appendText(head, 'h2', '', day.label || `旅の${index + 1}日目`);
   heading.id = `day-title-${index + 1}`;
   appendText(head, 'p', '', formatDate(day.date));
@@ -162,7 +162,7 @@ function renderDay(day, index) {
   if (Array.isArray(day.changedPlans) && day.changedPlans.length) {
     const changed = document.createElement('aside');
     changed.className = 'recap-changed';
-    appendText(changed, 'span', 'recap-changed-label', 'CHANGED PLAN');
+    appendText(changed, 'span', 'recap-changed-label', '変更された予定');
     const list = document.createElement('ul');
     day.changedPlans.forEach(value => appendText(list, 'li', '', String(value)));
     changed.append(list);
@@ -195,7 +195,7 @@ function renderRecap(data) {
   data.days.forEach((day, index) => {
     const link = document.createElement('a');
     link.href = `#day-${index + 1}`;
-    link.textContent = `DAY ${index + 1}`;
+    link.textContent = `${index + 1}日目`;
     link.setAttribute('aria-label', `${index + 1}日目 ${day.label}`);
     nav.append(link);
     chapters.append(renderDay(day, index));
@@ -214,8 +214,8 @@ async function shareRecap() {
   await navigator.clipboard?.writeText(location.href);
   const button = document.getElementById('recap-share');
   if (button) {
-    button.textContent = 'COPIED';
-    setTimeout(() => { button.textContent = 'SHARE'; }, 1600);
+    button.textContent = 'コピー完了';
+    setTimeout(() => { button.textContent = '共有'; }, 1600);
   }
 }
 

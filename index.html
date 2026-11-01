@@ -98,7 +98,10 @@
 
             <!-- Compact trip header -->
             <header class="j-hero">
-                <button type="button" class="j-btn j-back-btn" onclick="backToPortal()" aria-label="しおり棚へ戻る">← しおり一覧</button>
+                <div class="j-hero-top-bar">
+                    <button type="button" class="j-btn j-back-btn" onclick="backToPortal()" aria-label="しおり棚へ戻る">← しおり一覧</button>
+                    <button type="button" id="btn-open-settings" class="j-btn j-settings-btn" onclick="window.openTripSettings?.()" aria-label="しおり設定を開く">⚙ 設定</button>
+                </div>
                 <span class="j-hero-badge">旅のしおり</span>
                 <h1 class="j-hero-bebas" id="hero-title">SHIORI</h1>
                 <div class="j-hero-ja" id="hero-catchphrase">旅の感動を、みんなの思い出に。</div>
