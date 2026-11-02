@@ -425,9 +425,9 @@ describe('Tier 4: Real-World Application Scenarios', () => {
       // Verify first card details
       const firstCard = trip.days.day1[0];
       assert.equal(firstCard.cardId, 'day1-01-carshare');
-      assert.equal(firstCard.title, '上本郷');
+      assert.equal(firstCard.title, '松戸');
       assert.ok(firstCard.reservation);
-      assert.equal(firstCard.reservation.number, '233227371');
+      assert.equal(firstCard.reservation.number, '233712169');
 
       // Verify migration identity: migrateTripToV2 on valid Schema v2 returns identical structural data
       const normalized = migrateTripToV2(trip);

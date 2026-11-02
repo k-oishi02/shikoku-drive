@@ -59,7 +59,7 @@ describe('Schema v2 Compatibility & Canonical Trip Verification', () => {
       assert.equal(trip.dayLabels?.day1, '11/7 (土) ひたちなか・日立・大洗ナイト');
       assert.ok(trip.daySettings?.day1);
       assert.equal(trip.daySettings.day1.departureTime, '07:30');
-      assert.ok(trip.daySettings.day1.note.includes('上本郷駅前第２'));
+      assert.ok(trip.daySettings.day1.note.includes('松戸パーキング'));
 
       // Days & Cards
       assert.ok(trip.days && Array.isArray(trip.days.day1));
@@ -80,10 +80,10 @@ describe('Schema v2 Compatibility & Canonical Trip Verification', () => {
 
       // First Card Details
       const carshare = trip.days.day1[0];
-      assert.equal(carshare.title, '上本郷');
+      assert.equal(carshare.title, '松戸');
       assert.equal(carshare.time, '07:15 - 07:30');
       assert.equal(carshare.badge, 'レンタカー / 出発');
-      assert.equal(carshare.reservation?.number, '233227371');
+      assert.equal(carshare.reservation?.number, '233712169');
       assert.equal(carshare.constraints?.departureBy, '07:30');
 
       // Weather Locations
