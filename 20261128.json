@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 2,
+  "tripId": "20261128",
+  "title": "秩父・長瀞 晩秋ドライブ 2026",
+  "subtitle": "紅葉と美食を巡る秋のフォトジェニック旅！",
+  "catchphrase": "深紅の紅葉と黄金のイチョウ絨毯！！",
+  "startDate": "2026-11-28",
+  "endDate": "2026-11-28",
+  "archived": false,
+  "theme": {
+    "mode": "auto",
+    "accent": "#e05a2b"
+  },
+  "features": {
+    "nowMode": true,
+    "expenses": true,
+    "notifications": true
+  },
+  "dayLabels": {
+    "day1": "11/28 (土) 長瀞渓谷・秩父名物・紅葉ライトアップ"
+  },
+  "daySettings": {
+    "day1": {
+      "departureTime": "07:30",
+      "note": "朝07:30タイムズ町屋駅前を出発。首都高C2〜外環〜関越道（花園IC）経由で長瀞へ（※CX-5予約07:00〜）"
+    }
+  },
+  "days": {
+    "day1": [
+      {
+        "time": "07:15 - 07:30",
+        "badge": "レンタカー / 出発",
+        "title": "町屋",
+        "desc": "カーシェア受取・日常点検・ナビ設定をして07:30出発。首都高C2（王子北IC）から関越道へ向かいます。車両: MAZDA CX-5（ミドルクラス）。返却予定24:00（予約07:00〜）。",
+        "mapQuery": "タイムズ町屋駅前",
+        "cardId": "day1-01-carshare",
+        "expenseShortcut": true,
+        "reservation": {
+          "name": "タイムズ町屋駅前",
+          "note": "マツダ CX-5 (ミドル) / 予約開始07:00 / 返却予定 24:00 (11/29 07:00枠推奨)"
+        },
+        "constraints": {
+          "reservationAt": "07:00",
+          "departureBy": "07:30"
+        }
+      },
+      {
+        "time": "09:20 - 11:15",
+        "badge": "絶景 / 舟下り",
+        "title": "長瀞岩畳・荒川ラインくだり",
+        "desc": "【午前中の順光】国の名勝・天然記念物の岩畳散策＆荒川ラインくだり乗船。朝日が差し込む渓谷で、エメラルドグリーンの川面と紅葉ピークの断崖美を船上から撮影！",
+        "official": "https://www.chichibu-railway.co.jp/nagatoro/",
+        "mapQuery": "長瀞ラインくだり 本部",
+        "cardId": "day1-02-nagatoro-iwadatami",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 110,
+        "constraints": {
+          "opensAt": "09:00",
+          "closesAt": "16:00"
+        },
+        "routeHint": "首都高C2 → 美女木JCT → 外環道 → 大泉JCT → 関越道 花園IC → 皆野寄居有料道路",
+        "waypoints": "花園IC|寄居風布IC"
+      },
+      {
+        "time": "11:45 - 13:15",
+        "badge": "昼食 / 豚みそ丼",
+        "title": "豚みそ丼本舗 野さか",
+        "desc": "【売切前の元祖王者】皆野秩父バイパス（無料快走路）で秩父市街へ直行。香ばしい備長炭で焼き上げる名物「豚みそ丼（ロース＆バラ）」をがっつり堪能！※売切次第終了の人気店。",
+        "official": "https://www.chichibuji.gr.jp/spot/spot-syousai16/",
+        "officialLabel": "観光協会公式案内",
+        "tabelog": "https://tabelog.com/saitama/A1107/A110701/11004815/",
+        "mapQuery": "豚みそ丼本舗 野さか",
+        "cardId": "day1-03-lunch-nosaka",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 25,
+        "constraints": {
+          "opensAt": "11:00",
+          "closesAt": "15:00"
+        },
+        "routeHint": "皆野秩父バイパス（国道140号バイパス）南下（信号少なく快走）",
+        "waypoints": "皆野秩父バイパス"
+      },
+      {
+        "time": "13:30 - 14:35",
+        "badge": "絶景 / 散策",
+        "title": "秩父ミューズパーク",
+        "desc": "【午後の柔らかい光】野さか至近の高台。スカイロード約3kmに広がる落葉の「黄金色イチョウ絨毯」を散策＆撮影！「旅立ちの丘」展望台からは晩秋の秩父市街と連山を一望。",
+        "official": "https://www.muse-park.com/",
+        "mapQuery": "秩父ミューズパーク 旅立ちの丘",
+        "cardId": "day1-04-musepark",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 12,
+        "routeHint": "秩父公園橋（秩父ハープ橋）経由で高台へ",
+        "waypoints": "秩父公園橋"
+      },
+      {
+        "time": "15:00 - 16:25",
+        "badge": "神社 / 夕景ロープウェイ",
+        "title": "寶登山神社・宝登山ロープウェイ",
+        "desc": "長瀞へ戻り、極彩色の豪華社殿と紅葉が美しい寶登山神社を参拝。その後ロープウェイ「夕やけ観賞便」で標高497m山頂へ！16:28の日没に向けて茜色に染まる秩父連山を一望。",
+        "official": "https://hodosan-ropeway.co.jp/",
+        "mapQuery": "宝登山ロープウェイ 山麓駅",
+        "cardId": "day1-05-hodosan",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 25,
+        "constraints": {
+          "opensAt": "09:40",
+          "closesAt": "17:00",
+          "lastEntryAt": "16:45"
+        },
+        "routeHint": "皆野秩父バイパス北上 → 宝登山参道へ",
+        "waypoints": "皆野長瀞IC"
+      },
+      {
+        "time": "16:40 - 17:45",
+        "badge": "夜間限定 / ライトアップ",
+        "title": "月の石もみじ公園（紅葉ライトアップ）",
+        "desc": "【ブルーアワーの絶景】日没直後の群青色の空と、闇に浮かび上がる約150本の深紅のモミジ！水面に映る「逆さもみじ」は息を呑む美しさ。屋台で熱々のみそポテトをつまみ食い。",
+        "official": "https://www.nagatoro.gr.jp/",
+        "mapQuery": "月の石もみじ公園",
+        "cardId": "day1-06-momijikouen-lightup",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 10,
+        "constraints": {
+          "opensAt": "16:00",
+          "closesAt": "21:00"
+        },
+        "routeHint": "県道209号経由（寶登山神社から車で約5〜7分）"
+      },
+      {
+        "time": "19:45 - 20:05",
+        "badge": "給油 / レンタカー返却",
+        "title": "町屋",
+        "desc": "皆野寄居有料道路・花園ICから関越道・外環・首都高C2で町屋へ帰着（約1時間50分〜2時間）。近隣GSで給油し、タイムズ町屋駅前へ無事返却！CX-5のパワフルなドライブお疲れ様でした。",
+        "mapQuery": "タイムズ町屋駅前",
+        "cardId": "day1-07-return-machiya",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 120,
+        "reservation": {
+          "name": "タイムズ町屋駅前",
+          "note": "マツダ CX-5 (ミドル) / 返却予定 24:00 (余裕枠確保)"
+        },
+        "routeHint": "花園IC → 関越道 → 大泉JCT → 外環道 → 美女木JCT → 首都高C2（王子北IC）",
+        "waypoints": "花園IC|大泉JCT"
+      },
+      {
+        "time": "20:10 - 22:00",
+        "badge": "夕食 / 打ち上げ",
+        "title": "町屋駅前・乾杯打ち上げ！",
+        "desc": "車を返却して運転ミッション完了！町屋駅前の名居酒屋・大衆酒場（もつ焼き・鮮魚など）で冷たい生ビールで乾杯！1日撮影した写真を見せ合いながらゆったり語らう最高の締めくくり。",
+        "mapQuery": "町屋駅",
+        "cardId": "day1-08-dinner-machiya",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 5
+      }
+    ]
+  },
+  "weatherLocations": {
+    "nagatoro": {
+      "label": "長瀞",
+      "lat": 36.1136,
+      "lon": 139.1136,
+      "tripDate": "2026-11-28",
+      "link": "https://weathernews.jp/onebox/tenki/saitama/11363/"
+    },
+    "chichibu": {
+      "label": "秩父",
+      "lat": 35.9922,
+      "lon": 139.0855,
+      "tripDate": "2026-11-28",
+      "link": "https://weathernews.jp/onebox/tenki/saitama/11207/"
+    }
+  },
+  "checklist": [
+    {
+      "category": "DRIVE",
+      "items": [
+        {
+          "name": "運転免許証"
+        },
+        {
+          "name": "ETCカード"
+        },
+        {
+          "name": "タイムズカー会員カード / アプリ（CX-5予約）"
+        },
+        {
+          "name": "車載充電器・スマホホルダー"
+        },
+        {
+          "name": "履き慣れたスニーカー（岩畳・散策用）"
+        }
+      ]
+    },
+    {
+      "category": "TRAVEL",
+      "items": [
+        {
+          "name": "防寒用の上着・マフラー（11月末の秩父の夜は冷え込みます）"
+        },
+        {
+          "name": "カメラ・予備バッテリー"
+        },
+        {
+          "name": "小銭・現金（コインパーキング・屋台・舟下り用）"
+        },
+        {
+          "name": "お土産用エコバッグ"
+        }
+      ]
+    }
+  ]
+}

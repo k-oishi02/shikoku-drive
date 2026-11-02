@@ -7,6 +7,7 @@ const APP_SHELL = [
   './recap.html',
   './20261107.json',
   './20261031.json',
+  './20261128.json',
   './recaps/shikoku-2026.json',
   './manifest.webmanifest',
   // Stylesheets
