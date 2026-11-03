@@ -167,5 +167,9 @@ describe('SHIORI Atmosphere & Typography Cards Experience', () => {
     assert.match(css, /\.expense-card[\s\S]*?padding:\s*24px 22px\s*!important/, 'Expense card must have generous padding');
     assert.match(css, /\.share-room-panel[\s\S]*?padding:\s*20px 22px\s*!important/, 'Share room panel must have generous padding');
     assert.match(css, /\.talk-header[\s\S]*?padding:\s*(20px 0 18px|24px 0 20px)\s*!important/, 'Discussion header must have generous breathing room');
+
+    // 5. Full-bleed sticky navigation bar with generous vertical whitespace
+    assert.match(css, /\.j-nav-sticky[\s\S]*?margin-left:\s*-20px\s*!important/, 'Sticky nav bar must extend full bleed to edges');
+    assert.match(css, /\.j-nav-sticky[\s\S]*?padding:\s*12px 20px\s*!important/, 'Sticky nav bar must provide generous vertical breathing room');
   });
 });

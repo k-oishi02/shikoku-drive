@@ -110,7 +110,7 @@ a.live-action, a.live-action:visited,
 .weather-disclosure {
   border-radius: 14px !important;
   overflow: hidden;
-  margin: 8px 0 12px !important;
+  margin: 8px 0 16px !important;
   background: var(--sh-surface) !important;
   border: 1px solid var(--sh-line) !important;
 }
@@ -242,17 +242,33 @@ a.live-action, a.live-action:visited,
 .weather-updated { font-size: .68rem; color: var(--sh-muted); }
 .weather-footer-actions { display: flex; align-items: center; gap: 6px; }
 
-/* 5. Sticky Navigation Bar */
+/* 5. Sticky Navigation Bar (Full Bleed Edge-to-Edge with Generous Whitespace) */
 .j-nav-sticky {
   position: sticky !important;
   top: 0 !important;
   z-index: 40 !important;
+  display: flex !important;
   gap: 6px !important;
-  padding: 8px 0 !important;
-  margin-bottom: 4px;
+  overflow-x: auto;
+  margin-left: -20px !important;
+  margin-right: -20px !important;
+  padding: 12px 20px !important;
+  margin-bottom: 20px !important;
+  width: calc(100% + 40px) !important;
+  box-sizing: border-box !important;
   border-bottom: 1px solid var(--sh-line) !important;
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   background: color-mix(in srgb, var(--sh-bg) 92%, transparent) !important;
+}
+@media (min-width: 600px) {
+  .j-nav-sticky {
+    margin-left: -28px !important;
+    margin-right: -28px !important;
+    padding-left: 28px !important;
+    padding-right: 28px !important;
+    width: calc(100% + 56px) !important;
+  }
 }
 .j-tab-btn {
   min-height: 40px !important;
