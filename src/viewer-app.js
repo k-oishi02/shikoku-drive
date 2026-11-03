@@ -61,6 +61,7 @@ export async function loadShioriData(tripId) {
       window.initEnhancements();
     }
     v2Runtime.activateParticipantV2(data);
+    initScrollStorytelling();
   } catch (error) {
     if (currentLoadId !== tripLoadRunId || (typeof window !== 'undefined' && window.currentTripId !== tripId)) return;
     reportAppError(error, { action: 'loadShioriData', tripId });
@@ -94,6 +95,37 @@ initWeatherService(() => tripStore.getSlice('activeTrip'));
 if (typeof window !== 'undefined') {
   window.tripStore = tripStore;
   window.loadShioriData = loadShioriData;
+}
+
+export function initScrollStorytelling() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  const cards = document.querySelectorAll('.j-card');
+  if (!cards.length) return;
+  if ('IntersectionObserver' in window) {
+    const viewObs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-in-view'); }), { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    cards.forEach(c => viewObs.observe(c));
+
+    const activeObs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const id = e.target.dataset.cardId;
+          document.querySelectorAll('.journey-chip').forEach(ch => ch.classList.toggle('active', ch.dataset.jumpCard === id));
+          e.target.classList.add('is-spot-active');
+        } else {
+          e.target.classList.remove('is-spot-active');
+        }
+      });
+    }, { rootMargin: '-18% 0px -55% 0px', threshold: 0 });
+    cards.forEach(c => activeObs.observe(c));
+  } else {
+    cards.forEach(c => c.classList.add('is-in-view'));
+  }
+  document.querySelectorAll('.journey-chip').forEach(ch => {
+    ch.onclick = () => {
+      const el = document.querySelector(`.j-card[data-card-id="${ch.dataset.jumpCard}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+  });
 }
 
 export function initViewerApp() {

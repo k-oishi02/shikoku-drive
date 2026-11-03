@@ -1610,3 +1610,282 @@ html[data-trip-theme="light"] .portal-tab-btn.active {
 @media (prefers-reduced-motion: reduce) {
   .j-btn, .mini-button, .expense-submit, .live-action, .j-tab-btn, .portal-card { transition: none !important; }
 }
+
+/* ==========================================================================
+   SHIORI Scroll Storytelling & Magazine Drive Experience (v3.3)
+   ========================================================================== */
+
+/* 1. Journey Route Strip (Interactive Drive Track) */
+.journey-strip {
+  position: relative;
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-radius: var(--sh-radius, 16px);
+  background: var(--sh-surface);
+  border: 1px solid var(--sh-line);
+  box-shadow: 0 4px 18px rgba(28, 41, 38, .04);
+  overflow: hidden;
+}
+.journey-strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.journey-strip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--sh-primary-container);
+  color: var(--sh-on-primary-container);
+  font: 800 .68rem/1.2 var(--sh-font);
+  letter-spacing: .06em;
+}
+.journey-strip-summary {
+  color: var(--sh-muted);
+  font-size: .72rem;
+  font-weight: 600;
+}
+.journey-strip-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px 2px 6px;
+  -webkit-overflow-scrolling: touch;
+}
+.journey-strip-track::-webkit-scrollbar { display: none; }
+.journey-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--sh-line);
+  background: var(--sh-surface-soft);
+  color: var(--sh-muted);
+  font-size: .74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s cubic-bezier(.2, .9, .2, 1.15);
+  user-select: none;
+}
+.journey-chip:hover {
+  border-color: var(--sh-accent);
+  color: var(--sh-ink);
+}
+.journey-chip.active {
+  background: var(--sh-accent) !important;
+  border-color: var(--sh-accent) !important;
+  color: var(--sh-on-accent) !important;
+  font-weight: 700;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--sh-accent) 35%, transparent);
+}
+.journey-chip .chip-num {
+  font-size: .68rem;
+  font-weight: 800;
+  opacity: .78;
+}
+.journey-chip.active .chip-num {
+  opacity: 1;
+}
+.journey-arrow {
+  color: var(--sh-line);
+  font-size: .72rem;
+  flex: 0 0 auto;
+  opacity: .6;
+}
+
+/* 2. Scroll Storytelling Spot Cards: Cinematic Fade & Lift */
+.j-card:not(.checklist-card):not(.expense-card) {
+  position: relative;
+  opacity: 0;
+  transform: translateY(24px) scale(0.985);
+  transition:
+    opacity .55s cubic-bezier(0.16, 1, 0.3, 1),
+    transform .55s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color .22s ease,
+    box-shadow .22s ease !important;
+  will-change: opacity, transform;
+}
+
+.j-card:not(.checklist-card):not(.expense-card).is-in-view {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.j-card:not(.checklist-card):not(.expense-card).is-spot-active {
+  border-color: color-mix(in srgb, var(--sh-accent) 70%, var(--sh-line)) !important;
+  box-shadow: 0 8px 30px rgba(224, 90, 43, .14) !important;
+}
+
+/* Timeline Road Line (Left Continuous Road Track) */
+.j-card:not(.checklist-card):not(.expense-card)::after {
+  content: "";
+  position: absolute;
+  left: -15px !important;
+  top: 30px !important;
+  bottom: -20px !important;
+  width: 3px !important;
+  background: linear-gradient(to bottom, var(--sh-accent) 0%, var(--sh-line) 100%) !important;
+  border-radius: 999px;
+  z-index: 1;
+  transition: background .3s ease;
+}
+
+/* Spot Milestone Pin */
+.j-card:not(.checklist-card):not(.expense-card)::before {
+  content: "";
+  position: absolute;
+  left: -19px !important;
+  top: 20px !important;
+  width: 11px !important;
+  height: 11px !important;
+  border-radius: 50%;
+  background: var(--sh-surface) !important;
+  border: 3px solid var(--sh-accent) !important;
+  box-shadow: 0 0 0 3px var(--sh-accent-soft) !important;
+  z-index: 2;
+  transition: transform .3s cubic-bezier(.2, .9, .2, 1.2), box-shadow .3s ease, background .3s ease;
+}
+
+.j-card:not(.checklist-card):not(.expense-card).is-spot-active::before {
+  background: var(--sh-accent) !important;
+  transform: scale(1.35);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--sh-accent) 28%, transparent), 0 0 16px var(--sh-accent) !important;
+}
+
+/* Watermark Spot Number */
+.j-spot-watermark {
+  position: absolute;
+  right: 14px;
+  top: 4px;
+  font-family: var(--sh-serif);
+  font-size: 3.8rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -.02em;
+  color: var(--sh-ink);
+  opacity: .05;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity .3s ease, transform .4s ease, color .3s ease;
+}
+.j-card.is-spot-active .j-spot-watermark {
+  opacity: .13;
+  transform: scale(1.06);
+  color: var(--sh-accent);
+}
+html[data-trip-theme="dark"] .j-spot-watermark {
+  color: #ffffff;
+  opacity: .06;
+}
+html[data-trip-theme="dark"] .j-card.is-spot-active .j-spot-watermark {
+  opacity: .18;
+  color: var(--sh-accent);
+}
+
+/* Spot Badge in Time Row */
+.j-spot-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--sh-primary-container);
+  color: var(--sh-on-primary-container);
+  font: 800 .66rem/1.3 var(--sh-font);
+  letter-spacing: .06em;
+}
+
+/* Moving Car Icon on Travel Hint */
+.travel-car-icon {
+  display: inline-block;
+  font-size: .88rem;
+  animation: car-bounce 1.6s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+@keyframes car-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+/* 3. Ambient Autumn Leaves Effect in Hero Header */
+.j-hero {
+  position: relative;
+  overflow: hidden;
+}
+.j-hero::before {
+  content: "🍁";
+  position: absolute;
+  right: 28px;
+  top: -10px;
+  font-size: 1.6rem;
+  opacity: .45;
+  pointer-events: none;
+  animation: leaf-drift-1 12s cubic-bezier(.4, 0, .6, 1) infinite;
+}
+.j-hero::after {
+  content: "🍂";
+  position: absolute;
+  left: 20%;
+  top: -20px;
+  font-size: 1.2rem;
+  opacity: .35;
+  pointer-events: none;
+  animation: leaf-drift-2 15s cubic-bezier(.4, 0, .6, 1) infinite 4s;
+}
+
+@keyframes leaf-drift-1 {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  15% { opacity: .55; }
+  50% { transform: translate(-30px, 120px) rotate(120deg); opacity: .45; }
+  85% { opacity: .2; }
+  100% { transform: translate(-60px, 240px) rotate(240deg); opacity: 0; }
+}
+
+@keyframes leaf-drift-2 {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  20% { opacity: .45; }
+  60% { transform: translate(45px, 140px) rotate(-140deg); opacity: .35; }
+  90% { opacity: .15; }
+  100% { transform: translate(80px, 260px) rotate(-280deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .j-card:not(.checklist-card):not(.expense-card) {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .j-hero::before, .j-hero::after, .travel-car-icon {
+    animation: none !important;
+    display: none !important;
+  }
+}
+@media (max-width: 600px) {
+  .j-card:not(.checklist-card):not(.expense-card) {
+    margin-left: 18px !important;
+    padding: 15px 16px 14px !important;
+  }
+  .j-card:not(.checklist-card):not(.expense-card)::before {
+    left: -15px !important;
+  }
+  .j-card:not(.checklist-card):not(.expense-card)::after {
+    left: -11px !important;
+  }
+  .journey-strip {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+  }
+  .j-spot-watermark {
+    font-size: 3rem;
+    right: 10px;
+    top: 4px;
+  }
+}

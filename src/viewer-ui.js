@@ -213,7 +213,7 @@ export function buildShioriUI(data) {
       const depLabel = depMin == null ? '' : `${String(Math.floor((depMin + 1440) % 1440 / 60)).padStart(2, '0')}:${String((depMin + 1440) % 60).padStart(2, '0')}までに出発`;
       const routeHint = String(card?.routeHint || '').trim(), waypoints = String(card?.waypoints || '').trim();
       const routeHintChip = routeHint ? `<span class="v2-route-chip">経由: ${escapeHtml(routeHint)}</span>` : '';
-      const travelHintHtml = cardIndex > 0 && (travelMin || routeHint) ? `<div class="v2-travel-hint">${travelMin ? `<strong>移動 約${travelMin}分</strong>` : ''}${depLabel ? `<span>${depLabel}</span>` : ''}${routeHintChip}</div>` : '';
+      const travelHintHtml = cardIndex > 0 && (travelMin || routeHint) ? `<div class="v2-travel-hint"><span class="travel-car-icon" aria-hidden="true">🚗</span>${travelMin ? `<strong>移動 約${travelMin}分</strong>` : ''}${depLabel ? `<span>${depLabel}</span>` : ''}${routeHintChip}</div>` : '';
 
       let resHtml = '';
       if (card.reservation && typeof card.reservation === 'object') {
@@ -271,15 +271,24 @@ export function buildShioriUI(data) {
         cst.closesAt ? `営業〜${cst.closesAt}` : ''
       ].filter(Boolean).map(b => `<span class="j-constraint-pill">${escapeHtml(b)}</span>`).join('');
       const btnRowHtml = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
+      const spotNum = String(cardIndex + 1).padStart(2, '0');
       cardsHtml += `
         ${travelHintHtml}
-        <div class="j-card" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
-          <div class="j-card-time-row"><span class="j-card-time">${escapeHtml(card.time)}</span>${cstBadges}</div>
+        <div class="j-card" data-spot-index="${cardIndex}" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
+          <span class="j-spot-watermark" aria-hidden="true">${spotNum}</span>
+          <div class="j-card-time-row"><span class="j-spot-badge">SPOT ${spotNum}</span><span class="j-card-time">${escapeHtml(card.time)}</span>${cstBadges}</div>
           <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span>${escapeHtml(cardTitle)}</div>
           <div class="j-card-desc">${escapeHtml(cardDesc)}</div>
           ${resHtml}${imgHtml}${btnRowHtml}
         </div>`;
     });
+
+    const dayCards = Array.isArray(data.days[key]) ? data.days[key] : [];
+    let journeyStripHtml = '';
+    if (dayCards.length > 2) {
+      const steps = dayCards.map((c, i) => `<button type="button" class="journey-chip${i === 0 ? ' active' : ''}" data-jump-card="${escapeHtml(c.cardId || '')}" aria-label="${escapeHtml(c.title || '')}"><span class="chip-num">${String(i + 1).padStart(2, '0')}</span><span class="chip-title">${escapeHtml(c.title || '')}</span></button>`).join('<span class="journey-arrow" aria-hidden="true">→</span>');
+      journeyStripHtml = `<div class="journey-strip" aria-label="本日のルート"><div class="journey-strip-head"><span class="journey-strip-badge">🚗 DRIVE ROUTE</span><span class="journey-strip-summary">全${dayCards.length}スポットの旅路</span></div><div class="journey-strip-track">${steps}</div></div>`;
+    }
 
     panelsHtml += `
       <div id="tab-${key}" class="j-tab-panel ${idx === 0 ? 'active' : ''} j-tab-pnl" role="tabpanel" aria-labelledby="btn-${key}" aria-hidden="${idx !== 0}">
@@ -287,6 +296,7 @@ export function buildShioriUI(data) {
           <h2 class="j-sec-en">${dayNum}日目の旅程</h2>
           <div class="j-sec-ja"><span>${escapeHtml(label)}</span><i class="j-sec-line"></i></div>
         </section>
+        ${journeyStripHtml}
         ${cardsHtml}
       </div>`;
   });

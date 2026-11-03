@@ -27,7 +27,7 @@ if (-not $nodeExe) {
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $scriptDir
 
-$testTarget = if ($args.Count -gt 0) { $args } else { @("tests/draft-validation.test.js", "tests/trip-core.test.js", "tests/settlement.test.js", "tests/day-planner.test.js", "tests/itinerary-calc.test.js", "tests/direct-member-share.test.js", "tests/admin-ui-ux.test.js") }
+$testTarget = if ($args.Count -gt 0) { $args } else { @("tests/draft-validation.test.js", "tests/trip-core.test.js", "tests/settlement.test.js", "tests/day-planner.test.js", "tests/itinerary-calc.test.js", "tests/direct-member-share.test.js", "tests/admin-ui-ux.test.js", "tests/scroll-storytelling.test.js") }
 
 # Filter to targets that actually exist or glob pattern
 $existingTargets = @()
