@@ -2079,37 +2079,26 @@ html[data-trip-theme="dark"] .j-card.is-expanded {
   color: var(--sh-text) !important;
   margin-bottom: 8px !important;
 }
-/* 5. Editorial Scroll Storytelling & Photo Presentation */
-.j-card.has-media {
+/* 5. Clean Editorial Cards (Zero Image Clutter, Pure Typography) */
+.j-card {
   padding: 0 !important;
-  overflow: hidden !important;
   border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.65) !important;
+  box-shadow: 0 4px 20px rgba(20, 32, 28, 0.04), 0 1px 3px rgba(20, 32, 28, 0.02) !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease !important;
+  overflow: hidden !important;
 }
-.j-card.no-media {
+.j-card.is-expanded {
+  box-shadow: 0 8px 28px rgba(20, 32, 28, 0.08), 0 2px 6px rgba(20, 32, 28, 0.03) !important;
+}
+.j-card-summary {
   padding: 16px 18px 14px !important;
-  border-radius: 18px !important;
 }
-.j-card-media {
-  position: relative !important;
-  width: 100% !important;
-  margin: 0 !important;
-  height: 200px !important;
-  overflow: hidden !important;
-  background: #17221f !important;
-}
-@media (min-width: 600px) {
-  .j-card-media {
-    height: 240px !important;
-  }
-}
-.has-media .j-card-summary {
-  padding: 14px 16px 14px !important;
-}
-.no-media .j-card-summary {
-  padding: 0 !important;
-}
-.has-media .j-card-details {
-  padding: 0 16px 14px !important;
+.j-card-details {
+  padding: 0 18px 16px !important;
 }
 .j-card-num-inline {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -2122,64 +2111,91 @@ html[data-trip-theme="dark"] .j-card.is-expanded {
   border-radius: 5px !important;
   margin-right: 2px !important;
 }
-.has-media .j-card-num-inline {
-  display: none !important;
-}
-.j-card-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transform: scale(1.05);
-  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease;
-  filter: brightness(0.92);
-}
-.j-card.is-in-view .j-card-photo {
-  transform: scale(1);
-  filter: brightness(0.98);
-}
-.j-card-photo-scrim {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 12px 14px;
-  background: linear-gradient(180deg, rgba(12, 18, 16, 0.55) 0%, rgba(12, 18, 16, 0) 45%, rgba(12, 18, 16, 0.65) 100%);
-  pointer-events: none;
-}
-.j-card-num {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-}
 .j-card-cat {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  padding: 3px 9px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-.no-media .j-card-cat {
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
   color: var(--sh-accent) !important;
   background: var(--sh-accent-soft) !important;
-  border-color: transparent !important;
-  text-shadow: none !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  border: 1px solid transparent !important;
+}
+
+/* 5.5 Per-Shiori Atmospheric Background System (Dynamic Vibe per Destination) */
+html[data-shiori-atmosphere="autumn"] body {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(224, 90, 43, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 88% 26%, rgba(245, 166, 35, 0.16) 0%, transparent 48%),
+    radial-gradient(circle at 45% 78%, rgba(180, 52, 28, 0.09) 0%, transparent 55%),
+    linear-gradient(180deg, #fcf8f3 0%, #f6eee3 48%, #efe4d4 100%) !important;
+  background-attachment: fixed !important;
+}
+html[data-shiori-atmosphere="autumn"] {
+  --sh-accent: #c44f24 !important;
+  --sh-accent-soft: #fbf0ea !important;
+}
+
+html[data-shiori-atmosphere="ocean"] body {
+  background:
+    radial-gradient(circle at 10% 8%, rgba(25, 140, 240, 0.16) 0%, transparent 42%),
+    radial-gradient(circle at 90% 32%, rgba(0, 195, 215, 0.14) 0%, transparent 48%),
+    radial-gradient(circle at 35% 82%, rgba(30, 110, 220, 0.08) 0%, transparent 52%),
+    linear-gradient(180deg, #f2f8fc 0%, #e8f3fa 48%, #dcf0f8 100%) !important;
+  background-attachment: fixed !important;
+}
+html[data-shiori-atmosphere="ocean"] {
+  --sh-accent: #1976d2 !important;
+  --sh-accent-soft: #e3f2fd !important;
+}
+
+html[data-shiori-atmosphere="islands"] body {
+  background:
+    radial-gradient(circle at 86% 12%, rgba(225, 175, 45, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 14% 32%, rgba(46, 125, 107, 0.16) 0%, transparent 46%),
+    radial-gradient(circle at 68% 82%, rgba(55, 155, 135, 0.10) 0%, transparent 50%),
+    linear-gradient(180deg, #f5faf8 0%, #ebf4f1 48%, #e0efe9 100%) !important;
+  background-attachment: fixed !important;
+}
+html[data-shiori-atmosphere="islands"] {
+  --sh-accent: #2e7d6b !important;
+  --sh-accent-soft: #e4f4f0 !important;
+}
+
+html[data-shiori-atmosphere="night"] body {
+  background:
+    radial-gradient(circle at 20% 12%, rgba(96, 165, 250, 0.22) 0%, transparent 42%),
+    radial-gradient(circle at 82% 24%, rgba(245, 158, 11, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 50% 72%, rgba(139, 92, 246, 0.14) 0%, transparent 52%),
+    linear-gradient(180deg, #0f172a 0%, #1e1b4b 50%, #090d16 100%) !important;
+  color: #f1f5f9 !important;
+  background-attachment: fixed !important;
+}
+html[data-shiori-atmosphere="night"] {
+  --sh-accent: #60a5fa !important;
+  --sh-accent-soft: #1e293b !important;
+  --sh-text: #f8fafc !important;
+  --sh-muted: #94a3b8 !important;
+}
+html[data-shiori-atmosphere="night"] .j-card {
+  background: rgba(30, 41, 59, 0.82) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+html[data-shiori-atmosphere="night"] .j-card-ttl {
+  color: #f8fafc !important;
+}
+html[data-shiori-atmosphere="night"] .journey-strip {
+  background: rgba(30, 41, 59, 0.82) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-shiori-atmosphere="classic"] body {
+  background:
+    radial-gradient(circle at 82% 10%, rgba(53, 107, 104, 0.12) 0%, transparent 42%),
+    radial-gradient(circle at 18% 48%, rgba(145, 96, 51, 0.08) 0%, transparent 46%),
+    linear-gradient(180deg, #f7f6f2 0%, #f0eee8 48%, #e9e7e0 100%) !important;
+  background-attachment: fixed !important;
 }
 
 /* 6. Typography & Subtraction of Icon Clutter */

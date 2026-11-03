@@ -2,20 +2,12 @@
  * Viewer UI: DOM Builders, Device App Intents, Tab Navigation & Swipe Gestures
  */
 
-export const APP_ICONS = Object.freeze({
-  ana: 'images/ana-app.jpg',
-  helloCycling: 'images/hello-cycling-app.png',
-  tabelog: 'images/tabelog.png',
-  jalan: 'images/jalan-app.jpg',
-  toyota: 'images/toyota-rent-app.png'
-});
-
+export const APP_ICONS = Object.freeze({ ana: 'images/ana-app.jpg', helloCycling: 'images/hello-cycling-app.png', tabelog: 'images/tabelog.png', jalan: 'images/jalan-app.jpg', toyota: 'images/toyota-rent-app.png' });
 export const TOYOTA_RENTAL_APP = Object.freeze({
   webUrl: 'https://rent.toyota.co.jp/cp/18_ser_app01/',
   androidIntent: 'intent://#Intent;scheme=toyotaapp;package=jp.co.toyota.rent.app.android;S.browser_fallback_url=https%3A%2F%2Frent.toyota.co.jp%2Fcp%2F18_ser_app01%2F;end',
   iosUrl: 'toyotaapp://'
 });
-
 export const MOBILE_APP_TARGETS = Object.freeze({
   jalan: Object.freeze({ hostname: 'www.jalan.net', packageName: 'net.jalan.android', scheme: 'jalan', intentHost: '', iosUrl: 'universal-link' }),
   helloCycling: Object.freeze({ hostname: 'www.hellocycling.jp', packageName: 'jp.hellocycling.hellocycling', scheme: 'hellocycling', intentHost: 'main', iosUrl: 'hellocycling://main' })
@@ -133,8 +125,21 @@ export function renderActionLink(url, rawLabel, options = {}) {
   return `<a href="${escapeHtml(linkHref)}"${appAttrs}${targetAttr} rel="noopener noreferrer" class="${classes}" aria-label="${escapeHtml(ariaLabel)}" title="${escapeHtml(String(rawLabel || visibleLabel))}">${options.iconHtml || ''}<span class="j-btn-label">${escapeHtml(visibleLabel)}</span><span class="j-btn-mark" aria-hidden="true">↗</span></a>`;
 }
 
+export function detectTripAtmosphere(data) {
+  if (data?.theme?.atmosphere) return String(data.theme.atmosphere);
+  const text = `${data?.title || ''} ${data?.subtitle || ''} ${data?.catchphrase || ''}`;
+  if (/四国|しまなみ|小豆島|瀬戸内|直島|沖縄|島/.test(text)) return 'islands';
+  if (/紅葉|秋|晩秋|秩父|長瀞|もみじ/.test(text)) return 'autumn';
+  if (/海|大洗|ひたち|水族館|ビーチ|海岸|港|茨城/.test(text)) return 'ocean';
+  if (/夜|ナイト|星|イルミ/.test(text)) return 'night';
+  return 'classic';
+}
+
 export function buildShioriUI(data) {
   if (!data || typeof document === 'undefined') return;
+  if (document.documentElement?.dataset) {
+    document.documentElement.dataset.shioriAtmosphere = detectTripAtmosphere(data);
+  }
   const weatherPanel = document.querySelector('.weather-disclosure');
   const itineraryNav = document.getElementById('nav-bar');
   if (weatherPanel && itineraryNav) itineraryNav.before(weatherPanel);
@@ -270,15 +275,11 @@ export function buildShioriUI(data) {
       const isDefaultActive = cardIndex === activeCardIndex;
       const cleanBadge = (card.badge || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
       const badgeHtml = cleanBadge ? `<span class="j-card-cat">${escapeHtml(cleanBadge)}</span>` : '';
-      const spotImg = card.image || (/ラインくだり|岩畳/.test(cardTitle) ? 'spots/nagatoro-line.jpg' : /SL|パレオ/.test(cardTitle) ? 'spots/sl-paleo.jpg' : /豚みそ|有隣/.test(cardTitle) ? 'spots/butamiso-don.jpg' : /わらび餅|門藤/.test(cardTitle) ? 'spots/warabimochi.jpg' : /金石水管橋/.test(cardTitle) ? 'spots/kanaishi-bridge.jpg' : /寶登山|宝登山/.test(cardTitle) ? 'spots/hodosan-shrine.jpg' : /もみじ公園|ライトアップ/.test(cardTitle) ? 'spots/tsukinoishi-momiji.jpg' : '');
-      const photoHtml = spotImg ? `<div class="j-card-media"><img class="j-card-photo" src="images/${escapeHtml(spotImg)}" alt="${escapeHtml(cardTitle)}" loading="lazy"><div class="j-card-photo-scrim"><span class="j-card-num">NO. ${spotNum}</span>${badgeHtml}</div></div>` : '';
       cardsHtml += `
         ${travelHintHtml}
-        <div class="j-card${isDefaultActive ? ' is-expanded' : ''}${spotImg ? ' has-media' : ' no-media'}" data-spot-index="${cardIndex}" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}" role="button" tabindex="0" aria-expanded="${isDefaultActive}">
-          <span class="j-spot-watermark" aria-hidden="true">${spotNum}</span>
-          ${photoHtml}
+        <div class="j-card${isDefaultActive ? ' is-expanded' : ''}" data-spot-index="${cardIndex}" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}" role="button" tabindex="0" aria-expanded="${isDefaultActive}">
           <div class="j-card-summary">
-            <div class="j-card-time-row"><span class="j-card-num-inline">NO. ${spotNum}</span><span class="j-card-time">${escapeHtml(card.time)}</span>${!spotImg ? badgeHtml : ''}${cstBadges}</div>
+            <div class="j-card-time-row"><span class="j-card-num-inline">NO. ${spotNum}</span><span class="j-card-time">${escapeHtml(card.time)}</span>${badgeHtml}${cstBadges}</div>
             <div class="j-card-ttl"><span>${escapeHtml(cardTitle)}</span><span class="j-card-expand-icon" aria-hidden="true">▾</span></div>
             ${btnRowHtml}
           </div>

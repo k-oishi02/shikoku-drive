@@ -83,6 +83,7 @@ export function handlePauseTrip() {
     window.nowModeInterval = null;
   }
   resetWeather();
+  if (typeof document !== 'undefined') delete document.documentElement.dataset.shioriAtmosphere;
   tripStore.setState({ activeTrip: null, currentAccess: null });
 }
 

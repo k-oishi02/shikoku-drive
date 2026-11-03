@@ -9,7 +9,8 @@
   "archived": false,
   "theme": {
     "mode": "auto",
-    "accent": "#e05a2b"
+    "accent": "#e05a2b",
+    "atmosphere": "autumn"
   },
   "features": {
     "nowMode": true,
@@ -59,8 +60,7 @@
           "closesAt": "16:00"
         },
         "routeHint": "首都高C2 → 美女木JCT → 外環道 → 大泉JCT → 関越道 花園IC → 皆野寄居有料道路",
-        "waypoints": "花園IC|寄居風布IC",
-        "image": "spots/nagatoro-line.jpg"
+        "waypoints": "花園IC|寄居風布IC"
       },
       {
         "time": "11:25 - 11:42",
@@ -72,8 +72,7 @@
         "mapQuery": "長瀞駅",
         "cardId": "day1-03-sl-nagatoro",
         "travelMinutesFromPrevious": 10,
-        "routeHint": "岩畳通り商店街を駅方面へ徒歩約4〜5分",
-        "image": "spots/sl-paleo.jpg"
+        "routeHint": "岩畳通り商店街を駅方面へ徒歩約4〜5分"
       },
       {
         "time": "11:45 - 12:45",
@@ -90,8 +89,7 @@
           "opensAt": "11:00",
           "closesAt": "15:00"
         },
-        "routeHint": "長瀞駅前から徒歩30秒（宝登山参道入口）",
-        "image": "spots/butamiso-don.jpg"
+        "routeHint": "長瀞駅前から徒歩30秒（宝登山参道入口）"
       },
       {
         "time": "12:55 - 13:55",
@@ -108,8 +106,7 @@
           "opensAt": "11:00",
           "closesAt": "17:00"
         },
-        "routeHint": "長瀞駅前から国道140号を北へ車で約3〜4分（無料駐車場あり）",
-        "image": "spots/warabimochi.jpg"
+        "routeHint": "長瀞駅前から国道140号を北へ車で約3〜4分（無料駐車場あり）"
       },
       {
         "time": "14:05 - 14:50",
@@ -122,8 +119,7 @@
         "cardId": "day1-06-kanaishi-bridge",
         "expenseShortcut": true,
         "travelMinutesFromPrevious": 10,
-        "routeHint": "門藤から車で南東へ約3〜4分（東詰に駐車スペースあり）",
-        "image": "spots/kanaishi-bridge.jpg"
+        "routeHint": "門藤から車で南東へ約3〜4分（東詰に駐車スペースあり）"
       },
       {
         "time": "15:00 - 16:25",
@@ -140,8 +136,7 @@
           "closesAt": "17:00",
           "lastEntryAt": "16:45"
         },
-        "routeHint": "金石水管橋から宝登山参道・ロープウェイ山麓駐車場へ車で約8分",
-        "image": "spots/hodosan-shrine.jpg"
+        "routeHint": "金石水管橋から宝登山参道・ロープウェイ山麓駐車場へ車で約8分"
       },
       {
         "time": "16:40 - 17:45",
@@ -157,8 +152,7 @@
           "opensAt": "16:00",
           "closesAt": "21:00"
         },
-        "routeHint": "宝登山から県道経由で車で約5分（近隣駐車場あり）",
-        "image": "spots/tsukinoishi-momiji.jpg"
+        "routeHint": "宝登山から県道経由で車で約5分（近隣駐車場あり）"
       },
       {
         "time": "19:45 - 20:05",
