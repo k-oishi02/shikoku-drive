@@ -3,7 +3,7 @@
   "tripId": "20261128",
   "title": "秩父・長瀞 晩秋ドライブ 2026",
   "subtitle": "紅葉と美食を巡る秋のフォトジェニック旅！",
-  "catchphrase": "深紅の紅葉と山頂360度大パノラマ！！",
+  "catchphrase": "朝の長瀞舟下りからとろけるわらび餅・深紅のライトアップまで！",
   "startDate": "2026-11-28",
   "endDate": "2026-11-28",
   "archived": false,
@@ -17,7 +17,7 @@
     "notifications": true
   },
   "dayLabels": {
-    "day1": "11/28 (土) 長瀞渓谷・秩父名物・紅葉ライトアップ"
+    "day1": "11/28 (土) 長瀞渓谷・絶品わらび餅・紅葉ライトアップ"
   },
   "daySettings": {
     "day1": {
@@ -48,9 +48,9 @@
         "time": "09:20 - 11:15",
         "badge": "絶景 / 舟下り",
         "title": "長瀞岩畳・荒川ラインくだり",
-        "desc": "【午前中の順光】国の名勝・天然記念物の岩畳散策＆荒川ラインくだり乗船。朝日が差し込む渓谷で、エメラルドグリーンの川面と紅葉ピークの断崖美を船上から撮影！",
+        "desc": "【午前中の順光が最高！】朝の澄んだ空気と水面を滑る和舟から、紅葉ピークの岩畳を大パノラマで満喫！Bコース（岩畳〜高砂橋 約3km）に乗船。下船後は岩畳の遊歩道をのんびり散策。",
         "official": "https://www.chichibu-railway.co.jp/nagatoro/",
-        "mapQuery": "長瀞ラインくだり 本部",
+        "mapQuery": "長瀞 荒川ライン下り 本部",
         "cardId": "day1-02-nagatoro-iwadatami",
         "expenseShortcut": true,
         "travelMinutesFromPrevious": 110,
@@ -62,55 +62,68 @@
         "waypoints": "花園IC|寄居風布IC"
       },
       {
-        "time": "11:45 - 13:15",
+        "time": "11:20 - 12:35",
         "badge": "昼食 / 豚みそ丼",
-        "title": "豚みそ丼本舗 野さか",
-        "desc": "【売切前の元祖王者】皆野秩父バイパス（無料快走路）で秩父市街へ直行。香ばしい備長炭で焼き上げる名物「豚みそ丼（ロース＆バラ）」をがっつり堪能！※売切次第終了の人気店。",
-        "official": "https://www.chichibuji.gr.jp/spot/spot-syousai16/",
-        "officialLabel": "観光協会公式案内",
-        "tabelog": "https://tabelog.com/saitama/A1107/A110701/11004815/",
-        "mapQuery": "豚みそ丼本舗 野さか",
-        "cardId": "day1-03-lunch-nosaka",
+        "title": "豚みそ丼専門店 有隣",
+        "desc": "【長瀞駅前・本場の豚みそ丼】岩畳から徒歩ですぐ！秩父鉄道直営、秘伝の味噌ダレに漬け込んだ豚肉を備長炭風に香ばしく炙り焼きにした名物豚みそ丼！わらじカツとのW丼も大人気。",
+        "official": "https://www.chichibu-railway.co.jp/yurin/",
+        "officialLabel": "公式案内",
+        "mapQuery": "豚みそ丼専門店 有隣",
+        "cardId": "day1-03-lunch-yurin",
         "expenseShortcut": true,
-        "travelMinutesFromPrevious": 25,
+        "travelMinutesFromPrevious": 5,
         "constraints": {
           "opensAt": "11:00",
           "closesAt": "15:00"
         },
-        "routeHint": "皆野秩父バイパス（国道140号バイパス）南下（信号少なく快走）",
-        "waypoints": "皆野秩父バイパス"
+        "routeHint": "岩畳通り商店街を駅方面へ徒歩約4〜5分"
       },
       {
-        "time": "13:40 - 14:40",
-        "badge": "絶景 / 山頂パノラマ",
-        "title": "美の山公園（山頂展望台・紅葉パノラマ）",
-        "desc": "【CX-5快走ヒルクライム＆秩父一望パノラマ】標高581m蓑山山頂へ！トルクフルな走りで観光道路を駆け上がり、山頂展望台から晩秋の秩父盆地、紅葉に染まる山々、雄大な武甲山を360度大パノラマで満喫。園内のモミジ・カエデの紅葉散策も心地よい時間。",
-        "official": "https://www.pref.saitama.lg.jp/b0504/minoyamakouen-top/",
-        "officialLabel": "埼玉県公式案内",
-        "mapQuery": "美の山公園 展望台",
-        "cardId": "day1-04-minoyama",
+        "time": "12:45 - 13:45",
+        "badge": "名物甘味 / わらび餅",
+        "title": "わらび餅専門店 門藤 埼玉長瀞店",
+        "desc": "【テレビで話題沸騰・新食感の本わらび餅】ミシュランシェフ監修、お箸で持つと「ブリンッ、とろ〜ん」と口の中でとろける『ぜいみ（脆味）』！3種のきな粉食べ比べや、吸うわらび餅ドリンク『WARABI-TA』を堪能＆テイクアウト。",
+        "official": "https://warabimochi-kadofuji.com/",
+        "officialLabel": "店舗公式サイト",
+        "mapQuery": "わらび餅専門店 門藤 埼玉長瀞店",
+        "cardId": "day1-04-warabi-kadofuji",
         "expenseShortcut": true,
-        "travelMinutesFromPrevious": 25,
-        "routeHint": "国道140号北上 → 美の山観光道路を登坂（無料駐車場あり）",
-        "waypoints": "美の山観光道路"
+        "travelMinutesFromPrevious": 10,
+        "constraints": {
+          "opensAt": "11:00",
+          "closesAt": "17:00"
+        },
+        "routeHint": "長瀞駅前から国道140号を北へ車で約3〜4分（無料駐車場あり）"
+      },
+      {
+        "time": "13:55 - 14:45",
+        "badge": "穴場 / 絶景散策",
+        "title": "金石水管橋（紅葉渓谷パノラマ）",
+        "desc": "【知る人ぞ知る長瀞の紅葉穴場】荒川の真上に架かる歩行者専用橋。観光客の混雑がなく、荒川の清流と赤や黄色に染まる渓谷林を真上から見下ろす大迫力のパノラマ写真が撮影できます！",
+        "official": "https://www.nagatoro.gr.jp/spot/spot-syousai6/",
+        "officialLabel": "観光協会案内",
+        "mapQuery": "金石水管橋",
+        "cardId": "day1-05-kanaishi-bridge",
+        "expenseShortcut": true,
+        "travelMinutesFromPrevious": 10,
+        "routeHint": "門藤から車で南東へ約3〜4分（東詰に駐車スペースあり）"
       },
       {
         "time": "15:00 - 16:25",
         "badge": "神社 / 夕景ロープウェイ",
         "title": "寶登山神社・宝登山ロープウェイ",
-        "desc": "長瀞へ向かい、極彩色の豪華社殿と紅葉が美しい寶登山神社を参拝。その後ロープウェイ「夕やけ観賞便」で標高497m山頂へ！16:28の日没に向けて茜色に染まる秩父連山を一望。",
+        "desc": "秩父三社の一角・寶登山神社を参拝。その後ロープウェイ「夕やけ観賞便」で標高497m山頂へ！16:28の日没に向けて茜色に染まる秩父連山と秩父盆地の夕景を一望。",
         "official": "https://hodosan-ropeway.co.jp/",
         "mapQuery": "宝登山ロープウェイ 山麓駅",
-        "cardId": "day1-05-hodosan",
+        "cardId": "day1-06-hodosan",
         "expenseShortcut": true,
-        "travelMinutesFromPrevious": 20,
+        "travelMinutesFromPrevious": 15,
         "constraints": {
           "opensAt": "09:40",
           "closesAt": "17:00",
           "lastEntryAt": "16:45"
         },
-        "routeHint": "美の山観光道路を下り、国道140号経由で宝登山参道へ",
-        "waypoints": "皆野長瀞IC"
+        "routeHint": "金石水管橋から宝登山参道・ロープウェイ山麓駐車場へ車で約8分"
       },
       {
         "time": "16:40 - 17:45",
@@ -119,38 +132,40 @@
         "desc": "【ブルーアワーの絶景】日没直後の群青色の空と、闇に浮かび上がる約150本の深紅のモミジ！水面に映る「逆さもみじ」は息を呑む美しさ。屋台で熱々のみそポテトをつまみ食い。",
         "official": "https://www.nagatoro.gr.jp/",
         "mapQuery": "月の石もみじ公園",
-        "cardId": "day1-06-momijikouen-lightup",
+        "cardId": "day1-07-momijikouen-lightup",
         "expenseShortcut": true,
         "travelMinutesFromPrevious": 10,
         "constraints": {
           "opensAt": "16:00",
           "closesAt": "21:00"
         },
-        "routeHint": "県道209号経由（寶登山神社から車で約5〜7分）"
+        "routeHint": "宝登山から県道経由で車で約5分（近隣駐車場あり）"
       },
       {
         "time": "19:45 - 20:05",
         "badge": "給油 / レンタカー返却",
         "title": "町屋",
-        "desc": "皆野寄居有料道路・花園ICから関越道・外環・首都高C2で町屋へ帰着（約1時間50分〜2時間）。近隣GSで給油し、タイムズ町屋駅前へ無事返却！CX-5のパワフルなドライブお疲れ様でした。",
+        "desc": "長瀞から皆野寄居有料道路・花園ICから関越道・外環・首都高C2で町屋へ帰着（約1時間50分）。近隣GSで給油し、タイムズ町屋駅前へ無事返却！CX-5の快適なドライブお疲れ様でした。",
         "mapQuery": "タイムズ町屋駅前",
-        "cardId": "day1-07-return-machiya",
+        "cardId": "day1-08-return-machiya",
         "expenseShortcut": true,
         "travelMinutesFromPrevious": 120,
         "reservation": {
           "name": "タイムズ町屋駅前",
-          "note": "マツダ CX-5 (ミドル) / 返却予定 24:00 (余裕枠確保)"
+          "note": "マツダ CX-5 (ミドル) / 予約24時間枠 (〜翌07:00)"
         },
-        "routeHint": "花園IC → 関越道 → 大泉JCT → 外環道 → 美女木JCT → 首都高C2（王子北IC）",
-        "waypoints": "花園IC|大泉JCT"
+        "constraints": {
+          "returnBy": "20:05"
+        },
+        "routeHint": "花園ICから関越道上り線 → 外環道 → 首都高C2王子北ICまたは扇大橋IC"
       },
       {
         "time": "20:10 - 22:00",
-        "badge": "夕食 / 打ち上げ",
+        "badge": "打ち上げ / 乾杯",
         "title": "町屋駅前・乾杯打ち上げ！",
-        "desc": "車を返却して運転ミッション完了！町屋駅前の名居酒屋・大衆酒場（もつ焼き・鮮魚など）で冷たい生ビールで乾杯！1日撮影した写真を見せ合いながらゆったり語らう最高の締めくくり。",
-        "mapQuery": "町屋駅",
-        "cardId": "day1-08-dinner-machiya",
+        "desc": "クルマ返却完了！気兼ねなくお酒が飲める打ち上げタイム。町屋駅前の活気ある居酒屋で、長瀞の紅葉や舟下りの写真を見返しながらビールで乾杯！",
+        "mapQuery": "町屋駅 居酒屋",
+        "cardId": "day1-09-dinner-machiya",
         "expenseShortcut": true,
         "travelMinutesFromPrevious": 5
       }
@@ -159,8 +174,8 @@
   "weatherLocations": {
     "nagatoro": {
       "label": "長瀞",
-      "lat": 36.1136,
-      "lon": 139.1136,
+      "lat": 36.1139,
+      "lon": 139.1147,
       "tripDate": "2026-11-28",
       "link": "https://weathernews.jp/onebox/tenki/saitama/11363/"
     },
@@ -206,7 +221,7 @@
           "name": "小銭・現金（コインパーキング・屋台・舟下り用）"
         },
         {
-          "name": "お土産用エコバッグ"
+          "name": "お土産用エコバッグ（わらび餅・特産品用）"
         }
       ]
     }
