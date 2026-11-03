@@ -102,28 +102,28 @@ export function initScrollStorytelling() {
   const cards = document.querySelectorAll('.j-card');
   if (!cards.length) return;
   if ('IntersectionObserver' in window) {
-    const viewObs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-in-view'); }), { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    const viewObs = new IntersectionObserver(ents => ents.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-in-view'); }), { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
     cards.forEach(c => viewObs.observe(c));
-
-    const activeObs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          const id = e.target.dataset.cardId;
-          document.querySelectorAll('.journey-chip').forEach(ch => ch.classList.toggle('active', ch.dataset.jumpCard === id));
-          e.target.classList.add('is-spot-active');
-        } else {
-          e.target.classList.remove('is-spot-active');
-        }
-      });
-    }, { rootMargin: '-18% 0px -55% 0px', threshold: 0 });
-    cards.forEach(c => activeObs.observe(c));
-  } else {
-    cards.forEach(c => c.classList.add('is-in-view'));
-  }
+    const actObs = new IntersectionObserver(ents => ents.forEach(e => {
+      const id = e.target.dataset.cardId;
+      if (e.isIntersecting) {
+        document.querySelectorAll('.journey-chip').forEach(ch => ch.classList.toggle('active', ch.dataset.jumpCard === id));
+        e.target.classList.add('is-spot-active');
+      } else { e.target.classList.remove('is-spot-active'); }
+    }), { rootMargin: '-18% 0px -55% 0px', threshold: 0 });
+    cards.forEach(c => actObs.observe(c));
+  } else { cards.forEach(c => c.classList.add('is-in-view')); }
+  cards.forEach(c => {
+    c.onclick = e => {
+      if (e.target.closest('a, button, details, input')) return;
+      c.classList.toggle('is-expanded');
+      c.setAttribute('aria-expanded', String(c.classList.contains('is-expanded')));
+    };
+  });
   document.querySelectorAll('.journey-chip').forEach(ch => {
     ch.onclick = () => {
       const el = document.querySelector(`.j-card[data-card-id="${ch.dataset.jumpCard}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (el) { el.classList.add('is-expanded'); el.setAttribute('aria-expanded', 'true'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     };
   });
 }

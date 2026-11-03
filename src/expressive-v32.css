@@ -1889,3 +1889,174 @@ html[data-trip-theme="dark"] .j-card.is-spot-active .j-spot-watermark {
     top: 4px;
   }
 }
+/* ==========================================================================
+   NOW Card Slim Consolidation & Tap-to-Expand Card Accordion (v3.4)
+   ========================================================================== */
+
+/* 1. Slim Consolidated NOW Capsule (Integrated with Drive Route) */
+.now-card {
+  margin: 6px 0 10px !important;
+  padding: 8px 12px !important;
+  border-radius: 14px !important;
+  background: color-mix(in srgb, var(--sh-accent-strong, #275552) 88%, #1c3f3d) !important;
+  box-shadow: 0 4px 14px rgba(20, 42, 39, .08) !important;
+}
+.now-head {
+  padding: 0 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  min-height: auto !important;
+}
+.now-kicker {
+  display: none !important;
+}
+.now-head h2 {
+  font-size: .8rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+.now-head h2::before {
+  content: "📍";
+  font-size: .84rem;
+}
+.network-status {
+  padding: 2px 7px !important;
+  font-size: .62rem !important;
+}
+.now-body {
+  padding: 4px 4px 2px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 4px 10px !important;
+}
+.now-day {
+  display: inline-block !important;
+  margin: 0 !important;
+  font-size: .68rem !important;
+  font-weight: 700 !important;
+  color: var(--sh-accent, #9cc6be) !important;
+  letter-spacing: .04em !important;
+}
+.now-title {
+  margin: 0 !important;
+  font-size: .95rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.3 !important;
+  flex: 1 1 auto !important;
+  max-width: 100% !important;
+}
+.now-meta {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: .72rem !important;
+  color: rgba(255, 255, 255, .82) !important;
+}
+.now-actions {
+  display: flex !important;
+  gap: 6px !important;
+  align-items: center !important;
+  margin: 2px 0 0 !important;
+  width: 100% !important;
+}
+.now-route, .now-secondary {
+  flex: 1 1 auto !important;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  font-size: .72rem !important;
+  border-radius: 999px !important;
+}
+.live-itinerary {
+  padding: 2px 4px 4px !important;
+}
+.live-title {
+  font-size: 1.05rem !important;
+  margin: 2px 0 !important;
+}
+.live-time-row {
+  margin-bottom: 4px !important;
+}
+.live-actions-bar .live-primary-actions .live-action {
+  min-height: 32px !important;
+  font-size: .72rem !important;
+  padding: 0 10px !important;
+}
+
+/* 2. Tap to Expand Accordion for Spot Cards */
+.j-card:not(.checklist-card):not(.expense-card) {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.j-card:not(.checklist-card):not(.expense-card):focus-visible {
+  outline: 2px solid var(--sh-accent);
+  outline-offset: 2px;
+}
+.j-card-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.j-card-ttl {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+.j-card-expand-icon {
+  margin-left: auto;
+  font-size: .82rem;
+  color: var(--sh-muted);
+  transition: transform .25s ease, color .2s ease;
+  flex-shrink: 0;
+  padding: 2px 4px;
+}
+.j-card.is-expanded .j-card-expand-icon {
+  transform: rotate(180deg);
+  color: var(--sh-accent);
+}
+.j-card-desc-preview {
+  margin: 0 !important;
+  font-size: .76rem !important;
+  line-height: 1.5 !important;
+  color: var(--sh-muted) !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.j-card.is-expanded .j-card-desc-preview {
+  display: none !important;
+}
+
+.j-card-details {
+  display: none;
+  animation: cardDetailExpand .22s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed color-mix(in srgb, var(--sh-line) 80%, transparent);
+}
+.j-card.is-expanded .j-card-details {
+  display: block;
+}
+@keyframes cardDetailExpand {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.j-card.is-expanded {
+  border-color: color-mix(in srgb, var(--sh-accent) 45%, var(--sh-line)) !important;
+  box-shadow: 0 6px 20px rgba(28, 41, 38, .07) !important;
+}
+html[data-trip-theme="dark"] .j-card.is-expanded {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35) !important;
+}

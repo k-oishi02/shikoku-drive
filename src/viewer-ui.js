@@ -272,14 +272,19 @@ export function buildShioriUI(data) {
       ].filter(Boolean).map(b => `<span class="j-constraint-pill">${escapeHtml(b)}</span>`).join('');
       const btnRowHtml = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
       const spotNum = String(cardIndex + 1).padStart(2, '0');
+      const isFirst = cardIndex === 0;
       cardsHtml += `
         ${travelHintHtml}
-        <div class="j-card" data-spot-index="${cardIndex}" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}">
+        <div class="j-card${isFirst ? ' is-expanded' : ''}" data-spot-index="${cardIndex}" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}" role="button" tabindex="0" aria-expanded="${isFirst}">
           <span class="j-spot-watermark" aria-hidden="true">${spotNum}</span>
-          <div class="j-card-time-row"><span class="j-spot-badge">SPOT ${spotNum}</span><span class="j-card-time">${escapeHtml(card.time)}</span>${cstBadges}</div>
-          <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span>${escapeHtml(cardTitle)}</div>
-          <div class="j-card-desc">${escapeHtml(cardDesc)}</div>
-          ${resHtml}${imgHtml}${btnRowHtml}
+          <div class="j-card-summary">
+            <div class="j-card-time-row"><span class="j-spot-badge">SPOT ${spotNum}</span><span class="j-card-time">${escapeHtml(card.time)}</span>${cstBadges}</div>
+            <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span><span>${escapeHtml(cardTitle)}</span><span class="j-card-expand-icon" aria-hidden="true">▾</span></div>
+            <div class="j-card-desc">${escapeHtml(cardDesc)}</div>
+          </div>
+          <div class="j-card-details">
+            ${resHtml}${imgHtml}${btnRowHtml}
+          </div>
         </div>`;
     });
 

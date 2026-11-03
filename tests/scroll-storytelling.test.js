@@ -81,6 +81,12 @@ describe('SHIORI Scroll Storytelling & Magazine Drive Experience', () => {
       assert.ok(html.includes('class="j-spot-badge">SPOT 01</span>'), 'Card 1 must have SPOT 01 badge');
       assert.ok(html.includes('class="j-spot-badge">SPOT 02</span>'), 'Card 2 must have SPOT 02 badge');
 
+            // 4. Tap-to-Expand Accordion Structure
+      assert.ok(html.includes('class="j-card-summary"'), 'Card must have summary block for collapsed view');
+      assert.ok(html.includes('class="j-card-details"'), 'Card must have details block for expanded view');
+      assert.ok(html.includes('class="j-card-expand-icon" aria-hidden="true">▾</span>'), 'Card must render expand icon arrow');
+      assert.ok(html.includes('class="j-card is-expanded"'), 'First card must be expanded by default for discoverability');
+      assert.ok(html.includes('aria-expanded="true"'), 'First card must set aria-expanded=true');
       // 3. Travel hint with moving car icon
       assert.ok(html.includes('travel-car-icon'), 'Travel hint must include animated car icon');
       assert.ok(html.includes('🚗'), 'Must render car emoji in travel hint');
