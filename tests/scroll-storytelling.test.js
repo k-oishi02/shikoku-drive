@@ -142,7 +142,7 @@ describe('SHIORI Atmosphere & Typography Cards Experience', () => {
     }
   });
 
-  it('verifies atmospheric css and hidden now-mode block in expressive css', () => {
+  it('verifies seamless road-trip timeline, crafted buttons, and second-tab whitespace in css', () => {
     const css = fs.readFileSync(new URL('../src/expressive-v32.css', import.meta.url), 'utf8');
     assert.match(css, /#now-mode[\s\S]*?display:\s*none\s*!important/, 'CSS must hide redundant now-mode card');
     assert.match(css, /html\[data-shiori-atmosphere="autumn"\]/, 'CSS must support autumn atmosphere');
@@ -150,5 +150,19 @@ describe('SHIORI Atmosphere & Typography Cards Experience', () => {
     assert.match(css, /html\[data-shiori-atmosphere="islands"\]/, 'CSS must support islands atmosphere');
     assert.match(css, /html\[data-shiori-atmosphere="night"\]/, 'CSS must support night atmosphere');
     assert.match(css, /html\[data-shiori-atmosphere="classic"\]/, 'CSS must support classic atmosphere');
+
+    // 1. Seamless road-trip timeline connection
+    assert.match(css, /\.v2-travel-hint::before[\s\S]*?left:\s*-20px\s*!important/, 'Travel hint must align on -20px track');
+    assert.match(css, /\.j-card:not\(\.checklist-card\):not\(\.expense-card\)::after[\s\S]*?left:\s*-20px\s*!important/, 'Card timeline must align on -20px track');
+
+    // 2. Crafted button styles
+    assert.match(css, /\.j-btn\.primary[\s\S]*?background:\s*linear-gradient/, 'Primary button must use rich crafted gradient');
+    assert.match(css, /\.j-btn\.primary[\s\S]*?box-shadow:/, 'Primary button must use layered tactile box-shadow');
+    assert.match(css, /\.j-btn:not\(\.primary\)[\s\S]*?backdrop-filter:\s*blur/, 'Ghost buttons must use frosted glass');
+
+    // 3. Second-tab and expense breathing room
+    assert.match(css, /\.expense-card[\s\S]*?padding:\s*22px 20px\s*!important/, 'Expense card must have generous padding');
+    assert.match(css, /\.share-room-panel[\s\S]*?padding:\s*18px 20px\s*!important/, 'Share room panel must have generous padding');
+    assert.match(css, /\.talk-header[\s\S]*?padding:\s*18px 0 16px\s*!important/, 'Discussion header must have generous breathing room');
   });
 });
