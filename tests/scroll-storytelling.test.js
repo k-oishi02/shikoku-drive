@@ -80,7 +80,7 @@ describe('SHIORI Scroll Storytelling & Magazine Drive Experience', () => {
       // 2. Editorial Photo Media & Visual Storytelling
       assert.ok(html.includes('class="j-card-media"'), 'Card must render media container for scroll storytelling');
       assert.ok(html.includes('class="j-card-photo" src="images/spots/nagatoro-line.jpg"'), 'Card 2 must render scenic photograph');
-      assert.ok(html.includes('class="j-card-num">NO. 01</span>'), 'Card 1 must render chapter marker NO. 01');
+      assert.ok(html.includes('NO. 01</span>'), 'Card 1 must render chapter marker NO. 01');
       assert.ok(html.includes('class="j-card-num">NO. 02</span>'), 'Card 2 must render chapter marker NO. 02');
 
       // 3. Travel hint with indicator
@@ -94,7 +94,7 @@ describe('SHIORI Scroll Storytelling & Magazine Drive Experience', () => {
       assert.match(html, /<div class="j-card-details">[\s\S]*?<div class="j-card-desc">/, 'Description must be inside expandable details block');
 
       // 5. Default expanded active card
-      assert.ok(html.includes('class="j-card is-expanded"'), 'Active card must be expanded by default for discoverability');
+      assert.ok(html.includes('is-expanded'), 'Active card must be expanded by default for discoverability');
       assert.ok(html.includes('aria-expanded="true"'), 'Active card must set aria-expanded=true');
     } finally {
       globalThis.document = prevDoc;

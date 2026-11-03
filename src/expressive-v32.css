@@ -2080,21 +2080,50 @@ html[data-trip-theme="dark"] .j-card.is-expanded {
   margin-bottom: 8px !important;
 }
 /* 5. Editorial Scroll Storytelling & Photo Presentation */
+.j-card.has-media {
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 18px !important;
+}
+.j-card.no-media {
+  padding: 16px 18px 14px !important;
+  border-radius: 18px !important;
+}
 .j-card-media {
-  position: relative;
-  width: calc(100% + 32px);
-  margin: -15px -16px 14px -16px;
-  height: 190px;
-  overflow: hidden;
-  border-radius: 17px 17px 0 0;
-  background: #1e2624;
+  position: relative !important;
+  width: 100% !important;
+  margin: 0 !important;
+  height: 200px !important;
+  overflow: hidden !important;
+  background: #17221f !important;
 }
 @media (min-width: 600px) {
   .j-card-media {
-    height: 230px;
-    width: calc(100% + 40px);
-    margin: -18px -20px 16px -20px;
+    height: 240px !important;
   }
+}
+.has-media .j-card-summary {
+  padding: 14px 16px 14px !important;
+}
+.no-media .j-card-summary {
+  padding: 0 !important;
+}
+.has-media .j-card-details {
+  padding: 0 16px 14px !important;
+}
+.j-card-num-inline {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  color: var(--sh-accent) !important;
+  background: var(--sh-accent-soft) !important;
+  padding: 2px 7px !important;
+  border-radius: 5px !important;
+  margin-right: 2px !important;
+}
+.has-media .j-card-num-inline {
+  display: none !important;
 }
 .j-card-photo {
   width: 100%;
@@ -2126,7 +2155,7 @@ html[data-trip-theme="dark"] .j-card.is-expanded {
   letter-spacing: 0.14em;
   color: #ffffff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   padding: 3px 8px;
@@ -2146,21 +2175,11 @@ html[data-trip-theme="dark"] .j-card.is-expanded {
   border: 1px solid rgba(255, 255, 255, 0.25);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
-.j-card-media-fallback {
-  background: linear-gradient(135deg, #23342f 0%, #17221f 50%, #101917 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 90px;
-}
-.j-card-media-fallback .j-card-photo-scrim {
-  background: none;
-}
-.j-card-fallback-grad {
-  position: absolute;
-  inset: 0;
-  opacity: 0.4;
-  background-image: radial-gradient(circle at 80% 20%, var(--sh-accent) 0%, transparent 60%);
+.no-media .j-card-cat {
+  color: var(--sh-accent) !important;
+  background: var(--sh-accent-soft) !important;
+  border-color: transparent !important;
+  text-shadow: none !important;
 }
 
 /* 6. Typography & Subtraction of Icon Clutter */

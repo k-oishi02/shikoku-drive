@@ -212,7 +212,6 @@ export function buildShioriUI(data) {
       const cardTitle = String(card?.title || '');
       const cardDesc = String(card?.desc || '').trim();
       const descHtml = cardDesc ? `<div class="j-card-desc">${escapeHtml(cardDesc)}</div>` : '';
-      const imgHtml = card.image ? `<img class="j-card-img" src="images/${escapeHtml(card.image)}" alt="${escapeHtml(cardTitle)}" loading="lazy">` : '';
       const mapFields = (typeof window !== 'undefined' && window.shioriMapFields) ? window.shioriMapFields(card) : { mapQuery: '', mapUrl: '' };
       const mapQuery = mapFields.mapQuery, mapSharedUrl = mapFields.mapUrl;
       const travelMin = Math.max(0, Math.round(Number(card.travelMinutesFromPrevious) || 0));
@@ -271,16 +270,15 @@ export function buildShioriUI(data) {
       const isDefaultActive = cardIndex === activeCardIndex;
       const cleanBadge = (card.badge || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
       const badgeHtml = cleanBadge ? `<span class="j-card-cat">${escapeHtml(cleanBadge)}</span>` : '';
-      const photoHtml = card.image
-        ? `<div class="j-card-media"><img class="j-card-photo" src="images/${escapeHtml(card.image)}" alt="${escapeHtml(cardTitle)}" loading="lazy"><div class="j-card-photo-scrim"><span class="j-card-num">NO. ${spotNum}</span>${badgeHtml}</div></div>`
-        : `<div class="j-card-media j-card-media-fallback"><div class="j-card-fallback-grad" aria-hidden="true"></div><div class="j-card-photo-scrim"><span class="j-card-num">NO. ${spotNum}</span>${badgeHtml}</div></div>`;
+      const spotImg = card.image || (/ラインくだり|岩畳/.test(cardTitle) ? 'spots/nagatoro-line.jpg' : /SL|パレオ/.test(cardTitle) ? 'spots/sl-paleo.jpg' : /豚みそ|有隣/.test(cardTitle) ? 'spots/butamiso-don.jpg' : /わらび餅|門藤/.test(cardTitle) ? 'spots/warabimochi.jpg' : /金石水管橋/.test(cardTitle) ? 'spots/kanaishi-bridge.jpg' : /寶登山|宝登山/.test(cardTitle) ? 'spots/hodosan-shrine.jpg' : /もみじ公園|ライトアップ/.test(cardTitle) ? 'spots/tsukinoishi-momiji.jpg' : '');
+      const photoHtml = spotImg ? `<div class="j-card-media"><img class="j-card-photo" src="images/${escapeHtml(spotImg)}" alt="${escapeHtml(cardTitle)}" loading="lazy"><div class="j-card-photo-scrim"><span class="j-card-num">NO. ${spotNum}</span>${badgeHtml}</div></div>` : '';
       cardsHtml += `
         ${travelHintHtml}
-        <div class="j-card${isDefaultActive ? ' is-expanded' : ''}" data-spot-index="${cardIndex}" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}" role="button" tabindex="0" aria-expanded="${isDefaultActive}">
+        <div class="j-card${isDefaultActive ? ' is-expanded' : ''}${spotImg ? ' has-media' : ' no-media'}" data-spot-index="${cardIndex}" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}" role="button" tabindex="0" aria-expanded="${isDefaultActive}">
           <span class="j-spot-watermark" aria-hidden="true">${spotNum}</span>
           ${photoHtml}
           <div class="j-card-summary">
-            <div class="j-card-time-row"><span class="j-card-time">${escapeHtml(card.time)}</span>${cstBadges}</div>
+            <div class="j-card-time-row"><span class="j-card-num-inline">NO. ${spotNum}</span><span class="j-card-time">${escapeHtml(card.time)}</span>${!spotImg ? badgeHtml : ''}${cstBadges}</div>
             <div class="j-card-ttl"><span>${escapeHtml(cardTitle)}</span><span class="j-card-expand-icon" aria-hidden="true">▾</span></div>
             ${btnRowHtml}
           </div>
