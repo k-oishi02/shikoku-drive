@@ -4,7 +4,10 @@
   "description": "SHIORI_app - PWA Travel Guide Application",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node --test tests/e2e/*.test.js",
+    "test:all": "node --test tests/*.test.js tests/e2e/*.test.js",
+    "verify": "node verify-all.mjs"
   },
   "keywords": [
     "shiori",
