@@ -291,7 +291,7 @@ body:has(#tab-recap.active) #now-mode {
 .now-card {
   background:
     radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--sh-tertiary) 32%, transparent), transparent 36%),
-    linear-gradient(145deg, #275552, #1c3f3d) !important;
+    linear-gradient(145deg, var(--sh-accent-strong), color-mix(in srgb, var(--sh-accent-strong) 80%, #000000)) !important;
   border-radius: 16px !important;
   box-shadow: 0 8px 24px rgba(20, 42, 39, .14) !important;
   margin: 10px 0 16px !important;
@@ -437,7 +437,7 @@ body:has(#tab-recap.active) #now-mode {
 }
 .live-action.live-route:not([hidden]),
 .live-route {
-  color: #1c3f3d !important;
+  color: var(--sh-accent-strong) !important;
   background: #ffffff !important;
   border-color: #ffffff !important;
   font-weight: 700 !important;
@@ -497,7 +497,7 @@ body:has(#tab-recap.active) #now-mode {
   min-height: 36px !important;
   padding: 0 15px !important;
   background: #ffffff !important;
-  color: #1c3f3d !important;
+  color: var(--sh-accent-strong) !important;
   border: 0 !important;
   border-radius: 9px !important;
   font: 700 .74rem/1 var(--sh-font) !important;
@@ -1537,8 +1537,8 @@ html[data-trip-theme="light"] .portal-tab-btn.active {
   border-radius: 999px;
   background: rgba(255, 255, 255, .86);
   backdrop-filter: blur(6px);
-  border: 1px solid rgba(39, 85, 82, .16);
-  color: #1c3f3d;
+  border: 1px solid color-mix(in srgb, var(--sh-accent-strong) 20%, transparent);
+  color: var(--sh-accent-strong);
   font: 700 .68rem/1 var(--sh-font);
   letter-spacing: .04em;
 }
@@ -1911,7 +1911,7 @@ html[data-trip-theme="dark"] .j-card.is-spot-active .j-spot-watermark {
   margin: 6px 0 10px !important;
   padding: 8px 12px !important;
   border-radius: 14px !important;
-  background: color-mix(in srgb, var(--sh-accent-strong, #275552) 88%, #1c3f3d) !important;
+  background: color-mix(in srgb, var(--sh-accent-strong) 88%, #111111) !important;
   box-shadow: 0 4px 14px rgba(20, 42, 39, .08) !important;
 }
 .now-head {
@@ -1954,7 +1954,7 @@ html[data-trip-theme="dark"] .j-card.is-spot-active .j-spot-watermark {
   margin: 0 !important;
   font-size: .68rem !important;
   font-weight: 700 !important;
-  color: var(--sh-accent, #9cc6be) !important;
+  color: var(--sh-accent-soft) !important;
   letter-spacing: .04em !important;
 }
 .now-title {
@@ -2264,57 +2264,127 @@ html[data-shiori-atmosphere="classic"] {
   --sh-on-tertiary-container: #5a3817 !important;
 }
 
-/* 6. Typography & Subtraction of Icon Clutter */
+/* 6. Editorial Typography: Pure Information, Zero Pill Frames */
 .j-spot-watermark,
 .j-spot-badge,
 .j-app-icon {
   display: none !important;
 }
-.j-card-ttl {
-  font-size: 1.05rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.02em !important;
-  color: var(--sh-ink) !important;
-  margin: 2px 0 6px !important;
-}
+
+/* Time & Category Row (Pure Typographic Rhythm, No Boxes/Pills) */
 .j-card-time-row {
   display: flex !important;
   flex-wrap: wrap !important;
-  align-items: center !important;
-  margin-bottom: 3px !important;
-  gap: 8px !important;
+  align-items: baseline !important;
+  margin-bottom: 8px !important;
+  gap: 6px 10px !important;
 }
-.j-card-time {
-  font-size: 0.8rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.05em !important;
+
+/* Spot Number Prefix (Sharp Editorial Text, Zero Pill Frame) */
+.j-card-num-inline {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
   color: var(--sh-accent) !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Time (Confident Tabular Digits, No Pill) */
+.j-card-time {
+  font-size: 0.86rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  color: var(--sh-ink) !important;
   font-variant-numeric: tabular-nums !important;
 }
 
-/* 7. Fully Seamless Road-Trip Timeline (Cards and Travel Hints 100% Linked) */
+/* Category Badge (Quiet Editorial Label with subtle dot, No Pill Frame) */
+.j-card-cat {
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--sh-muted) !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+.j-card-cat::before {
+  content: "· ";
+  color: var(--sh-line);
+  margin-right: 2px;
+}
+
+/* Constraints (Quiet Auxiliary Note in Parentheses, No Pill Frame) */
+.j-constraint-pill {
+  display: inline !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--sh-muted) !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+.j-constraint-pill::before {
+  content: " (";
+  color: var(--sh-muted);
+}
+.j-constraint-pill::after {
+  content: ")";
+  color: var(--sh-muted);
+}
+
+/* Spot Title (Bold, Spacious Heading) */
+.j-card-ttl {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 1.18rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--sh-ink) !important;
+  margin: 0 0 12px !important;
+  line-height: 1.35 !important;
+}
+.j-card-expand-icon {
+  font-size: 0.85rem !important;
+  color: var(--sh-muted) !important;
+  transition: transform 0.25s ease !important;
+}
+.j-card.is-expanded .j-card-expand-icon {
+  transform: rotate(180deg) !important;
+}
+
+/* 7. Fully Seamless Road-Trip Timeline with Generous Whitespace */
 .j-card:not(.checklist-card):not(.expense-card) {
   position: relative !important;
-  margin: 0 0 16px 28px !important;
-  padding: 16px 18px 14px !important;
+  margin: 0 0 22px 36px !important;
+  padding: 20px 22px 18px !important;
   border-radius: 18px !important;
-  background: rgba(255, 255, 255, 0.88) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.75) !important;
   box-shadow: 0 4px 20px rgba(20, 32, 28, 0.04), 0 1px 3px rgba(20, 32, 28, 0.02) !important;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.2s ease !important;
 }
 .j-card:not(.checklist-card):not(.expense-card).is-expanded {
-  box-shadow: 0 8px 28px rgba(20, 32, 28, 0.08), 0 2px 6px rgba(20, 32, 28, 0.03) !important;
+  box-shadow: 0 8px 30px rgba(20, 32, 28, 0.08), 0 2px 6px rgba(20, 32, 28, 0.03) !important;
 }
 
-/* Spot Milestone Pin (Placed exactly on the track) */
+/* Spot Milestone Pin (Placed exactly on the -24px track with breathing room) */
 .j-card:not(.checklist-card):not(.expense-card)::before {
   content: "" !important;
   position: absolute !important;
-  left: -25px !important;
-  top: 19px !important;
+  left: -31px !important;
+  top: 22px !important;
   width: 14px !important;
   height: 14px !important;
   border-radius: 50% !important;
@@ -2334,9 +2404,9 @@ html[data-shiori-atmosphere="classic"] {
 .j-card:not(.checklist-card):not(.expense-card)::after {
   content: "" !important;
   position: absolute !important;
-  left: -20px !important;
-  top: 26px !important;
-  bottom: -18px !important;
+  left: -25px !important;
+  top: 30px !important;
+  bottom: -24px !important;
   width: 3px !important;
   background: var(--sh-accent) !important;
   border-radius: 999px !important;
@@ -2346,33 +2416,33 @@ html[data-shiori-atmosphere="classic"] {
   display: none !important;
 }
 
-/* Transit Hint (Seamlessly linked to the continuous road track with zero gap) */
+/* Transit Hint (Generous breathing room and zero-gap alignment with road track) */
 .v2-travel-hint {
   position: relative !important;
   display: flex !important;
   flex-wrap: wrap !important;
   align-items: center !important;
   gap: 4px 8px !important;
-  margin: -4px 0 14px 28px !important;
-  padding: 8px 14px !important;
+  margin: 0 0 22px 36px !important;
+  padding: 10px 16px !important;
   border-radius: 12px !important;
-  background: rgba(255, 255, 255, 0.76) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
   backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
   border: 1px solid color-mix(in srgb, var(--sh-accent) 18%, rgba(255, 255, 255, 0.8)) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
   color: var(--sh-muted) !important;
-  font-size: .72rem !important;
+  font-size: .73rem !important;
   line-height: 1.45 !important;
 }
-/* Road Track running through the Transit Hint: same X coordinate (-20px) and width (3px) */
+/* Road Track running through the Transit Hint: same X coordinate (-25px) and width (3px) */
 .v2-travel-hint::before {
   content: "" !important;
   display: block !important;
   position: absolute !important;
-  left: -20px !important;
-  top: -18px !important;
-  bottom: -18px !important;
+  left: -25px !important;
+  top: -24px !important;
+  bottom: -24px !important;
   width: 3px !important;
   background: var(--sh-accent) !important;
   z-index: 1 !important;
@@ -2390,74 +2460,76 @@ html[data-shiori-atmosphere="classic"] {
 .v2-travel-hint strong {
   color: var(--sh-accent-strong, var(--sh-ink)) !important;
   font-weight: 700 !important;
-  font-size: .74rem !important;
+  font-size: .76rem !important;
 }
 .v2-route-chip {
   flex: 1 1 100% !important;
   color: var(--sh-muted) !important;
-  font-size: .68rem !important;
+  font-size: .69rem !important;
   margin-top: 2px !important;
 }
 
-/* 8. Crafted Editorial Action Buttons (Refined Craftsmanship & Micro-Interactions) */
+/* 8. Modern Architectural Buttons (Zero Pill Sausages, Crisp Clean Edges) */
 .j-btn-row {
   display: flex !important;
   flex-wrap: wrap !important;
   align-items: center !important;
   gap: 8px !important;
-  margin-top: 10px !important;
+  margin-top: 14px !important;
 }
 .j-btn,
 .j-btn-row .j-btn {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 5px !important;
-  min-height: 38px !important;
-  padding: 0 15px !important;
-  border-radius: 999px !important;
+  gap: 4px !important;
+  min-height: 35px !important;
+  padding: 0 13px !important;
+  border-radius: 8px !important; /* Architecturally crisp corner radius instead of pill capsule! */
   font-size: 0.74rem !important;
   font-weight: 600 !important;
-  letter-spacing: 0.03em !important;
+  letter-spacing: 0.02em !important;
   text-decoration: none !important;
   cursor: pointer !important;
   user-select: none !important;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   -webkit-tap-highlight-color: transparent !important;
 }
 
 /* Primary Action Button (地図, ルート etc.) */
 .j-btn.primary,
 .j-btn-row .j-btn.primary {
+  border-radius: 9px !important;
   background: linear-gradient(135deg, var(--sh-accent) 0%, var(--sh-accent-strong) 100%) !important;
   color: #ffffff !important;
   border: 1px solid color-mix(in srgb, var(--sh-accent) 80%, #ffffff) !important;
   box-shadow:
-    0 4px 14px color-mix(in srgb, var(--sh-accent) 32%, transparent),
+    0 3px 10px color-mix(in srgb, var(--sh-accent) 30%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
 }
 .j-btn.primary:hover,
 .j-btn-row .j-btn.primary:hover {
-  transform: translateY(-1.5px) !important;
+  transform: translateY(-1px) !important;
   box-shadow:
-    0 6px 18px color-mix(in srgb, var(--sh-accent) 42%, transparent),
+    0 5px 14px color-mix(in srgb, var(--sh-accent) 40%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
 }
 .j-btn.primary:active,
 .j-btn-row .j-btn.primary:active {
-  transform: translateY(1px) scale(0.97) !important;
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--sh-accent) 30%, transparent) !important;
+  transform: translateY(1px) scale(0.98) !important;
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--sh-accent) 30%, transparent) !important;
 }
 
 /* Secondary Action Button (+ 立替, 食べログ, 公式 etc.) */
 .j-btn:not(.primary),
 .j-btn-row .j-btn:not(.primary) {
-  background: rgba(255, 255, 255, 0.88) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
-  border: 1px solid color-mix(in srgb, var(--sh-accent) 26%, var(--sh-line)) !important;
+  border: 1px solid var(--sh-line) !important;
   color: var(--sh-ink) !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
 }
 .j-btn:not(.primary):hover,
 .j-btn-row .j-btn:not(.primary):hover {
@@ -2465,56 +2537,54 @@ html[data-shiori-atmosphere="classic"] {
   border-color: var(--sh-accent) !important;
   color: var(--sh-accent) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--sh-accent) 18%, transparent) !important;
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--sh-accent) 15%, transparent) !important;
 }
 .j-btn:not(.primary):active,
 .j-btn-row .j-btn:not(.primary):active {
-  transform: translateY(1px) scale(0.97) !important;
+  transform: translateY(1px) scale(0.98) !important;
 }
 
-/* Arrow Mark Badge inside buttons */
+/* Arrow Mark */
 .j-btn-mark {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 16px !important;
-  height: 16px !important;
-  border-radius: 50% !important;
-  font-size: 0.65rem !important;
-  line-height: 1 !important;
+  font-size: 0.68rem !important;
   margin-left: 2px !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  display: inline !important;
 }
 .j-btn.primary .j-btn-mark {
-  background: rgba(255, 255, 255, 0.22) !important;
-  color: #ffffff !important;
+  color: rgba(255, 255, 255, 0.85) !important;
 }
 .j-btn:not(.primary) .j-btn-mark {
-  background: color-mix(in srgb, var(--sh-accent) 15%, transparent) !important;
-  color: var(--sh-accent) !important;
+  color: var(--sh-muted) !important;
 }
 
 /* Specific styling for + 立替 shortcut button */
 .j-btn.expense-shortcut {
-  font-weight: 700 !important;
-  border-color: color-mix(in srgb, var(--sh-accent) 35%, var(--sh-line)) !important;
+  font-weight: 600 !important;
+  border-color: var(--sh-line) !important;
 }
 
 /* 9. Second Tab & Beyond: Generous Whitespace, Spatial Breathing Room & Glass Cards */
 .j-tab-panel {
-  padding: 16px 0 48px !important;
+  padding: 18px 0 52px !important;
 }
 
 .j-sec-header {
-  margin-bottom: 22px !important;
+  margin: 30px 0 24px !important;
 }
-.j-sec-header h2 {
+.j-sec-header h2,
+.j-sec-header .j-sec-en {
   font-size: 1.55rem !important;
   font-weight: 700 !important;
   letter-spacing: -0.02em !important;
   color: var(--sh-ink) !important;
   margin: 0 0 6px !important;
 }
-.j-sec-header p {
+.j-sec-header p,
+.j-sec-header .j-sec-ja {
   font-size: 0.82rem !important;
   color: var(--sh-muted) !important;
   margin: 0 !important;
@@ -2522,10 +2592,10 @@ html[data-shiori-atmosphere="classic"] {
 
 /* Expenses Tab (#tab-expenses) */
 .share-room-panel {
-  margin: 0 0 18px !important;
-  padding: 18px 20px !important;
+  margin: 0 0 20px !important;
+  padding: 20px 22px !important;
   border-radius: 18px !important;
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.75) !important;
@@ -2536,8 +2606,8 @@ html[data-shiori-atmosphere="classic"] {
   color: var(--sh-ink) !important;
 }
 .sync-badge {
-  border-radius: 999px !important;
-  padding: 3px 10px !important;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
   font-size: 0.68rem !important;
   font-weight: 700 !important;
   background: var(--sh-accent-soft) !important;
@@ -2546,19 +2616,19 @@ html[data-shiori-atmosphere="classic"] {
 }
 
 .device-owner-panel {
-  margin-bottom: 20px !important;
-  padding: 18px 20px !important;
+  margin-bottom: 22px !important;
+  padding: 20px 22px !important;
   border-radius: 18px !important;
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.75) !important;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03) !important;
 }
 .device-owner-panel select {
-  min-height: 44px !important;
+  min-height: 46px !important;
   padding: 0 14px !important;
-  border-radius: 12px !important;
+  border-radius: 10px !important;
   border: 1px solid var(--sh-line) !important;
   background: #ffffff !important;
   font-size: 0.88rem !important;
@@ -2568,14 +2638,14 @@ html[data-shiori-atmosphere="classic"] {
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 8px !important;
-  margin-bottom: 20px !important;
+  margin-bottom: 22px !important;
 }
 .expense-preset-chip {
-  min-height: 36px !important;
-  padding: 0 14px !important;
+  min-height: 35px !important;
+  padding: 0 13px !important;
   border: 1px solid var(--sh-line) !important;
-  border-radius: 999px !important;
-  background: rgba(255, 255, 255, 0.85) !important;
+  border-radius: 8px !important; /* Architectural radius */
+  background: rgba(255, 255, 255, 0.88) !important;
   backdrop-filter: blur(8px) !important;
   color: var(--sh-ink) !important;
   font: 600 .74rem/1 var(--sh-font) !important;
@@ -2590,14 +2660,14 @@ html[data-shiori-atmosphere="classic"] {
 }
 
 .expense-card {
-  padding: 22px 20px !important;
+  padding: 24px 22px !important;
   border-radius: 20px !important;
-  background: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(14px) !important;
   -webkit-backdrop-filter: blur(14px) !important;
   border: 1px solid rgba(255, 255, 255, 0.75) !important;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04) !important;
-  margin-bottom: 24px !important;
+  margin-bottom: 26px !important;
 }
 
 .expense-form {
@@ -2614,7 +2684,7 @@ html[data-shiori-atmosphere="classic"] {
   min-height: 48px !important;
   padding: 0 14px !important;
   border: 1px solid var(--sh-line) !important;
-  border-radius: 12px !important;
+  border-radius: 10px !important;
   font-size: 16px !important;
   background: #ffffff !important;
   transition: border-color .2s, box-shadow .2s !important;
@@ -2628,13 +2698,13 @@ html[data-shiori-atmosphere="classic"] {
 
 .expense-participants {
   gap: 8px !important;
-  margin: 6px 0 14px !important;
+  margin: 6px 0 16px !important;
 }
 .expense-participants label {
-  padding: 8px 15px !important;
-  border-radius: 999px !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important; /* Architectural radius */
   border: 1px solid var(--sh-line) !important;
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
   color: var(--sh-ink) !important;
   font-size: .78rem !important;
 }
@@ -2647,7 +2717,7 @@ html[data-shiori-atmosphere="classic"] {
 
 .expense-submit {
   min-height: 48px !important;
-  border-radius: 12px !important;
+  border-radius: 10px !important;
   border: 0 !important;
   background: linear-gradient(135deg, var(--sh-accent) 0%, var(--sh-accent-strong) 100%) !important;
   color: #ffffff !important;
@@ -2658,7 +2728,7 @@ html[data-shiori-atmosphere="classic"] {
   transition: all 0.2s ease !important;
 }
 .expense-submit:hover {
-  transform: translateY(-1.5px) !important;
+  transform: translateY(-1px) !important;
   box-shadow: 0 6px 18px color-mix(in srgb, var(--sh-accent) 45%, transparent) !important;
 }
 .expense-submit:active {
@@ -2666,27 +2736,44 @@ html[data-shiori-atmosphere="classic"] {
 }
 
 /* Discussion / Talk Tab (#tab-talk) */
+.talk,
+html[data-trip-theme="light"] .talk {
+  --talk-accent: var(--sh-accent) !important;
+  --talk-card: rgba(255, 255, 255, 0.92) !important;
+}
 .talk-header {
-  padding: 18px 0 16px !important;
-  margin-bottom: 8px !important;
+  padding: 24px 0 20px !important;
+  margin-bottom: 16px !important;
 }
 .talk-header h2 {
   font-size: clamp(1.6rem, 5vw, 2.2rem) !important;
   font-weight: 700 !important;
   color: var(--sh-ink) !important;
   line-height: 1.3 !important;
+  letter-spacing: -0.02em !important;
+}
+.talk-intro {
+  margin-top: 8px !important;
+  font-size: 0.84rem !important;
+  color: var(--sh-muted) !important;
+}
+.talk-toolbar {
+  padding-bottom: 16px !important;
+  margin-bottom: 20px !important;
 }
 .talk-filters {
-  gap: 8px !important;
-  margin: 18px 0 16px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  margin: 22px 0 20px !important;
 }
 .talk-filter {
   min-height: 38px !important;
   padding: 0 16px !important;
-  border-radius: 999px !important;
-  font-size: .78rem !important;
+  border-radius: 8px !important;
+  font-size: .8rem !important;
   font-weight: 600 !important;
-  background: rgba(255, 255, 255, 0.65) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
   border: 1px solid var(--sh-line) !important;
   color: var(--sh-muted) !important;
   transition: all 0.2s ease !important;
@@ -2696,35 +2783,92 @@ html[data-shiori-atmosphere="classic"] {
   border-color: var(--sh-accent) !important;
   color: var(--sh-accent) !important;
   font-weight: 700 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
 }
 .talk-button.talk-primary {
-  min-height: 42px !important;
+  min-height: 44px !important;
   padding: 0 18px !important;
-  border-radius: 999px !important;
+  border-radius: 8px !important;
   background: linear-gradient(135deg, var(--sh-accent) 0%, var(--sh-accent-strong) 100%) !important;
   color: #ffffff !important;
   border: 1px solid color-mix(in srgb, var(--sh-accent) 80%, #ffffff) !important;
   font-weight: 700 !important;
+  font-size: 0.82rem !important;
   box-shadow: 0 4px 14px color-mix(in srgb, var(--sh-accent) 32%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
 }
 .talk-card {
-  padding: 22px 20px !important;
+  padding: 24px 22px !important;
   border-radius: 18px !important;
-  background: rgba(255, 255, 255, 0.88) !important;
-  backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.75) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
-  margin-bottom: 16px !important;
-}
-
-/* Checklist Tab (#tab-checklist) */
-.checklist-card {
-  padding: 22px 20px !important;
-  border-radius: 18px !important;
-  background: rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.75) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
   margin-bottom: 20px !important;
+}
+.talk-badge {
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+}
+
+/* Checklist Tab (#tab-checklist) */
+.checklist-card {
+  padding: 26px 24px !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04) !important;
+  margin-bottom: 26px !important;
+}
+.checklist-head {
+  padding-bottom: 18px !important;
+  margin-bottom: 20px !important;
+  border-bottom: 1px solid var(--sh-line) !important;
+}
+.checklist-head strong {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: var(--sh-ink) !important;
+}
+.checklist-group {
+  margin-bottom: 24px !important;
+}
+.checklist-group-title {
+  font-size: 0.86rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 12px !important;
+  color: var(--sh-ink) !important;
+  letter-spacing: 0.03em !important;
+}
+.checklist-item {
+  font-size: 0.84rem !important;
+  min-height: 44px !important;
+  padding: 10px 8px !important;
+  gap: 12px !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--sh-line) 60%, transparent) !important;
+}
+.checklist-item input {
+  accent-color: var(--sh-accent) !important;
+  width: 19px !important;
+  height: 19px !important;
+  cursor: pointer;
+}
+.mini-button {
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--sh-line) !important;
+  font-size: .76rem !important;
+  font-weight: 600 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: var(--sh-ink) !important;
+  cursor: pointer;
+  transition: all 0.2s ease !important;
+}
+.mini-button:hover {
+  background: var(--sh-accent-soft) !important;
+  border-color: var(--sh-accent) !important;
+  color: var(--sh-accent) !important;
 }

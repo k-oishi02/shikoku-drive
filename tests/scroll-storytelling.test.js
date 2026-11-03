@@ -152,17 +152,20 @@ describe('SHIORI Atmosphere & Typography Cards Experience', () => {
     assert.match(css, /html\[data-shiori-atmosphere="classic"\]/, 'CSS must support classic atmosphere');
 
     // 1. Seamless road-trip timeline connection
-    assert.match(css, /\.v2-travel-hint::before[\s\S]*?left:\s*-20px\s*!important/, 'Travel hint must align on -20px track');
-    assert.match(css, /\.j-card:not\(\.checklist-card\):not\(\.expense-card\)::after[\s\S]*?left:\s*-20px\s*!important/, 'Card timeline must align on -20px track');
+    assert.match(css, /\.v2-travel-hint::before[\s\S]*?left:\s*-25px\s*!important/, 'Travel hint must align on -25px track');
+    assert.match(css, /\.j-card:not\(\.checklist-card\):not\(\.expense-card\)::after[\s\S]*?left:\s*-25px\s*!important/, 'Card timeline must align on -25px track');
 
-    // 2. Crafted button styles
-    assert.match(css, /\.j-btn\.primary[\s\S]*?background:\s*linear-gradient/, 'Primary button must use rich crafted gradient');
-    assert.match(css, /\.j-btn\.primary[\s\S]*?box-shadow:/, 'Primary button must use layered tactile box-shadow');
-    assert.match(css, /\.j-btn:not\(\.primary\)[\s\S]*?backdrop-filter:\s*blur/, 'Ghost buttons must use frosted glass');
+    // 2. Pure typography (no pill frames on numbers or badges)
+    assert.match(css, /\.j-card-num-inline[\s\S]*?background:\s*transparent\s*!important/, 'Spot number must not have background box');
+    assert.match(css, /\.j-card-cat[\s\S]*?background:\s*transparent\s*!important/, 'Category badge must not have pill frame');
 
-    // 3. Second-tab and expense breathing room
-    assert.match(css, /\.expense-card[\s\S]*?padding:\s*22px 20px\s*!important/, 'Expense card must have generous padding');
-    assert.match(css, /\.share-room-panel[\s\S]*?padding:\s*18px 20px\s*!important/, 'Share room panel must have generous padding');
-    assert.match(css, /\.talk-header[\s\S]*?padding:\s*18px 0 16px\s*!important/, 'Discussion header must have generous breathing room');
+    // 3. Architectural button styles (clean 8px/9px radii)
+    assert.match(css, /\.j-btn\.primary[\s\S]*?border-radius:\s*9px\s*!important/, 'Primary button must use crisp architectural radius');
+    assert.match(css, /\.j-btn:not\(\.primary\)[\s\S]*?border-radius:\s*8px\s*!important/, 'Secondary button must use crisp architectural radius');
+
+    // 4. Second-tab and expense breathing room
+    assert.match(css, /\.expense-card[\s\S]*?padding:\s*24px 22px\s*!important/, 'Expense card must have generous padding');
+    assert.match(css, /\.share-room-panel[\s\S]*?padding:\s*20px 22px\s*!important/, 'Share room panel must have generous padding');
+    assert.match(css, /\.talk-header[\s\S]*?padding:\s*(20px 0 18px|24px 0 20px)\s*!important/, 'Discussion header must have generous breathing room');
   });
 });
