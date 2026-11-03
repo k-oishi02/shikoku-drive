@@ -200,6 +200,7 @@ export function renderPortalDashboard() {
   if (typeof document === 'undefined') return;
   const loadId = ++portalLoadRunId;
   showPortalStatus('');
+  if (typeof window !== 'undefined') window._syncAssignedTrips?.().catch?.(() => {});
   const joined = Object.keys(readStoredObject(TRIP_ACCESS_KEY)).filter(id => isValidDataKey(id) && storedTripAccess(id));
   const todayStr = tokyoDateKey();
   const cached = joined.map(id => portalTripSummary(id, readCachedTripConfig(id), todayStr)).filter(Boolean);
@@ -338,4 +339,7 @@ export function initAppRouter() {
 
 if (typeof window !== 'undefined') {
   Object.assign(window, { handleOnboardingSubmit, switchPortalCategory, showAddTripInput, hideAddTripInput, handleAddTripSubmit, backToPortal });
+  window.addEventListener('shiori-assigned-trips-updated', () => {
+    if (typeof document !== 'undefined' && document.getElementById('portal-overlay')?.classList.contains('active')) { renderPortalDashboard(); showPortalStatus('新しいしおりが届きました！'); }
+  });
 }

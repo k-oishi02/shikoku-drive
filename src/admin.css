@@ -167,6 +167,21 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); box-sha
 .admin-ledger-controls { display: grid; justify-items: end; gap: .35rem; }
 .admin-ledger-actions { display: flex; justify-content: flex-end; padding: .55rem .85rem .8rem; border-top: 1px solid var(--line); }
 .admin-ledger-delete { min-width: 3.5rem; }
+.known-members-picker, .direct-share-box { margin-top: .85rem; padding: .8rem .9rem; border: 1px solid rgba(99, 214, 154, .24); border-radius: .85rem; background: rgba(12, 22, 30, .65); }
+.known-members-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .6rem; }
+.known-members-title { display: grid; gap: .15rem; }
+.known-members-title strong { font-size: .8rem; color: #d8f8e5; }
+.known-members-title small { font-size: .7rem; color: var(--muted); }
+.known-members-quick, .direct-share-actions { display: flex; flex-wrap: wrap; gap: .4rem; }
+.direct-share-actions { margin-top: .65rem; justify-content: flex-end; }
+.known-members-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); gap: .45rem; }
+.known-member-chip { display: flex; align-items: center; gap: .55rem; padding: .48rem .65rem; border: 1px solid var(--line); border-radius: .7rem; background: #0c121c; cursor: pointer; transition: border-color .15s, background .15s; }
+.known-member-chip.is-selected { border-color: rgba(99, 214, 154, .55); background: rgba(99, 214, 154, .11); }
+.known-member-chip input { width: 1rem; min-height: auto; margin: 0; flex-shrink: 0; }
+.known-member-copy { display: grid; min-width: 0; gap: .08rem; }
+.known-member-copy strong, .known-member-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.known-member-copy strong { font-size: .78rem; }
+.known-member-copy small { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .63rem; }
 
 dialog { width: min(94vw, 48rem); max-height: 90vh; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 1.3rem; color: var(--text); background: var(--panel); box-shadow: var(--shadow); }
 dialog::backdrop { background: rgba(0, 0, 0, .72); backdrop-filter: blur(6px); }

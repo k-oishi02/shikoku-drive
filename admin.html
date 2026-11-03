@@ -175,7 +175,8 @@
                             <label class="distribution-capacity-field">端末枠<input id="distribution-capacity" type="number" min="1" max="50" step="1" value="2" inputmode="numeric"></label>
                             <button id="create-distribution" class="button primary" type="button" aria-label="配布IDを発行">ISSUE ID</button>
                         </div>
-                        <p class="field-help">端末枠は1〜50台で設定できます。参加者は登録リンクを開くだけで追加され、配布IDをADDへ手入力する方法も使えます。配布先ごとに独立した参加者・割り勘ルームを作成し、共有支出は各配布先カードの「共有台帳」から管理者もリアルタイムで確認できます。</p>
+                        <div id="distribution-known-members" class="known-members-picker" hidden></div>
+                        <p class="field-help">端末枠は1〜50台で設定できます。過去の参加メンバーを選択して発行（または配布先カードの「既知メンバーへ直接共有」を実行）すると、相手は12桁入力不要でいつものSHIORIを開くだけで自動追加されます。初参加の方には登録リンクや配布IDも併用できます。</p>
                     </section>
                     <div class="section-heading"><h3>ACTIVE DISTRIBUTIONS</h3><span id="distribution-count">0件</span></div>
                     <div id="distribution-list" class="distribution-list" aria-live="polite"></div>
@@ -426,6 +427,6 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
     </dialog>
     <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
     <div id="admin-error-boundary" class="shiori-error-boundary-container" hidden></div>
-    <script type="module" src="src/admin.js?v=401"></script>
+    <script type="module" src="src/admin.js?v=402"></script>
 </body>
 </html>

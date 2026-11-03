@@ -21,6 +21,7 @@ import {
     documentId,
     FieldPath,
     deleteField,
+    getDocFromServer,
     getDocsFromServer,
     initializeFirestore,
     getFirestore,
@@ -403,6 +404,7 @@ export async function redeemAccessId(value) {
         if (String(error?.code || '').includes('permission-denied')) throw accessError('access/full', 'Room is full or inactive');
         throw error;
     }
+    await registerParticipantPresence(db, grant.roomId, uid);
     return { tripId: grant.tripId, ledgerToken: grant.ledgerToken, grantId, trip };
 }
 
@@ -799,7 +801,117 @@ async function getDbInstance() {
 window._redeemAccessId = redeemAccessId;
 window._fetchManagedTripConfig = fetchManagedTripConfig;
 window._initSyncEngine = initSyncEngine;
+const MANAGED_TRIP_CACHE_PREFIX = 'managed-trip-cache-v2:';
+const failedInboxGrantIds = new Set();
+let inboxSyncPromise = null;
+let lastVisibilityInboxCheck = 0;
+let lastInboxSyncAt = 0;
+
+async function registerParticipantPresence(db, roomId, uid) {
+    if (typeof localStorage === 'undefined') return;
+    const nickname = String(localStorage.getItem('user_nickname') || '').trim().slice(0, 40);
+    if (!nickname) return;
+    try {
+        const participantRef = doc(db, 'rooms', roomId, 'participants', uid);
+        const existing = await getDoc(participantRef);
+        await setDoc(participantRef, {
+            nickname,
+            lastActive: serverTimestamp(),
+            ...(existing.exists() ? {} : { joinedAt: serverTimestamp() })
+        }, { merge: true });
+    } catch {
+        // Best-effort presence registration
+    }
+}
+
+export async function inboxGrantIdForUid(uid) {
+    const cleanUid = String(uid || '').trim();
+    if (!/^[A-Za-z0-9_-]{6,128}$/.test(cleanUid)) return '';
+    return sha256(`shiori-member-inbox-v1:${cleanUid}`);
+}
+
+export async function syncAssignedTripsFromCloud(force = false) {
+    if (!force && Date.now() - lastInboxSyncAt < 5000) return { added: [] };
+    if (inboxSyncPromise) return inboxSyncPromise;
+    inboxSyncPromise = (async () => {
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return { added: [] };
+        const db = await getDbInstance();
+        if (!db) return { added: [] };
+        const uid = getAuth().currentUser?.uid || '';
+        const inboxId = await inboxGrantIdForUid(uid);
+        if (!inboxId) return { added: [], uid };
+        const inboxRef = doc(db, 'accessGrants', inboxId);
+        lastInboxSyncAt = Date.now();
+        let snap;
+        try {
+            snap = await getDocFromServer(inboxRef);
+        } catch (err) {
+            if (String(err?.code || '').includes('permission-denied')) return { added: [], uid };
+            try { snap = await getDoc(inboxRef); } catch { return { added: [], uid }; }
+        }
+        if (!snap?.exists()) return { added: [], uid };
+        const rawItems = snap.data()?.items;
+        if (!rawItems || typeof rawItems !== 'object') return { added: [], uid };
+
+        const latestByTrip = new Map();
+        Object.values(rawItems).forEach(entry => {
+            if (!entry || typeof entry !== 'object') return;
+            const tripId = String(entry.tripId || '').trim();
+            const accessId = normalizeAccessId(entry.accessId);
+            const ledgerToken = String(entry.ledgerToken || '').trim();
+            if (!/^[a-zA-Z0-9_-]{1,40}$/.test(tripId) || !ACCESS_ID_PATTERN.test(accessId) || !/^[A-Za-z0-9_-]{43}$/.test(ledgerToken)) return;
+            const ts = Date.parse(entry.sharedAt || '') || 0;
+            const prev = latestByTrip.get(tripId);
+            if (!prev || ts >= prev.ts) {
+                latestByTrip.set(tripId, { tripId, accessId, ledgerToken, grantId: String(entry.grantId || ''), ts });
+            }
+        });
+
+        const added = [];
+        for (const candidate of latestByTrip.values()) {
+            if (candidate.grantId && failedInboxGrantIds.has(candidate.grantId)) continue;
+            const saved = storedAccessForTrip(candidate.tripId);
+            if (saved && normalizeAccessId(saved.accessId) === candidate.accessId && saved.ledger === candidate.ledgerToken) continue;
+            try {
+                const redeemed = await redeemAccessId(candidate.accessId);
+                let allAccess = {};
+                try {
+                    const parsed = JSON.parse(localStorage.getItem(TRIP_ACCESS_KEY) || '{}');
+                    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) allAccess = parsed;
+                } catch {}
+                allAccess[redeemed.tripId] = { ledger: redeemed.ledgerToken, accessId: candidate.accessId, grantId: redeemed.grantId };
+                localStorage.setItem(TRIP_ACCESS_KEY, JSON.stringify(allAccess));
+                localStorage.setItem(`${MANAGED_TRIP_CACHE_PREFIX}${redeemed.tripId}:${redeemed.grantId}`, JSON.stringify(redeemed.trip));
+                added.push(redeemed.tripId);
+            } catch (err) {
+                const code = String(err?.code || '');
+                if ((code.includes('access/revoked') || code.includes('access/invalid')) && candidate.grantId) {
+                    failedInboxGrantIds.add(candidate.grantId);
+                }
+            }
+        }
+        if (added.length > 0 && typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('shiori-assigned-trips-updated', { detail: { added } }));
+        }
+        return { added, uid };
+    })().finally(() => { inboxSyncPromise = null; });
+    return inboxSyncPromise;
+}
+
 window._stopSyncEngine = stopSyncEngine;
+window._syncAssignedTrips = syncAssignedTripsFromCloud;
+
+if (typeof localStorage !== 'undefined' && localStorage.getItem('user_nickname')) {
+    syncAssignedTripsFromCloud().catch(() => {});
+}
+if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && localStorage.getItem('user_nickname') && Date.now() - lastVisibilityInboxCheck > 15000) {
+            lastVisibilityInboxCheck = Date.now();
+            syncAssignedTripsFromCloud(true).catch(() => {});
+        }
+    });
+}
 
 window.addEventListener('offline', () => {
     if (window.currentTripId) publishLedgerAccess('', false, 'offline');

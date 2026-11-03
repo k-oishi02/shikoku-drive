@@ -92,7 +92,7 @@ export async function adoptSuggestionTransaction(args) {
       return { trip, planning, candidate: matches[0], newVersion: draftVersion(data), isIdempotentReplay: true };
     }
     assertDraftVersion(data, expectedVersion);
-    const adopted = applySuggestionAdopt({ planning, suggestion, roomId, candidateId: args.candidateId, adoptedAt: nowIso });
+    const adopted = applySuggestionAdopt({ planning, suggestion, roomId, candidateId: args.candidateId, adoptedAt: args.adoptedAt || nowIso });
     if (!adopted.ok) throw new Error(adopted.error);
     adopted.planning = cleanPlanning(adopted.planning);
     adopted.candidate = adopted.planning.candidates.find(c => c.id === adopted.candidate.id);
@@ -205,4 +205,228 @@ export async function cleanupRoomSuggestionsAndComments({
   }
 
   return { deletedSuggestions, deletedComments };
+}
+
+export const KNOWN_MEMBERS_DOC_ID = 'admin_known_members_v1';
+const VALID_MEMBER_UID = /^[A-Za-z0-9_-]{6,128}$/;
+const GENERIC_NICKNAMES = new Set(['', '名無し', '参加者情報のない端末']);
+
+export async function computeParticipantInboxGrantId(uid, sha256Fn) {
+  const cleanUid = String(uid || '').trim();
+  if (!VALID_MEMBER_UID.test(cleanUid)) throw new Error('無効な参加者端末IDです。');
+  if (typeof sha256Fn !== 'function') throw new Error('ハッシュ関数が指定されていません。');
+  return sha256Fn(`shiori-member-inbox-v1:${cleanUid}`);
+}
+
+export function collectKnownParticipants(distributions = [], savedDirectory = {}, excludeTripId = '') {
+  const byUid = new Map();
+  const upsert = (uid, info) => {
+    const cleanUid = String(uid || '').trim();
+    if (!VALID_MEMBER_UID.test(cleanUid)) return;
+    const nick = String(info.nickname || '').trim().slice(0, 40);
+    const prev = byUid.get(cleanUid);
+    const hasRealNick = !GENERIC_NICKNAMES.has(nick);
+    const prevHasRealNick = prev && !GENERIC_NICKNAMES.has(prev.nickname);
+    const ts = Number(info.lastActiveMs) || 0;
+    if (!prev) {
+      byUid.set(cleanUid, {
+        uid: cleanUid,
+        nickname: hasRealNick ? nick : '',
+        lastTripId: String(info.lastTripId || ''),
+        lastLabel: String(info.lastLabel || ''),
+        lastActiveMs: ts,
+        isRecent: Boolean(info.isRecent)
+      });
+      return;
+    }
+    const newer = ts >= prev.lastActiveMs;
+    if (hasRealNick && (newer || !prevHasRealNick)) prev.nickname = nick;
+    if (newer && info.lastTripId) {
+      prev.lastTripId = String(info.lastTripId);
+      prev.lastLabel = String(info.lastLabel || prev.lastLabel);
+    }
+    if (ts > prev.lastActiveMs) prev.lastActiveMs = ts;
+    if (info.isRecent) prev.isRecent = true;
+  };
+
+  if (savedDirectory && typeof savedDirectory === 'object') {
+    Object.entries(savedDirectory).forEach(([uid, entry]) => {
+      if (entry && typeof entry === 'object') upsert(uid, entry);
+    });
+  }
+
+  const sortedDists = [...(Array.isArray(distributions) ? distributions : [])]
+    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  const recentSource = sortedDists.find(d => (!excludeTripId || d.tripId !== excludeTripId) && (
+    (Array.isArray(d.participants) && d.participants.length > 0) ||
+    (d.sharedMembers && Object.keys(d.sharedMembers).length > 0)
+  ));
+
+  sortedDists.forEach(dist => {
+    const isRecent = Boolean(recentSource && dist.id === recentSource.id);
+    const distTs = (dist.createdAt?.seconds || 0) * 1000;
+    const shared = (dist.sharedMembers && typeof dist.sharedMembers === 'object') ? dist.sharedMembers : {};
+    Object.entries(shared).forEach(([uid, meta]) => {
+      const parsedTs = Date.parse(meta?.sharedAt || '') || distTs;
+      upsert(uid, { nickname: meta?.nickname, lastTripId: dist.tripId, lastLabel: dist.label, lastActiveMs: parsedTs, isRecent });
+    });
+    (Array.isArray(dist.participants) ? dist.participants : []).forEach(p => {
+      const pTs = (p.lastActive?.seconds || p.joinedAt?.seconds || 0) * 1000 || distTs;
+      upsert(p.uid, { nickname: p.nickname, lastTripId: dist.tripId, lastLabel: dist.label, lastActiveMs: pTs, isRecent });
+    });
+  });
+
+  return [...byUid.values()]
+    .filter(item => item.nickname)
+    .sort((a, b) => (Number(b.isRecent) - Number(a.isRecent)) || (b.lastActiveMs - a.lastActiveMs) || a.nickname.localeCompare(b.nickname, 'ja'));
+}
+
+export async function syncKnownParticipantsDirectory({ db, doc, getDoc, setDoc, serverTimestamp, knownList = [], existingDirectory = null }) {
+  const ref = doc(db, 'accessGrants', KNOWN_MEMBERS_DOC_ID);
+  let base = existingDirectory;
+  if (!base) {
+    const snap = await getDoc(ref);
+    base = (snapExists(snap) && snap.data()?.members && typeof snap.data().members === 'object') ? snap.data().members : {};
+  }
+  const merged = { ...base };
+  let changed = false;
+  knownList.forEach(item => {
+    if (!item?.uid || !VALID_MEMBER_UID.test(item.uid) || !item.nickname) return;
+    const cur = merged[item.uid];
+    const nextEntry = {
+      nickname: String(item.nickname).slice(0, 40),
+      lastTripId: String(item.lastTripId || cur?.lastTripId || '').slice(0, 40),
+      lastLabel: String(item.lastLabel || cur?.lastLabel || '').slice(0, 40),
+      lastActiveMs: Math.max(Number(item.lastActiveMs) || 0, Number(cur?.lastActiveMs) || 0)
+    };
+    if (!cur || cur.nickname !== nextEntry.nickname || cur.lastTripId !== nextEntry.lastTripId || cur.lastActiveMs < nextEntry.lastActiveMs) {
+      merged[item.uid] = nextEntry;
+      changed = true;
+    }
+  });
+  if (changed) {
+    await setDoc(ref, {
+      kind: 'knownMembersDirectory',
+      status: 'directory',
+      members: merged,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  }
+  return merged;
+}
+
+export async function pushDistributionToMembers({
+  db, doc, runTransaction, serverTimestamp, sha256Fn, distribution, membersToShare = [], adminUid = 'admin'
+}) {
+  const roomId = String(distribution?.roomId || distribution?.id || '').trim();
+  const distId = String(distribution?.id || roomId).trim();
+  if (!segment(roomId) || !segment(distId)) throw new Error('配布先IDが不正です。');
+  const seen = new Set();
+  const targets = [];
+  for (const m of membersToShare) {
+    const uid = String(m?.uid || '').trim();
+    if (!VALID_MEMBER_UID.test(uid) || seen.has(uid)) continue;
+    seen.add(uid);
+    const inboxId = await computeParticipantInboxGrantId(uid, sha256Fn);
+    targets.push({ uid, nickname: String(m?.nickname || '参加者').trim().slice(0, 40) || '参加者', inboxId });
+  }
+  if (!targets.length) throw new Error('共有するメンバーを1名以上選択してください。');
+
+  const nowIso = new Date().toISOString();
+  const roomRef = doc(db, 'rooms', roomId);
+  const distRef = doc(db, 'adminDistributions', distId);
+  const inboxRefs = targets.map(t => doc(db, 'accessGrants', t.inboxId));
+
+  return runTransaction(db, async tx => {
+    const [roomSnap, distSnap, ...inboxSnaps] = await Promise.all([
+      tx.get(roomRef),
+      tx.get(distRef),
+      ...inboxRefs.map(r => tx.get(r))
+    ]);
+    if (!snapExists(roomSnap) || !snapExists(distSnap)) throw new Error('配布ルームが見つかりません。');
+    const roomData = roomSnap.data() || {};
+    const distData = distSnap.data() || {};
+    if (roomData.status !== 'active' || distData.status !== 'active') {
+      throw new Error('有効な配布先のみ直接共有できます。再開してから実行してください。');
+    }
+    const tripId = String(distData.tripId || distribution.tripId || '');
+    const ledgerToken = String(distData.ledgerToken || distribution.ledgerToken || '');
+    const accessId = String(distData.accessId || distribution.accessId || '');
+    const grantId = String(distData.grantId || distribution.grantId || '');
+    if (!tripId || !ledgerToken || !accessId || !grantId) {
+      throw new Error('この配布先には配布ID情報がないため直接共有できません。新しく発行してください。');
+    }
+
+    const roomMembers = { ...(roomData.members || {}) };
+    const sharedMembers = { ...(distData.sharedMembers || {}) };
+    targets.forEach(t => {
+      roomMembers[t.uid] = true;
+      sharedMembers[t.uid] = { nickname: t.nickname, sharedAt: nowIso };
+    });
+
+    const totalDevices = Object.keys(roomMembers).length;
+    if (totalDevices > 50) throw new Error('1つの配布先に登録できる上限（50台）を超えています。');
+    const currentCap = Number.isInteger(Number(roomData.capacity)) ? Number(roomData.capacity) : 2;
+    const nextCapacity = Math.max(currentCap, totalDevices);
+
+    tx.update(roomRef, { members: roomMembers, capacity: nextCapacity, updatedAt: serverTimestamp() });
+    tx.update(distRef, { sharedMembers, capacity: nextCapacity, updatedAt: serverTimestamp() });
+
+    targets.forEach((t, idx) => {
+      const prev = snapExists(inboxSnaps[idx]) ? (inboxSnaps[idx].data() || {}) : {};
+      const prevItems = (prev.items && typeof prev.items === 'object') ? prev.items : {};
+      tx.set(inboxRefs[idx], {
+        kind: 'participantInbox',
+        targetUid: t.uid,
+        status: 'active',
+        items: {
+          ...prevItems,
+          [roomId]: {
+            tripId,
+            roomId,
+            ledgerToken,
+            accessId,
+            grantId,
+            label: String(distData.label || distribution.label || '').slice(0, 40),
+            sharedAt: nowIso
+          }
+        },
+        updatedAt: serverTimestamp(),
+        updatedBy: String(adminUid || 'admin')
+      });
+    });
+
+    return { sharedCount: targets.length, capacity: nextCapacity, sharedUids: targets.map(t => t.uid) };
+  });
+}
+
+export async function revokeMemberInboxEntries({ db, doc, getDoc, setDoc, serverTimestamp, sha256Fn, uids = [], roomId }) {
+  const cleanRoomId = String(roomId || '').trim();
+  if (!segment(cleanRoomId)) return 0;
+  let updated = 0;
+  for (const rawUid of new Set(uids)) {
+    const uid = String(rawUid || '').trim();
+    if (!VALID_MEMBER_UID.test(uid)) continue;
+    try {
+      const inboxId = await computeParticipantInboxGrantId(uid, sha256Fn);
+      const ref = doc(db, 'accessGrants', inboxId);
+      const snap = await getDoc(ref);
+      if (!snapExists(snap)) continue;
+      const data = snap.data() || {};
+      const items = (data.items && typeof data.items === 'object') ? { ...data.items } : {};
+      if (!Object.prototype.hasOwnProperty.call(items, cleanRoomId)) continue;
+      delete items[cleanRoomId];
+      await setDoc(ref, {
+        kind: 'participantInbox',
+        targetUid: uid,
+        status: 'active',
+        items,
+        updatedAt: serverTimestamp()
+      });
+      updated++;
+    } catch {
+      // Best-effort cleanup; accessGrants/{grantId} revocation still enforces security.
+    }
+  }
+  return updated;
 }

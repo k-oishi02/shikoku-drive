@@ -1,8 +1,8 @@
 /**
- * Admin Distribution Ledger Module
+ * Admin Distribution Ledger & Direct Member Share Components
  *
  * Provides shared distribution ledger UI rendering, individual expense deletion,
- * batched document deletion, and ledger clearance.
+ * batched document deletion, ledger clearance, and known-member direct push UI.
  */
 import {
   collection, doc, getDocs, writeBatch
@@ -102,9 +102,6 @@ export async function clearDistributionLedger(dbOrDist, distOrBtn, maybeBtn) {
 
 /**
  * Renders the interactive distribution ledger component.
- * @param {object} dbOrDist Firestore database instance or distribution record.
- * @param {object} [maybeDist] Distribution record when db is passed as first argument.
- * @returns {HTMLElement} Details element representing the ledger.
  */
 export function renderDistributionLedger(dbOrDist, maybeDist) {
   const db = maybeDist ? dbOrDist : (dbOrDist?.db || null);
@@ -157,4 +154,96 @@ export function renderDistributionLedger(dbOrDist, maybeDist) {
   actions.append(clear);
   panel.append(actions);
   return panel;
+}
+
+function buildMemberChip(member, checked, onToggle) {
+  const chip = makeElement('label', `known-member-chip${checked ? ' is-selected' : ''}`);
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = checked;
+  input.addEventListener('change', () => onToggle(member.uid, input.checked));
+  const copy = makeElement('span', 'known-member-copy');
+  const meta = `…${member.uid.slice(-6)}${member.lastLabel ? ' · ' + member.lastLabel : ''}`;
+  copy.append(makeElement('strong', '', member.nickname), makeElement('small', '', meta));
+  chip.append(input, copy);
+  return chip;
+}
+
+export function renderKnownMemberPicker({ container, knownMembers, selectedUids, onChange }) {
+  if (!container) return;
+  container.replaceChildren();
+  if (!Array.isArray(knownMembers) || !knownMembers.length) {
+    container.hidden = true;
+    return;
+  }
+  container.hidden = false;
+  const head = makeElement('div', 'known-members-head');
+  const titleWrap = makeElement('div', 'known-members-title');
+  titleWrap.append(
+    makeElement('strong', '', '過去の参加メンバーへ同時に自動共有'),
+    makeElement('small', '', 'チェックして発行すると、相手がSHIORIを開くだけで自動追加されます（12桁入力不要）')
+  );
+  const quick = makeElement('div', 'known-members-quick');
+  const selRecent = makeElement('button', 'compact ghost', '前回のメンバーを選択');
+  selRecent.type = 'button';
+  selRecent.addEventListener('click', () => {
+    selectedUids.clear();
+    const recents = knownMembers.filter(m => m.isRecent);
+    (recents.length ? recents : knownMembers).forEach(m => selectedUids.add(m.uid));
+    onChange();
+  });
+  const clearBtn = makeElement('button', 'compact ghost', 'クリア');
+  clearBtn.type = 'button';
+  clearBtn.addEventListener('click', () => { selectedUids.clear(); onChange(); });
+  quick.append(selRecent, clearBtn);
+  head.append(titleWrap, quick);
+
+  const grid = makeElement('div', 'known-members-grid');
+  knownMembers.forEach(m => {
+    grid.append(buildMemberChip(m, selectedUids.has(m.uid), (uid, on) => {
+      if (on) selectedUids.add(uid); else selectedUids.delete(uid);
+      onChange();
+    }));
+  });
+  container.append(head, grid);
+}
+
+export function renderCardDirectShareBox({ distribution, knownMembers, memberSet, selectedUids, onChange, onPush }) {
+  if (distribution.status !== 'active' || !distribution.accessId) return null;
+  const candidates = (Array.isArray(knownMembers) ? knownMembers : []).filter(m => !memberSet.has(m.uid));
+  if (!candidates.length) return null;
+  const box = makeElement('div', 'direct-share-box');
+  const head = makeElement('div', 'known-members-head');
+  const titleWrap = makeElement('div', 'known-members-title');
+  titleWrap.append(
+    makeElement('strong', '', '既知メンバーへ直接共有'),
+    makeElement('small', '', '選択した相手の「しおり棚」へ自動配信します（12桁入力・リンク不要）')
+  );
+  const selAll = makeElement('button', 'compact ghost', '全員選択');
+  selAll.type = 'button';
+  selAll.addEventListener('click', () => {
+    candidates.forEach(m => selectedUids.add(m.uid));
+    onChange();
+  });
+  head.append(titleWrap, selAll);
+
+  const grid = makeElement('div', 'known-members-grid');
+  let activeSelected = 0;
+  candidates.forEach(m => {
+    const isChecked = selectedUids.has(m.uid);
+    if (isChecked) activeSelected += 1;
+    grid.append(buildMemberChip(m, isChecked, (uid, on) => {
+      if (on) selectedUids.add(uid); else selectedUids.delete(uid);
+      onChange();
+    }));
+  });
+
+  const actions = makeElement('div', 'direct-share-actions');
+  const pushBtn = makeElement('button', 'compact primary', activeSelected ? `選択した${activeSelected}端末へ直接共有` : 'メンバーを選択して直接共有');
+  pushBtn.type = 'button';
+  pushBtn.disabled = activeSelected === 0;
+  pushBtn.addEventListener('click', () => onPush(pushBtn, candidates.filter(m => selectedUids.has(m.uid))));
+  actions.append(pushBtn);
+  box.append(head, grid, actions);
+  return box;
 }
