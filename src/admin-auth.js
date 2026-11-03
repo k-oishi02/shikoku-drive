@@ -38,7 +38,7 @@ export async function enterAdmin({ user, profile, store, onEnter }) {
     currentUser: user,
     currentRole
   });
-  $('admin-account').textContent = `${currentRole === 'owner' ? 'OWNER' : 'EDITOR'} · ${user.email || user.displayName || user.uid}`;
+  $('admin-account').textContent = `${currentRole === 'owner' ? 'オーナー' : '編集者'} · ${user.email || user.displayName || user.uid}`;
   $('roles-nav').hidden = currentRole !== 'owner';
   $('admin-auth').hidden = true;
   $('admin-app').hidden = false;

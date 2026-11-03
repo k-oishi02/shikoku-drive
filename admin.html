@@ -4,29 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#20312f">
-    <title>SHIORI STUDIO — 管理者</title>
+    <title>SHIORI 管理画面 — しおり編集・メンバー共有</title>
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="src/admin.css">
-    <link rel="stylesheet" href="src/admin-v2.css?v=401">
+    <link rel="stylesheet" href="src/admin.css?v=404">
+    <link rel="stylesheet" href="src/admin-v2.css?v=404">
     <link rel="stylesheet" href="src/discussion.css">
     <link rel="stylesheet" href="src/theme-v31.css?v=320">
-    <link rel="stylesheet" href="src/design-v31.css?v=320">
+    <link rel="stylesheet" href="src/design-v31.css?v=404">
     <link rel="stylesheet" href="src/expressive-v32.css?v=400">
 </head>
 <body>
     <section id="admin-auth" class="auth-shell" aria-labelledby="auth-title">
         <div class="auth-card">
-            <p class="eyebrow">しおり編集室</p>
-            <h1 id="auth-title">SHIORI<br>STUDIO</h1>
-            <p class="auth-copy">旅程を作り、公開し、同行者へ安全に配布する管理者専用ページです。</p>
+            <p class="eyebrow">管理者ログイン</p>
+            <h1 id="auth-title">SHIORI<br>管理画面</h1>
+            <p class="auth-copy">旅行のしおりを作成・編集し、同行メンバーへかんたんに共有するための管理ページです。</p>
             <div id="auth-state" class="auth-state" role="status">管理者アカウントを確認しています…</div>
-            <button id="admin-sign-in" class="button primary wide" type="button" hidden aria-label="Googleでログイン">SIGN IN WITH GOOGLE</button>
+            <button id="admin-sign-in" class="button primary wide" type="button" hidden aria-label="Googleでログイン">Googleアカウントでログイン</button>
             <div id="admin-access-help" class="access-help" hidden>
                 <strong>管理者登録が必要です</strong>
                 <p>下のUIDをFirebaseの <code>admins</code> コレクションへドキュメントIDとして登録してください。</p>
                 <div class="copy-field">
                     <code id="admin-uid">—</code>
-                    <button id="copy-admin-uid" class="button compact" type="button">COPY UID</button>
+                    <button id="copy-admin-uid" class="button compact" type="button">UIDをコピー</button>
                 </div>
             </div>
         </div>
@@ -36,165 +36,250 @@
         <header class="topbar">
             <a class="brand" href="admin.html" aria-label="管理者トップ">
                 <span class="brand-mark">S</span>
-                <span><b>SHIORI</b><small>しおり編集室</small></span>
+                <span><b>SHIORI</b><small>しおり管理画面</small></span>
             </a>
             <div class="topbar-actions">
-                <a class="button ghost compact" href="./" target="_blank" rel="noopener noreferrer" aria-label="参加者ページを開く">OPEN APP ↗</a>
+                <a class="button ghost compact" href="./" target="_blank" rel="noopener noreferrer" aria-label="参加者ページを開く">参加者画面を開く ↗</a>
                 <span id="admin-account" class="account-chip">—</span>
-                <button id="admin-sign-out" class="button compact" type="button" aria-label="ログアウト">SIGN OUT</button>
+                <button id="admin-sign-out" class="button compact" type="button" aria-label="ログアウト">ログアウト</button>
             </div>
         </header>
 
         <div class="admin-layout">
             <aside class="sidebar" aria-label="管理メニュー">
-                <p class="sidebar-label">編集メニュー</p>
-                <button class="nav-item active" type="button" data-admin-view="overview" aria-label="概要"><span>01</span>OVERVIEW</button>
-                <button class="nav-item" type="button" data-admin-view="editor" aria-label="しおり編集"><span>02</span>EDIT</button>
-                <button class="nav-item" type="button" data-admin-view="distribution" aria-label="配布先管理"><span>03</span>DISTRIBUTE</button>
-                <button id="roles-nav" class="nav-item" type="button" data-admin-view="roles" aria-label="管理者"><span>04</span>ADMINS</button>
+                <p class="sidebar-label">操作ステップ</p>
+                <button class="nav-item active" type="button" data-admin-view="overview" aria-label="旅行一覧"><span>①</span>旅行一覧</button>
+                <button class="nav-item" type="button" data-admin-view="editor" aria-label="しおり編集・公開"><span>②</span>しおり編集・公開</button>
+                <button class="nav-item" type="button" data-admin-view="distribution" aria-label="メンバーへ共有"><span>③</span>メンバーへ共有</button>
+                <button id="roles-nav" class="nav-item" type="button" data-admin-view="roles" aria-label="管理者設定"><span>④</span>管理者設定</button>
                 <div class="sidebar-note">
-                    <b>公開について</b>
-                    <p>「下書き保存」では参加者ページは変わりません。「公開」を押した時だけ更新されます。</p>
+                    <b>かんたん3ステップ</b>
+                    <p>① 旅行を選ぶ（またはJSON読込）<br>② 編集して「参加者へ公開」<br>③ メンバーを選んで共有</p>
                 </div>
             </aside>
 
             <main class="workspace">
+                <input id="import-trip-file" type="file" accept="application/json,.json" hidden>
+
                 <section id="view-overview" class="admin-view" data-view="overview">
                     <div class="view-heading">
-                        <div><p class="eyebrow">旅行一覧</p><h2>旅行を管理</h2></div>
-                        <button id="overview-new-trip" class="button primary" type="button" aria-label="新しい旅行を作成">＋ NEW TRIP</button>
+                        <div>
+                            <p class="eyebrow">STEP 1 · しおりを選ぶ・作る</p>
+                            <h2>旅行一覧</h2>
+                        </div>
+                        <div class="button-group">
+                            <label class="button" for="import-trip-file" aria-label="JSONファイルを読み込む">📂 JSONファイルを読み込む</label>
+                            <button id="overview-new-trip" class="button primary" type="button" aria-label="新しいしおりを作成">＋ 新しいしおりを作成</button>
+                        </div>
                     </div>
+
+                    <div class="workflow-guide" aria-label="使い方の流れ">
+                        <div class="workflow-step-card">
+                            <span class="workflow-step-badge">STEP 1</span>
+                            <strong>旅行を作成・JSON読込</strong>
+                            <small>新規作成、または手元のJSONを読み込みます</small>
+                        </div>
+                        <div class="workflow-step-card">
+                            <span class="workflow-step-badge">STEP 2</span>
+                            <strong>日程を整えて「公開」</strong>
+                            <small>「参加者へ公開」を押すと本番しおりに反映されます</small>
+                        </div>
+                        <div class="workflow-step-card">
+                            <span class="workflow-step-badge">STEP 3</span>
+                            <strong>メンバーへ共有</strong>
+                            <small>過去の同行者なら12桁コード不要で自動配信できます</small>
+                        </div>
+                    </div>
+
                     <div class="metric-grid" aria-label="管理状況">
-                        <article><span>旅行</span><strong id="metric-trips">0</strong><small>登録された旅行</small></article>
-                        <article><span>公開中</span><strong id="metric-published">0</strong><small>参加者へ公開中</small></article>
-                        <article><span>配布先</span><strong id="metric-distributions">0</strong><small>有効な配布先</small></article>
+                        <article><span>登録数</span><strong id="metric-trips">0</strong><small>登録されたしおり</small></article>
+                        <article><span>公開中</span><strong id="metric-published">0</strong><small>参加者が閲覧可能</small></article>
+                        <article><span>共有ルーム</span><strong id="metric-distributions">0</strong><small>有効な共有グループ</small></article>
                     </div>
                     <div class="section-heading"><h3>しおり一覧</h3><span id="overview-updated">—</span></div>
                     <div id="admin-trip-list" class="trip-grid" aria-live="polite"></div>
                 </section>
 
-                <section id="view-editor" class="admin-view" data-view="editor" hidden>
-                    <div class="view-heading editor-heading">
-                        <div><p class="eyebrow">旅程を組み立てる</p><h2>しおり・旅程を編集</h2></div>
-                        <div class="button-group">
-                            <label class="button ghost" for="import-trip-file" aria-label="JSONを読み込む">IMPORT JSON</label>
-                            <input id="import-trip-file" type="file" accept="application/json,.json" hidden>
-                            <button id="download-trip" class="button ghost" type="button" aria-label="参加者用JSONを書き出す">EXPORT JSON</button>
-                            <button id="download-admin-backup" class="button ghost" type="button" title="管理者専用・非公開メモを含むため共有注意" aria-label="管理者バックアップを書き出す">BACKUP</button>
-                            <button id="preview-trip" class="button ghost" type="button" aria-label="スマホ表示を確認">PREVIEW</button>
-                            <button id="history-trip" class="button ghost" type="button" aria-label="公開履歴を表示">HISTORY</button>
-                            <button id="save-draft" class="button" type="button" aria-label="下書きを保存">SAVE DRAFT</button>
-                            <button id="reload-draft" class="button ghost" type="button" aria-label="最新の下書きを再読込">RELOAD</button>
-                            <button id="publish-trip" class="button primary" type="button">参加者へ公開</button>
+                <section id="view-editor" class="admin-view" data-view="editor" data-active-tab="itinerary" hidden>
+                    <div class="editor-sticky-bar">
+                        <div class="editor-sticky-info">
+                            <button class="button ghost compact editor-back-btn" type="button" data-admin-view="overview" aria-label="旅行一覧へ戻る">← 一覧</button>
+                            <div class="editor-active-title-wrap">
+                                <div class="editor-kicker-row">
+                                    <span class="eyebrow">STEP 2 · 編集・公開</span>
+                                    <code class="editor-trip-id-chip" data-editor-trip-id>未設定</code>
+                                </div>
+                                <h2 data-editor-trip-title>しおりを編集</h2>
+                            </div>
+                            <p id="editor-save-status" class="save-status-pill" role="status" aria-live="polite"></p>
+                        </div>
+                        <div class="button-group editor-primary-actions">
+                            <details class="editor-more-menu">
+                                <summary class="button ghost compact" aria-label="ファイル操作と履歴メニュー">📂 ファイル・履歴 ▾</summary>
+                                <div class="editor-more-popover">
+                                    <label class="menu-action-item" for="import-trip-file">📂 JSONファイルを読み込む</label>
+                                    <button id="download-trip" class="menu-action-item" type="button">📥 参加者用JSONを書き出す</button>
+                                    <button id="download-admin-backup" class="menu-action-item" type="button" title="管理者専用・非公開メモを含むため共有注意">🔒 管理者バックアップ書出（非公開メモ込）</button>
+                                    <hr class="menu-divider">
+                                    <button id="history-trip" class="menu-action-item" type="button">🕒 公開履歴・過去の版を復元</button>
+                                    <button id="reload-draft" class="menu-action-item" type="button">↻ クラウドの下書きを再読込</button>
+                                </div>
+                            </details>
+                            <button id="preview-trip" class="button compact" type="button" aria-label="スマホ表示を確認">📱 スマホ確認</button>
+                            <button id="save-draft" class="button compact" type="button" aria-label="下書きを保存">💾 下書き保存</button>
+                            <button id="publish-trip" class="button primary compact" type="button">🚀 参加者へ公開</button>
+                            <button class="button compact editor-go-share" type="button" data-editor-go-distribute aria-label="メンバー共有へ進む">📤 共有へ →</button>
                         </div>
                     </div>
 
                     <div id="editor-errors" class="error-panel" role="alert" hidden></div>
-                    <p id="editor-save-status" class="field-help" role="status" aria-live="polite"></p>
                     <section id="trip-audit" class="v2-audit" aria-live="polite"></section>
-                    <section id="planning-cockpit" class="planning-cockpit" aria-label="旅程設計の進行状況"></section>
+                    <section id="planning-cockpit" class="planning-cockpit" aria-label="旅程設計の進行状況" hidden></section>
+
+                    <div class="editor-subtabs" role="tablist" aria-label="編集セクション切替">
+                        <button type="button" class="editor-subtab active" role="tab" aria-selected="true" data-editor-tab="itinerary">
+                            📅 日程・タイムライン <span class="subtab-badge" data-tab-count="itinerary">0</span>
+                        </button>
+                        <button type="button" class="editor-subtab" role="tab" aria-selected="false" data-editor-tab="candidates">
+                            📍 候補スポット・相談 <span class="subtab-badge" data-tab-count="candidates">0</span>
+                        </button>
+                        <button type="button" class="editor-subtab" role="tab" aria-selected="false" data-editor-tab="basics">
+                            ⚙️ 基本情報・テーマ設定
+                        </button>
+                    </div>
+
                     <div class="editor-grid">
-                        <section class="panel basics-panel">
-                            <div class="panel-title"><span>01</span><h3>旅行の基本情報</h3></div>
-                            <div class="form-grid">
-                                <label>しおりID<input id="trip-id" autocomplete="off" maxlength="40" placeholder="trip2026"></label>
-                                <label>タイトル<input id="trip-title" autocomplete="off" maxlength="100"></label>
-                                <label>サブタイトル<input id="trip-subtitle" autocomplete="off" maxlength="160"></label>
-                                <label>キャッチコピー<input id="trip-catchphrase" autocomplete="off" maxlength="200"></label>
-                                <label>開始日<input id="trip-start-date" type="date"></label>
-                                <label>終了日<input id="trip-end-date" type="date"></label>
-                                <p class="v2-section-label">表示と機能</p>
-                                <label>表示テーマ<select id="trip-theme-mode"><option value="auto">端末に合わせる</option><option value="dark">ダーク</option><option value="light">ライト</option></select></label>
-                                <label>アクセント色<input id="trip-theme-accent" type="color" value="#f4d35e"></label>
-                                <label class="checkbox"><input id="trip-archived" type="checkbox"> 思い出へアーカイブ</label>
-                                <div class="v2-checks span-2">
-                                    <label><input id="feature-now" type="checkbox"> NOWモード</label>
-                                    <label><input id="feature-expenses" type="checkbox"> 共有精算</label>
-                                    <label><input id="feature-notifications" type="checkbox"> 端末内通知</label>
+                        <section class="panel itinerary-panel" data-editor-section="itinerary">
+                            <div class="panel-title responsive-title">
+                                <div><span>日程編集</span><h3>1日ごとのスケジュール</h3></div>
+                                <div class="day-actions">
+                                    <select id="editor-day-select" aria-label="編集する日"></select>
+                                    <button id="add-day" class="button compact" type="button" aria-label="日程の日を追加">＋ 日を追加</button>
+                                    <button id="add-card" class="button primary compact" type="button" aria-label="予定カードを追加">＋ 予定を追加</button>
+                                    <button id="undo-day-plan" class="button compact ghost" type="button" hidden aria-label="直前の変更を取り消す">↩ 元に戻す</button>
                                 </div>
-                                <p class="field-help span-2">表紙は標準デザイン、通貨は日本円、時刻は日本時間で固定されます。通知はしおりを開いている間だけ動作します。</p>
-                                <p class="v2-section-label">持ち物テンプレート</p>
-                                <label>旅行テンプレート<select id="trip-template"><option value="domestic">国内旅行</option><option value="drive">ドライブ旅行</option><option value="rail">鉄道旅行</option></select></label>
-                                <button id="apply-template" class="button ghost" type="button" aria-label="持ち物テンプレートを適用">APPLY TEMPLATE</button>
                             </div>
+                            <div class="day-quick-tabs" data-day-quick-tabs aria-label="日付のクイック切替"></div>
+                            <div class="form-grid day-label-field">
+                                <label>その日の見出しラベル<input id="editor-day-label" autocomplete="off" maxlength="80" placeholder="例: 11/28 (SAT) 秩父・長瀞紅葉ドライブ"></label>
+                                <label>その日の出発時刻<input id="editor-day-departure" type="time"></label>
+                                <label class="span-2">当日の集合場所・ひとことメモ（任意）<input id="editor-day-note" maxlength="160" placeholder="例: 07:30 駅ロータリー集合・ETCカード忘れずに"></label>
+                            </div>
+                            <p class="field-help">💡 カードはドラッグ＆ドロップまたは「↑」「↓」ボタンで並べ替えできます。編集後は上部の「🚀 参加者へ公開」を押すと本番に反映されます。</p>
+                            <div id="editor-card-list" class="editor-card-list"></div>
                         </section>
 
-                        <section class="panel candidate-panel">
+                        <section class="panel candidate-panel" data-editor-section="candidates" hidden>
                             <div class="panel-title responsive-title">
-                                <div><span>02</span><h3>候補スポット</h3></div>
+                                <div><span>候補メモ</span><h3>行きたい候補スポット</h3></div>
                                 <div class="day-actions">
-                                    <button id="add-candidate" class="button primary compact" type="button" aria-label="候補を追加">＋ ADD</button>
+                                    <button id="add-candidate" class="button primary compact" type="button" aria-label="候補を追加">＋ 候補を追加</button>
                                 </div>
                             </div>
                             <div class="candidate-filter-bar">
-                                <label>状態<select id="candidate-filter-status"><option value="all">すべての候補</option><option value="draft">未配置のみ</option><option value="assigned">日程追加済み</option></select></label>
-                                <label>分類<select id="candidate-filter-category"><option value="all">すべての分類</option><option value="sightseeing">観光 (SPOT)</option><option value="gourmet">食事 (GOURMET)</option><option value="hotel">宿泊 (HOTEL)</option><option value="transport">交通 (TRANSPORT)</option><option value="other">その他 (OTHER)</option></select></label>
+                                <label>配置状態<select id="candidate-filter-status"><option value="all">すべての候補</option><option value="draft">未配置のみ</option><option value="assigned">日程に追加済み</option></select></label>
+                                <label>ジャンル<select id="candidate-filter-category"><option value="all">すべての分類</option><option value="sightseeing">観光 (SPOT)</option><option value="gourmet">食事 (GOURMET)</option><option value="hotel">宿泊 (HOTEL)</option><option value="transport">交通 (TRANSPORT)</option><option value="other">その他 (OTHER)</option></select></label>
                             </div>
                             <div class="form-grid candidate-notes-field">
-                                <label class="span-2">企画・相談メモ（非公開）<textarea id="trip-planning-notes" rows="2" maxlength="2000" placeholder="旅行全体の相談メモや検討事項（参加者には公開されません）"></textarea></label>
+                                <label class="span-2">企画・検討メモ（非公開・管理者のみ閲覧）<textarea id="trip-planning-notes" rows="2" maxlength="2000" placeholder="旅行全体の相談メモや検討事項（参加者のしおりには表示されません）"></textarea></label>
                             </div>
                             <div id="editor-candidate-list" class="editor-candidate-list" aria-live="polite"></div>
                         </section>
 
-                        <section class="panel admin-talk-panel" aria-label="参加者の相談">
-                            <div class="panel-title"><span>相談</span><h3>参加者の相談</h3></div>
-                            <label class="admin-talk-selector">相談する配布先<select id="admin-discussion-room"><option value="">配布先を選択</option></select></label>
-                            <p class="field-help">同じ旅行でも配布先ごとに相談は別です。非公開の企画メモはここには表示しません。</p>
+                        <section class="panel admin-talk-panel" data-editor-section="candidates" aria-label="参加者の相談" hidden>
+                            <div class="panel-title"><span>チャット・提案</span><h3>参加者からの相談</h3></div>
+                            <label class="admin-talk-selector">表示する共有ルーム<select id="admin-discussion-room"><option value="">共有ルームを選択</option></select></label>
+                            <p class="field-help">共有ルームごとの相談コメントを確認・返信できます。上の非公開企画メモは参加者には見えません。</p>
                             <div id="admin-discussion"></div>
                         </section>
 
-                        <section class="panel itinerary-panel">
-                            <div class="panel-title responsive-title">
-                                <div><span>03</span><h3>日程とカード</h3></div>
-                                <div class="day-actions">
-                                    <select id="editor-day-select" aria-label="編集する日"></select>
-                                    <button id="add-day" class="button compact" type="button" aria-label="日程の日を追加">＋ DAY</button>
-                                    <button id="add-card" class="button primary compact" type="button" aria-label="旅程カードを追加">＋ CARD</button>
-                                    <button id="undo-day-plan" class="button compact ghost" type="button" hidden aria-label="直前の変更を取り消す">↩ UNDO</button>
+                        <section class="panel basics-panel" data-editor-section="basics" hidden>
+                            <div class="panel-title"><span>基本設定</span><h3>旅行タイトル・日程・機能設定</h3></div>
+                            <div class="form-grid">
+                                <label>しおりID（半角英数字・日付など）<input id="trip-id" autocomplete="off" maxlength="40" placeholder="例: 20261128"></label>
+                                <label>旅行タイトル（必須）<input id="trip-title" autocomplete="off" maxlength="100" placeholder="例: 秩父・長瀞 紅葉ドライブ旅"></label>
+                                <label>サブタイトル（任意）<input id="trip-subtitle" autocomplete="off" maxlength="160" placeholder="例: ラインくだり＆わらび餅・SLパレオエクスプレス"></label>
+                                <label>表紙キャッチコピー（任意）<input id="trip-catchphrase" autocomplete="off" maxlength="200" placeholder="例: 秋の渓谷と絶品グルメを満喫する1日"></label>
+                                <label>開始日<input id="trip-start-date" type="date"></label>
+                                <label>終了日<input id="trip-end-date" type="date"></label>
+                                <p class="v2-section-label">参加者画面の表示と便利機能</p>
+                                <label>カラーテーマ<select id="trip-theme-mode"><option value="auto">端末の設定に合わせる（自動）</option><option value="light">ライト（明るい背景）</option><option value="dark">ダーク（暗い背景）</option></select></label>
+                                <label>アクセント色<input id="trip-theme-accent" type="color" value="#f4d35e"></label>
+                                <div class="v2-checks span-2">
+                                    <label><input id="feature-now" type="checkbox"> 📍 旅行中の「いまここ（NOW）」案内を表示</label>
+                                    <label><input id="feature-expenses" type="checkbox"> 💴 みんなの割り勘・立替精算を使う</label>
+                                    <label><input id="feature-notifications" type="checkbox"> 🔔 出発前の端末内リマインド通知を使う</label>
                                 </div>
+                                <p class="v2-section-label">持ち物リストの初期テンプレート</p>
+                                <label>旅行スタイル<select id="trip-template"><option value="domestic">国内旅行（標準）</option><option value="drive">車・ドライブ旅行（免許証・ETC等）</option><option value="rail">新幹線・鉄道旅行（乗車券・IC等）</option></select></label>
+                                <div class="template-apply-box">
+                                    <button id="apply-template" class="button" type="button" aria-label="持ち物テンプレートを適用">持ち物リストに反映する</button>
+                                </div>
+                                <p class="v2-section-label">アーカイブ保管</p>
+                                <label class="checkbox span-2"><input id="trip-archived" type="checkbox"> 📦 旅行終了後に「思い出アーカイブ」として保管する</label>
+                                <p class="field-help span-2">通貨は日本円、時刻は日本時間で表示されます。</p>
                             </div>
-                            <div class="form-grid day-label-field">
-                                <label>日付ラベル<input id="editor-day-label" autocomplete="off" maxlength="80" placeholder="8/30 (SUN) KAGAWA"></label>
-                                <label>その日の出発時刻<input id="editor-day-departure" type="time"></label>
-                                <label class="span-2">当日の補足<input id="editor-day-note" maxlength="160" placeholder="ホテルロビー集合など"></label>
+                            <div class="basics-next-bar">
+                                <button type="button" class="button primary" data-switch-editor-tab="itinerary">次へ：📅 日程・タイムラインを編集する →</button>
                             </div>
-                            <div id="editor-card-list" class="editor-card-list"></div>
                         </section>
                     </div>
                 </section>
 
                 <section id="view-distribution" class="admin-view" data-view="distribution" hidden>
                     <div class="view-heading">
-                        <div><p class="eyebrow">参加者へ届ける</p><h2>配布先・参加者を管理</h2></div>
+                        <div>
+                            <p class="eyebrow">STEP 3 · 同行メンバーへ届ける</p>
+                            <h2>メンバーへ共有・配布管理</h2>
+                        </div>
                     </div>
+
+                    <div class="share-method-guide" aria-label="共有方法の選び方">
+                        <div class="share-guide-card is-direct">
+                            <strong>✨ いつも一緒に行くメンバー（おすすめ）</strong>
+                            <p>下の「過去の参加メンバー」にチェックを入れて作成（または「直接共有」ボタンを押す）だけ！相手は12桁入力もリンクも不要で、SHIORIを開くと自動でしおりが追加されます。</p>
+                        </div>
+                        <div class="share-guide-card">
+                            <strong>🔗 はじめて参加するメンバー</strong>
+                            <p>共有ルームを作成したあと、「🔗 LINE・招待リンクをコピー」を押してLINE等で送るだけ！相手はリンクを開くだけで登録完了します。</p>
+                        </div>
+                    </div>
+
                     <section class="panel distribution-create">
-                        <div class="panel-title"><span>01</span><h3>新しい配布先</h3></div>
+                        <div class="panel-title"><span>新規共有</span><h3>共有ルームを作成する</h3></div>
+                        <div class="unpublished-alert" data-dist-unpublished-hint hidden>
+                            <div>
+                                <strong>⚠️ 選択中の旅行はまだ「未公開（下書き）」です</strong>
+                                <p>共有ルームを作る前に、しおり編集画面で「🚀 参加者へ公開」を押してください。</p>
+                            </div>
+                            <button type="button" class="button primary compact" data-dist-open-editor>✏️ しおり編集を開いて公開する</button>
+                        </div>
                         <div class="distribution-form">
-                            <label>旅行<select id="distribution-trip"></select></label>
-                            <label>配布先名<input id="distribution-label" maxlength="40" placeholder="友人グループ用"></label>
-                            <label class="distribution-capacity-field">端末枠<input id="distribution-capacity" type="number" min="1" max="50" step="1" value="2" inputmode="numeric"></label>
-                            <button id="create-distribution" class="button primary" type="button" aria-label="配布IDを発行">ISSUE ID</button>
+                            <label>共有する旅行<select id="distribution-trip"></select></label>
+                            <label>グループ名（省略可）<input id="distribution-label" maxlength="40" placeholder="空欄なら「メンバー共有」になります"></label>
+                            <label class="distribution-capacity-field">端末の上限台数<input id="distribution-capacity" type="number" min="1" max="50" step="1" value="5" inputmode="numeric"></label>
+                            <button id="create-distribution" class="button primary" type="button" aria-label="共有ルームを作成">共有ルームを作成</button>
                         </div>
                         <div id="distribution-known-members" class="known-members-picker" hidden></div>
-                        <p class="field-help">端末枠は1〜50台で設定できます。過去の参加メンバーを選択して発行（または配布先カードの「既知メンバーへ直接共有」を実行）すると、相手は12桁入力不要でいつものSHIORIを開くだけで自動追加されます。初参加の方には登録リンクや配布IDも併用できます。</p>
+                        <p class="field-help">上限台数はあとからいつでも増やせます（最大50台）。同じ旅行でもグループを分けると割り勘台帳や相談チャットを別々に管理できます。</p>
                     </section>
-                    <div class="section-heading"><h3>ACTIVE DISTRIBUTIONS</h3><span id="distribution-count">0件</span></div>
+                    <div class="section-heading"><h3>作成済みの共有ルーム</h3><span id="distribution-count">0件</span></div>
                     <div id="distribution-list" class="distribution-list" aria-live="polite"></div>
                 </section>
 
                 <section id="view-roles" class="admin-view" data-view="roles" hidden>
-                    <div class="view-heading"><div><p class="eyebrow">ACCESS CONTROL</p><h2>管理者・役割</h2></div></div>
+                    <div class="view-heading"><div><p class="eyebrow">STEP 4 · 権限管理</p><h2>管理者アカウント設定</h2></div></div>
                     <section class="panel">
-                        <div class="panel-title"><span>01</span><h3>管理者を登録</h3></div>
+                        <div class="panel-title"><span>権限追加</span><h3>管理者を登録・変更</h3></div>
                         <div class="distribution-form">
-                            <label>Firebase UID<input id="role-uid" maxlength="128" autocomplete="off"></label>
-                            <label>表示名<input id="role-name" maxlength="40" autocomplete="off"></label>
-                            <label>役割<select id="role-type"><option value="editor">編集者</option><option value="owner">オーナー</option></select></label>
-                            <button id="save-role" class="button primary" type="button" aria-label="管理者を登録または更新">SAVE</button>
+                            <label>Firebase UID<input id="role-uid" maxlength="128" autocomplete="off" placeholder="ログイン画面に表示されたUID"></label>
+                            <label>表示名<input id="role-name" maxlength="40" autocomplete="off" placeholder="例: たろう"></label>
+                            <label>権限ロール<select id="role-type"><option value="editor">編集者（しおり作成・公開・共有）</option><option value="owner">オーナー（全権限＋管理者設定）</option></select></label>
+                            <button id="save-role" class="button primary" type="button" aria-label="管理者を登録または更新">管理者を保存</button>
                         </div>
-                        <p class="field-help">オーナーは管理者登録と完全削除ができます。編集者は旅程の編集・公開・配布管理ができます。</p>
+                        <p class="field-help">オーナーは管理者の追加・停止と共有ルームの完全削除ができます。編集者はしおりの編集・公開・メンバー共有ができます。</p>
                     </section>
-                    <div class="section-heading"><h3>ADMIN MEMBERS</h3><span id="roles-count">—</span></div>
+                    <div class="section-heading"><h3>登録済みの管理者</h3><span id="roles-count">—</span></div>
                     <div id="roles-list" class="distribution-list"></div>
                 </section>
             </main>
@@ -204,13 +289,13 @@
     <dialog id="candidate-dialog" class="card-dialog">
         <form id="candidate-form" method="dialog">
             <div class="dialog-heading">
-                <div><p class="eyebrow">CANDIDATE SPOT</p><h2 id="candidate-dialog-title">候補を追加</h2></div>
+                <div><p class="eyebrow">候補スポット</p><h2 id="candidate-dialog-title">候補を追加</h2></div>
                 <button id="close-candidate-dialog" class="icon-button" type="button" aria-label="閉じる">×</button>
             </div>
             <input id="candidate-id" type="hidden">
             <div class="form-grid card-form-grid">
-                <label class="span-2">場所名・スポット名<input id="candidate-title" maxlength="120" placeholder="例: 道後温泉本館 / 讃岐うどん" required></label>
-                <label>分類<select id="candidate-category">
+                <label class="span-2">場所名・スポット名（必須）<input id="candidate-title" maxlength="120" placeholder="例: 長瀞ラインくだり / 阿左美冷蔵" required></label>
+                <label>ジャンル<select id="candidate-category">
                     <option value="sightseeing">観光 (SPOT)</option>
                     <option value="gourmet">食事 (GOURMET)</option>
                     <option value="hotel">宿泊 (HOTEL)</option>
@@ -226,29 +311,28 @@
                     <div class="duration-input-group">
                         <input id="candidate-duration" type="number" min="0" max="1440" step="5" value="60" placeholder="60">
                         <div class="quick-duration-buttons">
-                            <button type="button" class="button compact ghost" data-set-duration="15">15 MIN</button>
-                            <button type="button" class="button compact ghost" data-set-duration="30">30 MIN</button>
-                            <button type="button" class="button compact ghost" data-set-duration="60">60 MIN</button>
-                            <button type="button" class="button compact ghost" data-set-duration="90">90 MIN</button>
-                            <button type="button" class="button compact ghost" data-set-duration="120">120 MIN</button>
+                            <button type="button" class="button compact ghost" data-set-duration="15">15分</button>
+                            <button type="button" class="button compact ghost" data-set-duration="30">30分</button>
+                            <button type="button" class="button compact ghost" data-set-duration="60">60分</button>
+                            <button type="button" class="button compact ghost" data-set-duration="90">90分</button>
+                            <button type="button" class="button compact ghost" data-set-duration="120">120分</button>
                         </div>
                     </div>
                 </label>
-                <label class="span-2">地図の検索語・住所<input id="candidate-map-query" maxlength="300" placeholder="空欄ならスポット名で検索"></label>
-                <label class="span-2">Google Maps共有URL（任意）<input id="candidate-map-url" type="url" maxlength="2048" placeholder="https://maps.app.goo.gl/..."></label>
-                <p class="field-help span-2">共有URLはそのまま開きます。経路は検索語・住所（空欄ならスポット名）で検索します。所要時間は地図で確認してください。</p>
-                <label>公式URL<input id="candidate-official" type="url" maxlength="2000" placeholder="https://..."></label>
-                <label>公式ボタン名<input id="candidate-official-label" maxlength="40" placeholder="公式サイト"></label>
-                <label>食べログURL<input id="candidate-tabelog" type="url" maxlength="2000" placeholder="https://tabelog.com/..."></label>
-                <label>じゃらんURL<input id="candidate-jalan" type="url" maxlength="2000" placeholder="https://www.jalan.net/..."></label>
-                <label class="span-2">相談用メモ（非公開）<textarea id="candidate-notes" rows="3" maxlength="2000" placeholder="定休日、混雑時間、同行者からの要望など（参加者には公開されません）"></textarea></label>
+                <label class="span-2">場所名・住所（地図検索用）<input id="candidate-map-query" maxlength="300" placeholder="空欄ならスポット名で検索します"></label>
+                <label class="span-2">Googleマップ共有URL（任意）<input id="candidate-map-url" type="url" maxlength="2048" placeholder="https://maps.app.goo.gl/..."></label>
+                <label>公式サイトURL（任意）<input id="candidate-official" type="url" maxlength="2000" placeholder="https://..."></label>
+                <label>公式ボタンの表示名<input id="candidate-official-label" maxlength="40" placeholder="公式サイト"></label>
+                <label>食べログURL（任意）<input id="candidate-tabelog" type="url" maxlength="2000" placeholder="https://tabelog.com/..."></label>
+                <label>じゃらんURL（任意）<input id="candidate-jalan" type="url" maxlength="2000" placeholder="https://www.jalan.net/..."></label>
+                <label class="span-2">検討メモ（非公開）<textarea id="candidate-notes" rows="3" maxlength="2000" placeholder="定休日、駐車場、同行者からの要望など（参加者には公開されません）"></textarea></label>
             </div>
             <div class="dialog-actions">
                 <div>
                     <button id="delete-candidate" class="button danger" type="button" hidden>削除</button>
-                    <button id="reset-candidate-status" class="button compact ghost" type="button" hidden aria-label="日程への追加を取り消す">REMOVE FROM DAY</button>
+                    <button id="reset-candidate-status" class="button compact ghost" type="button" hidden aria-label="日程への追加を取り消す">日程から外す</button>
                 </div>
-                <button id="save-candidate" class="button primary" type="submit" aria-label="候補を保存">SAVE</button>
+                <button id="save-candidate" class="button primary" type="submit" aria-label="候補を保存">候補を保存</button>
             </div>
         </form>
     </dialog>
@@ -256,30 +340,32 @@
     <dialog id="candidate-adopt-dialog" class="card-dialog">
         <form id="candidate-adopt-form" method="dialog">
             <div class="dialog-heading">
-                <div><p class="eyebrow">ADOPT TO ITINERARY</p><h2 id="adopt-dialog-title">候補を日程に入れる</h2></div>
+                <div><p class="eyebrow">日程へ組み込む</p><h2 id="adopt-dialog-title">候補を日程に入れる</h2></div>
                 <button id="close-adopt-dialog" class="icon-button" type="button" aria-label="閉じる">×</button>
             </div>
             <input id="adopt-candidate-id" type="hidden">
             <div id="adopt-candidate-summary" class="adopt-target-summary"></div>
             <div class="form-grid card-form-grid">
-                <label>組み込み先の日<select id="adopt-day-select"></select></label>
-                <label>挿入位置<select id="adopt-position-select"></select></label>
+                <label>組み込む日<select id="adopt-day-select"></select></label>
+                <label>入れる順番<select id="adopt-position-select"></select></label>
                 <label class="span-2">前の場所からの移動時間（分）
                     <input id="adopt-travel-minutes" type="number" min="0" max="1440" value="0">
-                    <p class="field-help">※ 移動時間は Google Maps で確認して入力してください。</p>
                     <div class="adopt-maps-actions">
-                        <a id="adopt-maps-route-link" class="button compact ghost" target="_blank" rel="noopener noreferrer" href="#" aria-label="Google Mapsで前後の経路を確認">CHECK ROUTE ↗</a>
+                        <a id="adopt-maps-route-link" class="button compact ghost" target="_blank" rel="noopener noreferrer" href="#" aria-label="Googleマップで前後の経路を確認">🗺️ Googleマップで移動時間を確認 ↗</a>
                     </div>
                 </label>
                 <label>開始時刻<input id="adopt-start-time" type="time" required></label>
                 <label>滞在時間（分）<input id="adopt-duration-minutes" type="number" min="1" max="1440" value="60" required></label>
-                <label class="span-2">終了時刻（自動算出）<input id="adopt-end-time" type="time" readonly></label>
-                <label class="span-2">参加者向け説明（公開用）<textarea id="adopt-card-desc" rows="3" maxlength="75" required placeholder="参加者しおりに掲載する説明文（最大75文字）"></textarea></label>
+                <label class="span-2">終了時刻（自動計算）<input id="adopt-end-time" type="time" readonly></label>
+                <label class="span-2">
+                    <span class="label-with-counter"><span>しおりに載せるひとこと説明（必須）</span><small data-adopt-desc-count>0 / 75文字</small></span>
+                    <textarea id="adopt-card-desc" rows="3" maxlength="75" required placeholder="参加者のしおりに表示する説明文（75文字以内）"></textarea>
+                </label>
             </div>
             <div id="adopt-preview" class="adopt-preview-box" role="status" aria-live="polite"></div>
             <div class="dialog-actions">
-                <button id="cancel-adopt" class="button ghost" type="button" aria-label="日程への追加をキャンセル">CANCEL</button>
-                <button id="confirm-adopt" class="button primary" type="submit" aria-label="この内容で日程に追加">ADD TO DAY</button>
+                <button id="cancel-adopt" class="button ghost" type="button" aria-label="キャンセル">キャンセル</button>
+                <button id="confirm-adopt" class="button primary" type="submit" aria-label="この内容で日程に追加">この内容で日程に追加</button>
             </div>
         </form>
     </dialog>
@@ -287,70 +373,96 @@
     <dialog id="card-dialog" class="card-dialog">
         <form id="card-form" method="dialog">
             <div class="dialog-heading">
-                <div><p class="eyebrow">SCHEDULE CARD</p><h2 id="card-dialog-title">カードを編集</h2></div>
+                <div><p class="eyebrow">スケジュール編集</p><h2 id="card-dialog-title">予定カードを編集</h2></div>
                 <button id="close-card-dialog" class="icon-button" type="button" aria-label="閉じる">×</button>
             </div>
             <input id="card-index" type="hidden">
-            <div class="form-grid card-form-grid">
-                <label>時刻<input id="card-time" maxlength="17" placeholder="09:00 - 10:00"></label>
-                <label>バッジ<input id="card-badge" maxlength="30" placeholder="GOURMET"></label>
-                <label class="span-2">タイトル<input id="card-title" maxlength="120" required></label>
-                <label class="span-2">説明<textarea id="card-desc" rows="3" maxlength="75" required placeholder="スポットの説明（最大75文字）"></textarea></label>
-                <label class="span-2">地図の検索語・住所<input id="card-map-query" maxlength="300"></label>
-                <label class="span-2">Google Maps共有URL<input id="card-map-url" type="url" maxlength="2048"></label>
-                <label>推奨ルート・道順メモ（任意）<input id="card-route-hint" maxlength="160" placeholder="例: 常磐道 桜土浦IC → 国道354号バイパス経由"></label>
-                <label>ナビ経由地・IC指定（任意）<input id="card-waypoints" maxlength="200" placeholder="例: 桜土浦IC"></label>
-                <p class="field-help span-2">両方空欄ならMAPを表示しません。共有URLがあればGoogle Mapsでその場所を開きます。</p>
-                <label>公式URL<input id="card-official" type="url" maxlength="2000"></label>
-                <label>公式ボタン名<input id="card-official-label" maxlength="40"></label>
-                <label>食べログURL<input id="card-tabelog" type="url" maxlength="2000"></label>
-                <label>じゃらんURL<input id="card-jalan" type="url" maxlength="2000"></label>
-                <label>アソビューURL<input id="card-asoview" type="url" maxlength="2000" placeholder="https://www.asoview.com/..."></label>
-                <label>画像ファイル名<input id="card-image" maxlength="100" placeholder="example.png"></label>
-                <div class="preset-buttons-group span-2">
-                    <span class="muted small">アプリ・経路ボタンのプリセット追加:</span>
-                    <div class="preset-chips">
-                        <button type="button" class="button compact ghost" data-add-preset="route" aria-label="Google Maps経路ボタンを追加">🚗 ROUTE</button>
-                        <button type="button" class="button compact ghost" data-add-preset="ana">✈️ ANA</button>
-                        <button type="button" class="button compact ghost" data-add-preset="toyota" aria-label="トヨタレンタカーボタンを追加">🚙 TOYOTA</button>
-                        <button type="button" class="button compact ghost" data-add-preset="jalan" aria-label="じゃらんボタンを追加">🏨 JALAN</button>
-                        <button type="button" class="button compact ghost" data-add-preset="hello-cycling">🚲 HELLO CYCLING</button>
+            <div class="card-form-grid">
+                <div class="form-grid">
+                    <label>時刻<input id="card-time" maxlength="17" placeholder="例: 09:30 - 11:00"></label>
+                    <label>分類ラベル<input id="card-badge" maxlength="30" placeholder="例: SPOT / GOURMET"></label>
+                    <div class="badge-quick-row span-2">
+                        <span class="muted small">よく使う分類:</span>
+                        <button type="button" class="button compact ghost" data-set-badge="SPOT">📍 SPOT（観光）</button>
+                        <button type="button" class="button compact ghost" data-set-badge="GOURMET">🍽️ GOURMET（食事）</button>
+                        <button type="button" class="button compact ghost" data-set-badge="CAFE">☕ CAFE（カフェ）</button>
+                        <button type="button" class="button compact ghost" data-set-badge="DRIVE">🚗 DRIVE（移動）</button>
+                        <button type="button" class="button compact ghost" data-set-badge="HOTEL">🏨 HOTEL（宿）</button>
+                        <button type="button" class="button compact ghost" data-set-badge="TRAIN">🚃 TRAIN（鉄道）</button>
+                    </div>
+                    <label class="span-2">スポット・予定のタイトル（必須）<input id="card-title" maxlength="120" required placeholder="例: 長瀞ラインくだり"></label>
+                    <label class="span-2">
+                        <span class="label-with-counter"><span>ひとこと説明（必須・75文字以内）</span><small data-desc-count>0 / 75文字</small></span>
+                        <textarea id="card-desc" rows="2" maxlength="75" required placeholder="見どころやメモを簡潔に入力（最大75文字）"></textarea>
+                    </label>
+                    <label class="span-2">場所名・住所（Googleマップ検索用）<input id="card-map-query" maxlength="300" placeholder="例: 長瀞ラインくだり 本部 / 空欄ならMAPボタン非表示"></label>
+                    <div class="v2-checks span-2 card-core-checks">
+                        <label><input id="card-time-locked" type="checkbox"> 🔒 時刻を固定する（自動調整で動かさない）</label>
+                        <label><input id="card-expense" type="checkbox"> 💴 しおりに「立替を記録」ボタンを表示</label>
                     </div>
                 </div>
-                <label class="span-2">追加リンク（名前 | Web | Android | iPhone | アイコン）<textarea id="card-links" rows="5" maxlength="12000" placeholder="ルート | https://www.google.com/maps/dir/...
-ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
-                <p class="v2-section-label">TRAVEL & CHECK</p>
-                <label>前の場所からの移動時間（分）<input id="card-travel-minutes" type="number" min="0" max="1440" inputmode="numeric"></label>
-                <label>通知（分前、カンマ区切り）<input id="card-notify" maxlength="80" placeholder="30, 15"></label>
-                <label>開店<input id="card-opens-at" type="time"></label>
-                <label>閉店<input id="card-closes-at" type="time"></label>
-                <label>予約時刻<input id="card-reservation-at" type="time"></label>
-                <label>最終入場<input id="card-last-entry-at" type="time"></label>
-                <label>出発期限<input id="card-departure-by" type="time"></label>
-                <label>必要到着余裕（分）<input id="card-arrival-buffer" type="number" min="0" max="360" inputmode="numeric"></label>
-                <p class="v2-section-label">RESERVATION</p>
-                <label>予約番号<input id="card-reservation-number" maxlength="120"></label>
-                <label>予約名義<input id="card-reservation-name" maxlength="120"></label>
-                <label>電話番号<input id="card-reservation-phone" maxlength="40"></label>
-                <label>キャンセル期限<input id="card-reservation-deadline" maxlength="40"></label>
-                <label class="span-2">予約確認URL<input id="card-reservation-url" type="url" maxlength="2000"></label>
-                <label class="span-2">予約メモ<textarea id="card-reservation-note" rows="2" maxlength="240"></textarea></label>
-                <div class="check-field span-2">
-                    <label><input id="card-time-locked" type="checkbox"> 🔒 固定予定（timeLocked: 自動時刻調整で変更しない）</label>
-                </div>
-                <div class="check-field span-2">
-                    <label><input id="card-expense" type="checkbox"> ADD COSTボタンを表示</label>
-                </div>
+
+                <details class="dialog-section" data-card-section="links">
+                    <summary>🔗 地図URL・ルート案内・公式サイト・食べログ等（任意）</summary>
+                    <div class="form-grid dialog-section-body">
+                        <label class="span-2">Googleマップ共有URL<input id="card-map-url" type="url" maxlength="2048" placeholder="https://maps.app.goo.gl/..."></label>
+                        <label>推奨ルート・道順メモ<input id="card-route-hint" maxlength="160" placeholder="例: 関越道 花園IC → 国道140号経由"></label>
+                        <label>ナビ経由地・IC指定<input id="card-waypoints" maxlength="200" placeholder="例: 花園IC"></label>
+                        <label>公式サイトURL<input id="card-official" type="url" maxlength="2000" placeholder="https://..."></label>
+                        <label>公式ボタンの表示名<input id="card-official-label" maxlength="40" placeholder="公式サイト"></label>
+                        <label>食べログURL<input id="card-tabelog" type="url" maxlength="2000" placeholder="https://tabelog.com/..."></label>
+                        <label>じゃらんURL<input id="card-jalan" type="url" maxlength="2000" placeholder="https://www.jalan.net/..."></label>
+                        <label>アソビューURL<input id="card-asoview" type="url" maxlength="2000" placeholder="https://www.asoview.com/..."></label>
+                        <label>画像ファイル名（images/内）<input id="card-image" maxlength="100" placeholder="example.png"></label>
+                        <div class="preset-buttons-group span-2">
+                            <span class="muted small">アプリ起動・経路ボタンをワンクリック追加:</span>
+                            <div class="preset-chips">
+                                <button type="button" class="button compact ghost" data-add-preset="route" aria-label="Googleマップ経路ボタンを追加">🚗 経路案内</button>
+                                <button type="button" class="button compact ghost" data-add-preset="ana">✈️ ANA</button>
+                                <button type="button" class="button compact ghost" data-add-preset="toyota" aria-label="トヨタレンタカーボタンを追加">🚙 トヨタレンタカー</button>
+                                <button type="button" class="button compact ghost" data-add-preset="jalan" aria-label="じゃらんボタンを追加">🏨 じゃらん</button>
+                                <button type="button" class="button compact ghost" data-add-preset="hello-cycling">🚲 シェアサイクル</button>
+                            </div>
+                        </div>
+                        <label class="span-2">追加リンク（1行1件: 名前 | Web URL | Android | iPhone | アイコン）<textarea id="card-links" rows="3" maxlength="12000" placeholder="ルート | https://www.google.com/maps/dir/?api=1"></textarea></label>
+                    </div>
+                </details>
+
+                <details class="dialog-section" data-card-section="time">
+                    <summary>⏰ 移動時間・営業時間・リマインド通知（任意）</summary>
+                    <div class="form-grid dialog-section-body">
+                        <label>前の場所からの移動時間（分）<input id="card-travel-minutes" type="number" min="0" max="1440" inputmode="numeric" placeholder="例: 25"></label>
+                        <label>事前通知（分前・カンマ区切り）<input id="card-notify" maxlength="80" placeholder="例: 30, 15"></label>
+                        <label>営業開始<input id="card-opens-at" type="time"></label>
+                        <label>営業終了<input id="card-closes-at" type="time"></label>
+                        <label>予約時刻<input id="card-reservation-at" type="time"></label>
+                        <label>最終入場<input id="card-last-entry-at" type="time"></label>
+                        <label>出発リミット時刻<input id="card-departure-by" type="time"></label>
+                        <label>到着余裕（分前）<input id="card-arrival-buffer" type="number" min="0" max="360" inputmode="numeric" placeholder="例: 10"></label>
+                    </div>
+                </details>
+
+                <details class="dialog-section" data-card-section="reservation">
+                    <summary>🎫 予約控え（予約番号・電話・キャンセル期限・メモ）</summary>
+                    <div class="form-grid dialog-section-body">
+                        <label>予約番号<input id="card-reservation-number" maxlength="120"></label>
+                        <label>予約名義<input id="card-reservation-name" maxlength="120"></label>
+                        <label>電話番号<input id="card-reservation-phone" maxlength="40"></label>
+                        <label>キャンセル期限<input id="card-reservation-deadline" maxlength="40" placeholder="例: 前日17:00まで無料"></label>
+                        <label class="span-2">予約確認URL<input id="card-reservation-url" type="url" maxlength="2000" placeholder="https://..."></label>
+                        <label class="span-2">予約メモ<textarea id="card-reservation-note" rows="2" maxlength="240" placeholder="受付方法や駐車場の案内など"></textarea></label>
+                    </div>
+                </details>
             </div>
             <div class="dialog-actions">
                 <div>
                     <button id="delete-card" class="button danger" type="button">削除</button>
-                    <button id="move-card-up" class="button compact" type="button" aria-label="カードを上へ移動">↑ UP</button>
-                    <button id="move-card-down" class="button compact" type="button" aria-label="カードを下へ移動">↓ DOWN</button>
-                    <button id="open-move-day" class="button compact ghost" type="button" aria-label="別日へ移動">MOVE DAY</button>
-                    <button id="open-cascade-adjust" class="button compact ghost" type="button" aria-label="後続時刻を調整">ADJUST TIME</button>
+                    <button id="move-card-up" class="button compact" type="button" aria-label="カードを上へ移動">↑ 前へ</button>
+                    <button id="move-card-down" class="button compact" type="button" aria-label="カードを下へ移動">↓ 次へ</button>
+                    <button id="open-move-day" class="button compact ghost" type="button" aria-label="別日へ移動">別日へ移動</button>
+                    <button id="open-cascade-adjust" class="button compact ghost" type="button" aria-label="後続時刻を調整">後続の時刻を調整</button>
                 </div>
-                <button id="save-card" class="button primary" type="submit" aria-label="カードを保存">SAVE</button>
+                <button id="save-card" class="button primary" type="submit" aria-label="カードを保存">保存する</button>
             </div>
         </form>
     </dialog>
@@ -358,24 +470,24 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
     <dialog id="move-day-dialog" class="card-dialog">
         <form id="move-day-form" method="dialog">
             <div class="dialog-heading">
-                <div><p class="eyebrow">MOVE TO ANOTHER DAY</p><h2>カードを別日へ移動</h2></div>
+                <div><p class="eyebrow">日程の移動</p><h2>予定を別の日に移動</h2></div>
                 <button id="close-move-day-dialog" class="icon-button" type="button" aria-label="閉じる">×</button>
             </div>
             <input id="move-day-card-index" type="hidden">
             <div id="move-day-card-summary" class="adopt-target-summary"></div>
             <div class="form-grid card-form-grid">
                 <label>移動先の日<select id="move-day-target-select"></select></label>
-                <label>挿入位置<select id="move-day-position-select"></select></label>
+                <label>入れる順番<select id="move-day-position-select"></select></label>
                 <label class="span-2">前の場所からの移動時間（分）
                     <input id="move-day-travel-minutes" type="number" min="0" max="1440" value="0">
                 </label>
                 <label>移動先での開始時刻<input id="move-day-start-time" type="time" required></label>
                 <label>滞在時間（分）<input id="move-day-duration-minutes" type="number" min="1" max="1440" value="60" required></label>
-                <label class="span-2 inline-checkbox"><input id="move-day-allow-locked" type="checkbox"><span>固定予定（timeLocked）の日時変更を許可する</span></label>
+                <label class="span-2 inline-checkbox"><input id="move-day-allow-locked" type="checkbox"><span>🔒 固定予定の日時変更を許可する</span></label>
             </div>
             <div class="dialog-actions">
-                <button id="cancel-move-day" class="button ghost" type="button" aria-label="別日移動をキャンセル">CANCEL</button>
-                <button id="preview-move-day" class="button primary" type="submit" aria-label="移動案を確認">PREVIEW</button>
+                <button id="cancel-move-day" class="button ghost" type="button" aria-label="キャンセル">キャンセル</button>
+                <button id="preview-move-day" class="button primary" type="submit" aria-label="移動案を確認">移動案を確認する</button>
             </div>
         </form>
     </dialog>
@@ -383,7 +495,7 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
     <dialog id="cascade-adjust-dialog" class="card-dialog">
         <form id="cascade-adjust-form" method="dialog">
             <div class="dialog-heading">
-                <div><p class="eyebrow">CASCADE TIME ADJUSTMENT</p><h2>後続の時刻を自動調整</h2></div>
+                <div><p class="eyebrow">時刻の一括調整</p><h2>以降の予定時刻を自動調整</h2></div>
                 <button id="close-cascade-dialog" class="icon-button" type="button" aria-label="閉じる">×</button>
             </div>
             <input id="cascade-card-index" type="hidden">
@@ -391,11 +503,11 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
             <div class="form-grid card-form-grid">
                 <label>新しい開始時刻<input id="cascade-start-time" type="time" required></label>
                 <label>新しい滞在時間（分）<input id="cascade-duration-minutes" type="number" min="1" max="1440" required></label>
-                <p class="field-help span-2">※ 🔒固定予定（timeLocked）に到達した場合は時刻を動かさず停止します。</p>
+                <p class="field-help span-2">※ 🔒 時刻を固定した予定に到達した場合は、その予定を動かさず停止します。</p>
             </div>
             <div class="dialog-actions">
-                <button id="cancel-cascade" class="button ghost" type="button" aria-label="時刻調整をキャンセル">CANCEL</button>
-                <button id="preview-cascade" class="button primary" type="submit" aria-label="調整案を確認">PREVIEW</button>
+                <button id="cancel-cascade" class="button ghost" type="button" aria-label="キャンセル">キャンセル</button>
+                <button id="preview-cascade" class="button primary" type="submit" aria-label="調整案を確認">調整案を確認する</button>
             </div>
         </form>
     </dialog>
@@ -403,30 +515,30 @@ ANA | https://... | intent://... | anaapp://... | ana"></textarea></label>
     <dialog id="planner-compare-dialog" class="card-dialog">
         <form id="planner-compare-form" method="dialog">
             <div class="dialog-heading">
-                <div><p class="eyebrow">SCHEDULE PLANNER</p><h2 id="planner-compare-title">日程変更の確認</h2></div>
+                <div><p class="eyebrow">変更内容の確認</p><h2 id="planner-compare-title">日程変更の確認</h2></div>
                 <button id="close-planner-compare" class="icon-button" type="button" aria-label="閉じる">×</button>
             </div>
             <div id="planner-compare-summary" class="adopt-target-summary"></div>
             <div id="planner-compare-diff" class="planner-diff-list" aria-live="polite"></div>
             <div id="planner-compare-alerts" class="adopt-preview-box" role="status" aria-live="polite"></div>
             <div class="dialog-actions">
-                <button id="planner-compare-auto-adjust" class="button compact ghost" type="button" hidden aria-label="時刻を自動調整して解決">⚡ AUTO ADJUST</button>
-                <button id="cancel-planner-compare" class="button ghost" type="button" aria-label="変更をキャンセル">CANCEL</button>
-                <button id="confirm-planner-compare" class="button primary" type="submit" aria-label="変更を適用">APPLY</button>
+                <button id="planner-compare-auto-adjust" class="button compact ghost" type="button" hidden aria-label="時刻を自動調整して解決">⚡ 重複を自動調整</button>
+                <button id="cancel-planner-compare" class="button ghost" type="button" aria-label="キャンセル">キャンセル</button>
+                <button id="confirm-planner-compare" class="button primary" type="submit" aria-label="変更を反映">この変更を反映する</button>
             </div>
         </form>
     </dialog>
 
     <dialog id="preview-dialog" class="v2-dialog">
-        <div class="dialog-heading"><div><p class="eyebrow">MOBILE PREVIEW</p><h2>参加者表示を確認</h2></div><button id="close-preview" class="icon-button" type="button" aria-label="閉じる">×</button></div>
+        <div class="dialog-heading"><div><p class="eyebrow">スマホ表示プレビュー</p><h2>参加者から見える画面</h2></div><button id="close-preview" class="icon-button" type="button" aria-label="閉じる">×</button></div>
         <div id="preview-content" class="v2-dialog-body"></div>
     </dialog>
     <dialog id="history-dialog" class="v2-dialog">
-        <div class="dialog-heading"><div><p class="eyebrow">PUBLISH HISTORY</p><h2>公開履歴・復元</h2></div><button id="close-history" class="icon-button" type="button" aria-label="閉じる">×</button></div>
+        <div class="dialog-heading"><div><p class="eyebrow">公開バージョン履歴</p><h2>公開履歴・過去の版を復元</h2></div><button id="close-history" class="icon-button" type="button" aria-label="閉じる">×</button></div>
         <div id="history-content" class="v2-dialog-body"></div>
     </dialog>
     <div id="admin-toast" class="toast" role="status" aria-live="polite"></div>
     <div id="admin-error-boundary" class="shiori-error-boundary-container" hidden></div>
-    <script type="module" src="src/admin.js?v=402"></script>
+    <script type="module" src="src/admin.js?v=403"></script>
 </body>
 </html>

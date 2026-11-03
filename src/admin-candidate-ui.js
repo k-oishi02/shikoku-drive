@@ -5,7 +5,7 @@
  * and day timeline adoption workflow with collision preview.
  */
 
-import { $, makeElement, showToast, deepClone, text } from './admin-ui.js';
+import { $, makeElement, showToast, deepClone, text, updateEditorHeaderMeta, updateCharCounter, switchEditorTab } from './admin-ui.js';
 import { resolveMapFields, validateMapFields, mapHref, mapSearchQuery, mapRouteHref } from './map-links.js';
 import { validateCandidateInput } from './draft-validation.js';
 import { cleanCandidate, cleanCard, parseTimeRange, formatMinute } from './trip-v2-index.js';
@@ -47,6 +47,7 @@ export function renderCandidateList(store, callbacks = {}) {
   if (!list) return;
   list.replaceChildren();
   const state = store.getState();
+  updateEditorHeaderMeta(state.activeTrip, state.activePlanning);
   const candidates = state.activePlanning?.candidates || [];
   const filterStatus = state.candidateFilterStatus || 'all';
   const filterCategory = state.candidateFilterCategory || 'all';
@@ -100,16 +101,16 @@ export function renderCandidateList(store, callbacks = {}) {
     }
 
     const actions = makeElement('div', 'candidate-card-actions');
-    actions.append(btn('compact primary', isAssigned ? 'ADDED' : 'ADD TO DAY', () => openCandidateAdoptDialog(store, candidate.id), isAssigned));
-    actions.append(btn('compact ghost', 'EDIT', () => openCandidateDialog(store, candidate.id)));
-    if (isAssigned) actions.append(btn('compact ghost', 'REMOVE FROM DAY', () => resetCandidateStatus(store, candidate.id, callbacks)));
+    actions.append(btn('button compact primary', isAssigned ? '✓ 日程に追加済み' : '📅 日程に入れる', () => openCandidateAdoptDialog(store, candidate.id), isAssigned));
+    actions.append(btn('button compact ghost', '編集', () => openCandidateDialog(store, candidate.id)));
+    if (isAssigned) actions.append(btn('button compact ghost', '日程から外す', () => resetCandidateStatus(store, candidate.id, callbacks)));
     const mapsUrl = mapHref(candidate);
     if (mapsUrl) {
-      const mapsLink = makeElement('a', 'button compact ghost', 'MAP ↗');
+      const mapsLink = makeElement('a', 'button compact ghost', '🗺️ 地図 ↗');
       mapsLink.href = mapsUrl; mapsLink.target = '_blank'; mapsLink.rel = 'noopener noreferrer';
       actions.append(mapsLink);
     }
-    actions.append(btn('compact danger', '削除', () => deleteCandidate(store, candidate.id, callbacks)));
+    actions.append(btn('button compact danger', '削除', () => deleteCandidate(store, candidate.id, callbacks)));
 
     card.append(actions);
     list.append(card);
@@ -255,6 +256,7 @@ export function openCandidateAdoptDialog(store, candidateId) {
   $('adopt-duration-minutes').value = String(duration);
   $('adopt-travel-minutes').value = '0';
   $('adopt-card-desc').value = '';
+  updateCharCounter('adopt-card-desc', 'data-adopt-desc-count');
 
   const initialDay = daySelect.value;
   const initialStartTime = calculateNextAvailableTime(store, initialDay, 0);
@@ -360,7 +362,8 @@ export function confirmAdoptCandidate(store, event, callbacks = {}) {
   if (typeof callbacks.renderEditorCards === 'function') callbacks.renderEditorCards();
   renderCandidateList(store, callbacks);
   if (typeof callbacks.renderTripAudit === 'function') callbacks.renderTripAudit();
-  showToast(`「${candidate.title}」を日程に追加しました。下書き保存で確定してください。`);
+  switchEditorTab('itinerary');
+  showToast(`「${candidate.title}」を日程に追加しました。下書き保存または公開で確定してください。`);
 }
 
 export function initCandidateShelf({ store, callbacks = {}, closeEditingDialog }) {

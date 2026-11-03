@@ -38,7 +38,7 @@ export function renderAdminRoles(db, store) {
     row.append(makeElement('p', 'muted small', profile.uid));
 
     const actions = makeElement('div', 'trip-actions');
-    const edit = makeElement('button', 'compact ghost', 'EDIT');
+    const edit = makeElement('button', 'compact ghost', '編集');
     edit.type = 'button';
     edit.addEventListener('click', () => {
       $('role-uid').value = profile.uid;

@@ -6,7 +6,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
-import { $, showToast } from './admin-ui.js';
+import { $, showToast, bindAdminUxEnhancements } from './admin-ui.js';
 import { initErrorBoundary, reportAppError } from './error-boundary.js';
 import { createAdminStore } from './admin-store.js';
 import { createEditorSession } from './admin-save-state.js';
@@ -79,6 +79,7 @@ export async function loadDashboard() {
 
 const callbacks = {
   showView,
+  populateTripSelects: () => populateTripSelects(adminStore),
   confirmEditorLeave: () => confirmEditorLeave(adminStore, editorSession),
   hasUnsavedChanges: () => hasUnsavedChanges(adminStore, editorSession),
   syncEditorInputs: () => syncEditorInputs(adminStore),
@@ -107,15 +108,18 @@ const callbacks = {
 function bindGlobalEvents() {
   initErrorBoundary({ containerId: 'admin-error-boundary', fallbackMessage: '管理者コンソールの実行中に予期せぬエラーが発生しました。' });
   initAdminAuth({ auth, db, store: adminStore, googleProvider, onEnter: loadDashboard, stopLiveListeners: () => stopLiveListeners(adminStore), confirmLeave: callbacks.confirmEditorLeave });
-  initOverviewView({ store: adminStore, onNewTrip: () => openTripEditor(adminStore, editorSession, callbacks, ''), onOpenEditor: id => openTripEditor(adminStore, editorSession, callbacks, id), onOpenDistribution: id => openDistribution(adminStore, id, showView), duplicateTrip: callbacks.duplicateTrip, toggleTripArchive: callbacks.toggleTripArchive, downloadDraftRecovery: id => downloadDraftRecovery(adminStore, id) });
+  initOverviewView({ onNewTrip: () => openTripEditor(adminStore, editorSession, callbacks, '') });
   initEditorView({ store: adminStore, session: editorSession, db, callbacks });
   initCandidateShelf({ store: adminStore, callbacks, closeEditingDialog: id => closeEditingDialog(adminStore, id) });
   initDayPlannerUI({ store: adminStore, callbacks });
   initDistributionView({ db, store: adminStore });
   initRolesView({ db, store: adminStore });
   initAdminDiscussion({ db, auth, store: adminStore, session: editorSession, callbacks });
+  bindAdminUxEnhancements();
 
   document.querySelectorAll('[data-admin-view]').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.adminView)));
+  document.querySelector('[data-editor-go-distribute]')?.addEventListener('click', () => { callbacks.syncEditorInputs(); openDistribution(adminStore, adminStore.getState().activeTrip?.tripId || '', showView); });
+  document.querySelector('[data-dist-open-editor]')?.addEventListener('click', () => openTripEditor(adminStore, editorSession, callbacks, $('distribution-trip')?.value || ''));
   $('save-draft')?.addEventListener('click', () => persistTrip({ db, store: adminStore, session: editorSession, publish: false, ...callbacks }));
   $('publish-trip')?.addEventListener('click', () => persistTrip({ db, store: adminStore, session: editorSession, publish: true, ...callbacks }));
   $('reload-draft')?.addEventListener('click', () => reloadActiveDraft({ db, store: adminStore, session: editorSession, ...callbacks }));
@@ -125,11 +129,7 @@ function bindGlobalEvents() {
 
   document.addEventListener('input', e => handleEditorInput(adminStore, editorSession, e));
   document.addEventListener('change', e => handleEditorInput(adminStore, editorSession, e));
-  document.addEventListener('click', e => {
-    if (e.target.closest?.('#view-editor, #card-dialog, #candidate-dialog, #candidate-adopt-dialog, #move-day-dialog, #cascade-adjust-dialog, #planner-compare-dialog')) {
-      queueMicrotask(callbacks.updateSaveStatus);
-    }
-  });
+  document.addEventListener('click', e => { if (e.target.closest?.('#view-editor, #card-dialog, #candidate-dialog, #candidate-adopt-dialog, #move-day-dialog, #cascade-adjust-dialog, #planner-compare-dialog')) queueMicrotask(callbacks.updateSaveStatus); });
 
   ['card-dialog', 'candidate-dialog', 'candidate-adopt-dialog', 'move-day-dialog', 'cascade-adjust-dialog', 'planner-compare-dialog'].forEach(id => {
     $(id)?.addEventListener('cancel', e => { if (adminStore.getState().dirtyDialogs.has(id) && !window.confirm('未反映の入力を破棄しますか？')) e.preventDefault(); });

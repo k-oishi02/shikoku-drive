@@ -17,7 +17,7 @@ import { commitTripRecord } from './admin-trip-store.js';
 import { buildTripExport, buildAdminBackup, parseTripImport } from './admin-transfer.js';
 import { validateStoredDraftSize } from './draft-validation.js';
 import { reconcileAssignments } from './admin-candidate-state.js';
-import { $, setBusy, showToast, deepClone, text } from './admin-ui.js';
+import { $, setBusy, showToast, deepClone, text, switchEditorTab } from './admin-ui.js';
 
 export function normalizeTrip(raw, fallbackId = '') {
   return migrateTripToV2(raw, fallbackId);
@@ -259,7 +259,7 @@ export async function reloadActiveDraft({ db, store, session, confirmEditorLeave
   }
 }
 
-export async function importTripFile({ file, store, session, confirmEditorLeave, renderEditor, startEditorSession }) {
+export async function importTripFile({ file, store, session, confirmEditorLeave, renderEditor, showView, startEditorSession }) {
   if (!file) return;
   const generation = session.generation;
   const state = store.getState();
@@ -281,10 +281,12 @@ export async function importTripFile({ file, store, session, confirmEditorLeave,
       activeDayKey: Object.keys(trip.days)[0] || 'day1'
     });
     if (typeof renderEditor === 'function') renderEditor();
+    switchEditorTab('itinerary');
+    if (typeof showView === 'function') showView('editor');
     if (typeof startEditorSession === 'function') {
       startEditorSession(false, state.trips.get(trip.tripId)?.version ?? null);
     }
-    showToast('JSONを読み込みました。内容を確認して保存してください。');
+    showToast('JSONを読み込みました。「🚀 参加者へ公開」または「💾 下書き保存」を押してください。');
   } catch (error) {
     showToast(`JSONを読み込めません: ${error.message}`, true);
   } finally {
@@ -324,6 +326,7 @@ export function duplicateTrip({ store, tripId, confirmEditorLeave, renderEditor,
   });
   if ($('undo-day-plan')) $('undo-day-plan').hidden = true;
   if (typeof renderEditor === 'function') renderEditor();
+  switchEditorTab('basics');
   if (typeof showView === 'function') showView('editor');
   if (typeof startEditorSession === 'function') startEditorSession(false);
   showToast('旅行を複製しました。日付と旅行IDを確認して下書き保存してください。');

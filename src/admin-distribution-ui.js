@@ -1,21 +1,25 @@
-// Admin Distribution View Controller (View 03: DISTRIBUTE)
+// Admin Distribution View Controller (View 03: メンバーへ共有)
 import { collection, doc, getDoc, getDocs, onSnapshot, runTransaction, serverTimestamp, setDoc, writeBatch, deleteDoc, query, limit } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import { $, makeElement, showToast, setBusy, copyText, formatTimestamp, formatAccessId, randomToken, randomAccessId, sha256, text } from './admin-ui.js';
 import { cleanupRoomSuggestionsAndComments, KNOWN_MEMBERS_DOC_ID, collectKnownParticipants, syncKnownParticipantsDirectory, pushDistributionToMembers, revokeMemberInboxEntries } from './admin-trip-store.js';
-import { renderDistributionLedger, deleteDocumentsInChunks, clearDistributionLedger, renderKnownMemberPicker, renderCardDirectShareBox } from './admin-distribution-ledger.js';
-
-function btn(cls, txt, fn, dis) {
-  const b = makeElement('button', cls, txt); b.type = 'button'; b.disabled = Boolean(dis);
-  if (fn) b.addEventListener('click', fn);
-  return b;
-}
+import { renderDistributionLedger, deleteDocumentsInChunks, clearDistributionLedger, renderKnownMemberPicker, renderCardDirectShareBox, renderCardInviteAndAdvanced, renderParticipantDeviceList } from './admin-distribution-ledger.js';
 
 let directorySyncTimer = null;
 function knownListFromState(state, excludeTripId) { return collectKnownParticipants(state.distributions, state.knownMembersDirectory || {}, excludeTripId || ''); }
 
+function syncUnpublishedHint(store) {
+  if (typeof document === 'undefined') return;
+  const hint = document.querySelector('[data-dist-unpublished-hint]');
+  if (!hint) return;
+  const state = store.getState();
+  const tripId = $('distribution-trip')?.value || '';
+  hint.hidden = !(tripId && state.trips.has(tripId) && !state.publishedIds.has(tripId));
+}
+
 function renderCreateMemberPickerUI(store) {
   const state = store.getState();
   if (!(state.createShareUids instanceof Set)) state.createShareUids = new Set();
+  syncUnpublishedHint(store);
   renderKnownMemberPicker({
     container: $('distribution-known-members'),
     knownMembers: knownListFromState(state, $('distribution-trip')?.value || ''),
@@ -42,10 +46,15 @@ function scheduleDirectorySync(db, store) {
 export function populateTripSelects(store) {
   const select = $('distribution-trip');
   if (!select) return;
+  const state = store.getState();
   const selected = select.value;
   select.replaceChildren();
-  [...store.getState().trips.entries()].sort((a, b) => text(a[1].trip.startDate).localeCompare(text(b[1].trip.startDate)))
-    .forEach(([id, rec]) => { const opt = document.createElement('option'); opt.value = id; opt.textContent = `${rec.trip.title} (${id})`; select.append(opt); });
+  [...state.trips.entries()].sort((a, b) => text(b[1].trip.startDate).localeCompare(text(a[1].trip.startDate)))
+    .forEach(([id, rec]) => {
+      const opt = document.createElement('option');
+      opt.value = id; opt.textContent = `${state.publishedIds.has(id) ? '🟢 公開中' : '🟠 未公開'}｜${rec.trip.title || id} (${id})`;
+      select.append(opt);
+    });
   if (select.querySelector(`option[value="${selected}"]`)) select.value = selected;
   renderCreateMemberPickerUI(store);
 }
@@ -77,7 +86,7 @@ export function startDistributionListener(db, store, callbacks = {}) {
       };
     }).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     renderDistributions(db, store, callbacks);
-  }, error => { console.error(error); showToast('配布先一覧を取得できませんでした。', true); });
+  }, error => { console.error(error); showToast('共有ルーム一覧を取得できませんでした。', true); });
 }
 
 export function participantAppUrl() { const u = new URL('./', window.location.href); u.search = ''; u.hash = ''; return u.toString(); }
@@ -97,24 +106,30 @@ export async function shareDistributionDirectly(db, store, distribution, targets
 }
 
 export async function createDistribution(db, store) {
-  const state = store.getState(), tripId = $('distribution-trip').value, label = $('distribution-label').value.trim(), rawCap = Number($('distribution-capacity').value);
-  if (!tripId || !state.trips.has(tripId)) return showToast('配布する旅行を選択してください。', true);
-  if (!label || label.length > 40) return showToast('配布先名は1〜40文字で入力してください。', true);
-  if (!Number.isInteger(rawCap) || rawCap < 1 || rawCap > 50) return showToast('端末枠は1〜50台の整数で入力してください。', true);
-  if (!state.publishedIds.has(tripId)) return showToast('配布IDを発行する前に、この旅行を参加者へ公開してください。', true);
+  const state = store.getState();
+  const tripId = $('distribution-trip').value;
+  const label = $('distribution-label').value.trim() || 'メンバー共有';
+  const rawCap = Number($('distribution-capacity').value);
+  if (!tripId || !state.trips.has(tripId)) return showToast('共有する旅行を選択してください。', true);
+  if (label.length > 40) return showToast('グループ名は40文字以内で入力してください。', true);
+  if (!Number.isInteger(rawCap) || rawCap < 1 || rawCap > 50) return showToast('端末上限は1〜50台の整数で入力してください。', true);
+  if (!state.publishedIds.has(tripId)) return showToast('先に「② しおり編集・公開」で「🚀 参加者へ公開」を押してください。', true);
   const selectedMembers = knownListFromState(state, tripId).filter(m => state.createShareUids?.has(m.uid));
   const capacity = Math.min(50, Math.max(rawCap, selectedMembers.length));
-  const button = $('create-distribution'); setBusy(button, true, '発行中…');
-  const ledgerToken = randomToken(), roomId = `${tripId}_${ledgerToken}`, trip = state.publishedTrips.get(tripId);
+  const button = $('create-distribution'); setBusy(button, true, '作成中…');
+  const ledgerToken = randomToken();
+  const roomId = `${tripId}_${ledgerToken}`;
+  const trip = state.publishedTrips.get(tripId);
   if (!trip) { showToast('公開済みデータを取得できません。旅行をもう一度公開してください。', true); setBusy(button, false); return; }
   try {
-    let accessId = '', grantId = '';
+    let accessId = '';
+    let grantId = '';
     for (let attempt = 0; attempt < 4; attempt += 1) {
       accessId = randomAccessId(); grantId = await sha256(accessId);
       if (!(await getDoc(doc(db, 'accessGrants', grantId))).exists()) break;
       accessId = '';
     }
-    if (!accessId) throw new Error('配布IDを生成できませんでした。もう一度お試しください。');
+    if (!accessId) throw new Error('共有IDを生成できませんでした。もう一度お試しください。');
     const distDoc = { roomId, tripId, label, ledgerToken, accessId, grantId, status: 'active', capacity, createdAt: serverTimestamp(), createdBy: state.currentUser.uid };
     const batch = writeBatch(db);
     batch.set(doc(db, 'rooms', roomId), { schemaVersion: 2, tripId, label, status: 'active', capacity, members: {}, accessIdHash: grantId, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), createdBy: state.currentUser.uid });
@@ -126,8 +141,8 @@ export async function createDistribution(db, store) {
       state.createShareUids?.clear();
     }
     $('distribution-label').value = '';
-    showToast(`配布ID ${formatAccessId(accessId)} を発行しました${selectedMembers.length ? `（${selectedMembers.map(m => m.nickname).join('・')}へ自動共有済み）` : ''}。`);
-  } catch (error) { console.error(error); showToast(`配布IDを発行できません: ${error.message}`, true); }
+    showToast(`共有ルーム「${label}」を作成しました${selectedMembers.length ? `（${selectedMembers.map(m => m.nickname).join('・')}へ自動共有済み）` : ''}！`);
+  } catch (error) { console.error(error); showToast(`共有ルームを作成できません: ${error.message}`, true); }
   finally { setBusy(button, false); renderCreateMemberPickerUI(store); }
 }
 
@@ -178,23 +193,24 @@ export function subscribeDistributionExpenses(db, store, distribution, callbacks
 
 export async function deleteDistribution(db, store, distribution, button) {
   const state = store.getState();
-  if (state.currentRole !== 'owner') return showToast('配布先の完全削除はオーナーだけが実行できます。', true);
-  if (distribution.status === 'active') return showToast('先に配布を停止してください。', true);
+  if (state.currentRole !== 'owner') return showToast('完全削除はオーナー権限のみ実行できます。', true);
+  if (distribution.status === 'active') return showToast('先に共有を一時停止してください。', true);
   const initialRef = doc(db, 'adminDistributions', distribution.id);
   try {
     const initSnap = await getDoc(initialRef);
-    if (!initSnap.exists()) return showToast('この配布先はすでに削除されています。');
+    if (!initSnap.exists()) return showToast('この共有ルームはすでに削除されています。');
     const initData = initSnap.data() || {};
-    if (initData.status === 'active') throw new Error('配布が再開されています。先に停止してください。');
-    const roomId = initData.roomId || distribution.roomId || distribution.id, roomRef = doc(db, 'rooms', roomId);
+    if (initData.status === 'active') throw new Error('共有が再開されています。先に停止してください。');
+    const roomId = initData.roomId || distribution.roomId || distribution.id;
+    const roomRef = doc(db, 'rooms', roomId);
     const [pSnap, eSnap] = await Promise.all([getDocs(collection(roomRef, 'participants')), getDocs(collection(roomRef, 'expenses'))]);
     const label = initData.label || distribution.label || '名称未設定';
-    if (!window.confirm(`「${label}」を完全削除しますか？\n\n参加者 ${pSnap.size}名、共有支出 ${eSnap.size}件、提案やコメント、配布ID・同期ルームを削除します。元に戻せません。`)) return;
+    if (!window.confirm(`「${label}」を完全削除しますか？\n\n参加者 ${pSnap.size}名、共有支出 ${eSnap.size}件、相談コメント、招待コードを削除します。元に戻せません。`)) return;
     setBusy(button, true, '削除中…');
     await runTransaction(db, async tr => {
       const [lDist, lRoom] = await Promise.all([tr.get(initialRef), tr.get(roomRef)]);
-      if (!lDist.exists()) throw new Error('この配布先はすでに削除されています。');
-      if (lDist.data()?.status === 'active' || lRoom.data()?.status === 'active') throw new Error('配布が再開されたため削除を中止しました。');
+      if (!lDist.exists()) throw new Error('この共有ルームはすでに削除されています。');
+      if (lDist.data()?.status === 'active' || lRoom.data()?.status === 'active') throw new Error('共有が再開されたため削除を中止しました。');
       tr.update(initialRef, { status: 'deleting', updatedAt: serverTimestamp() });
       if (lRoom.exists()) tr.update(roomRef, { status: 'deleting', updatedAt: serverTimestamp() });
     });
@@ -210,7 +226,7 @@ export async function deleteDistribution(db, store, distribution, button) {
     if (grantId) finalBatch.delete(doc(db, 'accessGrants', grantId));
     await finalBatch.commit();
     showToast(`「${label}」を完全削除しました。`);
-  } catch (error) { console.error(error); showToast(`配布先を削除できません: ${error.message}`, true); setBusy(button, false); }
+  } catch (error) { console.error(error); showToast(`削除できません: ${error.message}`, true); setBusy(button, false); }
 }
 
 export { clearDistributionLedger };
@@ -222,7 +238,8 @@ export async function migrateParticipantExpenseReferences(db, expensesRef, uid, 
   for (let offset = 0; offset < migrations.length; offset += 400) {
     const batch = writeBatch(db);
     migrations.slice(offset, offset + 400).forEach(item => {
-      const d = item.data() || {}, upd = {};
+      const d = item.data() || {};
+      const upd = {};
       if (d.payer === uid) upd.payer = replacementUid;
       if (d.creatorUid === uid) upd.creatorUid = replacementUid;
       batch.update(item.ref, upd);
@@ -233,11 +250,15 @@ export async function migrateParticipantExpenseReferences(db, expensesRef, uid, 
 }
 
 export async function removeParticipantDevice(db, distribution, uid, button) {
-  const roomId = distribution.roomId || distribution.id, roomRef = doc(db, 'rooms', roomId), distRef = doc(db, 'adminDistributions', distribution.id);
-  const participantRef = doc(roomRef, 'participants', uid), participantsRef = collection(roomRef, 'participants'), expensesRef = collection(roomRef, 'expenses');
+  const roomId = distribution.roomId || distribution.id;
+  const roomRef = doc(db, 'rooms', roomId);
+  const distRef = doc(db, 'adminDistributions', distribution.id);
+  const participantRef = doc(roomRef, 'participants', uid);
+  const participantsRef = collection(roomRef, 'participants');
+  const expensesRef = collection(roomRef, 'expenses');
   try {
     const [roomSnap, partSnap, partsSnap, expSnap] = await Promise.all([getDoc(roomRef), getDoc(participantRef), getDocs(participantsRef), getDocs(expensesRef)]);
-    if (!roomSnap.exists()) throw new Error('配布ルームが見つかりません。');
+    if (!roomSnap.exists()) throw new Error('共有ルームが見つかりません。');
     const roomMembers = roomSnap.data()?.members || {};
     if (!roomMembers[uid] && !partSnap.exists() && !distribution.sharedMembers?.[uid]) return showToast('この端末はすでに解除されています。');
     const targetName = text((partSnap.data() || {}).nickname || distribution.sharedMembers?.[uid]?.nickname).trim();
@@ -247,12 +268,12 @@ export async function removeParticipantDevice(db, distribution, uid, button) {
     if (expSnap.docs.some(i => { const d = i.data() || {}; return d.payer === uid || d.creatorUid === uid; }) && !replacement) {
       return showToast('この端末を参照する支出があります。同じ表示名の新端末を登録してから解除してください。', true);
     }
-    if (!window.confirm(`「${targetName || '参加者情報のない端末'}」端末 …${uid.slice(-6)} を配布先から解除しますか？${replacement ? '\n同じ表示名の端末へ支払者・登録者を移行します。' : ''}`)) return;
+    if (!window.confirm(`「${targetName || '名称未設定の端末'}」（…${uid.slice(-6)}）の共有を解除しますか？${replacement ? '\n同じ表示名の端末へ支払者・登録者を移行します。' : ''}`)) return;
     setBusy(button, true, '解除中…');
     if (replacement) await migrateParticipantExpenseReferences(db, expensesRef, uid, replacement.uid);
     await runTransaction(db, async tr => {
       const [snap, dSnap] = await Promise.all([tr.get(roomRef), tr.get(distRef)]);
-      if (!snap.exists()) throw new Error('配布ルームが見つかりません。');
+      if (!snap.exists()) throw new Error('共有ルームが見つかりません。');
       const members = { ...(snap.data()?.members || {}) };
       if (Object.prototype.hasOwnProperty.call(members, uid)) { delete members[uid]; tr.update(roomRef, { members, updatedAt: serverTimestamp() }); }
       if (dSnap.exists() && dSnap.data()?.sharedMembers?.[uid]) {
@@ -263,12 +284,13 @@ export async function removeParticipantDevice(db, distribution, uid, button) {
     await revokeMemberInboxEntries({ db, doc, getDoc, setDoc, serverTimestamp, sha256Fn: sha256, uids: [uid], roomId });
     if ((await migrateParticipantExpenseReferences(db, expensesRef, uid, replacement?.uid || '')) && !replacement) throw new Error('解除中にこの端末の支出が追加されました。再試行してください。');
     if (partSnap.exists()) { const finalBatch = writeBatch(db); finalBatch.delete(participantRef); await finalBatch.commit(); }
-    showToast(replacement ? '支出の支払者・登録者を同名端末へ移行し、参加端末を解除しました。' : '参加端末を解除しました。');
-  } catch (error) { console.error(error); showToast(`参加端末を解除できません: ${error.message}`, true); setBusy(button, false); }
+    showToast(replacement ? '支出データを同名端末へ引き継ぎ、端末を解除しました。' : '端末の共有を解除しました。');
+  } catch (error) { console.error(error); showToast(`端末を解除できません: ${error.message}`, true); setBusy(button, false); }
 }
 
 export function renderDistributions(db, store, callbacks = {}) {
   if (typeof callbacks.refreshAdminDiscussionRooms === 'function') callbacks.refreshAdminDiscussionRooms();
+  if (store.getState().currentView === 'overview' && typeof callbacks.renderTripLibrary === 'function') callbacks.renderTripLibrary();
   renderCreateMemberPickerUI(store);
   const list = $('distribution-list');
   if (!list) return;
@@ -281,88 +303,76 @@ export function renderDistributions(db, store, callbacks = {}) {
   [state.participantUnsubscribers, state.roomUnsubscribers, state.expenseUnsubscribers].forEach(m => {
     [...m.entries()].forEach(([id, unsub]) => { if (!activeIds.has(id)) { unsub(); m.delete(id); } });
   });
-  if (!state.distributions.length) {
-    list.append(makeElement('div', 'empty-state', '配布先はまだありません。旅行を選び、配布IDを発行してください。'));
-    return;
-  }
+  if (!state.distributions.length) return list.append(makeElement('div', 'empty-state', '共有ルームはまだありません。上の「共有ルームを作成する」から作成できます。'));
   const allKnown = knownListFromState(state, '');
   state.distributions.forEach(dist => {
     subscribeDistributionParticipants(db, store, dist, callbacks);
     subscribeDistributionRoom(db, store, dist, callbacks);
     subscribeDistributionExpenses(db, store, dist, callbacks);
-    const card = makeElement('article', 'distribution-card'), head = makeElement('div', 'distribution-head'), left = makeElement('div');
-    const isDeleting = dist.status === 'deleting', statusLabel = dist.status === 'active' ? '有効' : isDeleting ? '削除中' : '停止';
-    left.append(makeElement('span', `pill ${dist.status === 'active' ? '' : 'draft'}`, statusLabel), makeElement('h3', '', dist.label || '名称未設定'), makeElement('span', 'muted small', `${dist.tripId} · ${formatTimestamp(dist.createdAt)}`));
-    const partDocs = Array.isArray(dist.participants) ? dist.participants : [], partByUid = new Map(partDocs.map(p => [p.uid, p]));
+    const card = makeElement('article', 'distribution-card');
+    const head = makeElement('div', 'distribution-head');
+    const left = makeElement('div', 'distribution-title-block');
+    const isDeleting = dist.status === 'deleting';
+    const isActive = dist.status === 'active';
+    const tripTitle = state.trips.get(dist.tripId)?.trip?.title || dist.tripId;
+    left.append(makeElement('span', `pill ${isActive ? 'status-published' : 'draft'}`, isActive ? '🟢 共有中' : isDeleting ? '削除中' : '🟠 停止中'), makeElement('h3', '', dist.label || 'メンバー共有'), makeElement('span', 'muted small', `対象しおり: ${tripTitle} (${dist.tripId}) · 作成 ${formatTimestamp(dist.createdAt)}`));
+    const partDocs = Array.isArray(dist.participants) ? dist.participants : [];
+    const partByUid = new Map(partDocs.map(p => [p.uid, p]));
     const sharedMap = (dist.sharedMembers && typeof dist.sharedMembers === 'object') ? dist.sharedMembers : {};
     const memberIds = dist.roomReady ? [...new Set(Array.isArray(dist.roomMembers) ? dist.roomMembers : [])] : [...new Set([...partDocs.map(p => p.uid), ...Object.keys(sharedMap)])];
-    const memberSet = new Set(memberIds), listedIds = [...new Set([...memberIds, ...partDocs.map(p => p.uid)])];
+    const memberSet = new Set(memberIds);
+    const listedIds = [...new Set([...memberIds, ...partDocs.map(p => p.uid)])];
     const uniqueNames = new Set(); let unnamed = 0;
     memberIds.forEach(uid => { const k = normalizeParticipantName(partByUid.get(uid)?.nickname || sharedMap[uid]?.nickname); if (k) uniqueNames.add(k); else unnamed += 1; });
     const capacity = Number.isInteger(Number(dist.capacity)) ? Number(dist.capacity) : 2;
-    head.append(left, makeElement('strong', '', `${uniqueNames.size + unnamed}名（${memberIds.length}/${capacity}端末）`));
-    const accessIdCode = makeElement('code', 'distribution-id', dist.accessId ? formatAccessId(dist.accessId) : '配布IDなし：この配布先を削除し、新しく発行してください');
-    const participants = makeElement('div', 'participant-list participant-device-list');
-    if (listedIds.length) {
-      listedIds.forEach(uid => {
-        const p = partByUid.get(uid), sharedNick = text(sharedMap[uid]?.nickname).trim();
-        const item = makeElement('span', 'participant participant-device'), copy = makeElement('span', 'participant-device-copy');
-        const statusTail = p?.joinedAt ? ' · ' + formatTimestamp(p.joinedAt) : (sharedNick ? ' · 自動共有済み（未起動）' : '');
-        copy.append(makeElement('strong', '', p?.nickname || sharedNick || '参加者情報のない端末'), makeElement('small', '', `…${uid.slice(-6)}${statusTail}${memberSet.has(uid) ? '' : ' · 配布枠外'}`));
-        const remBtn = btn('compact danger', '解除', () => removeParticipantDevice(db, dist, uid, remBtn));
-        item.append(copy, remBtn); participants.append(item);
-      });
-    } else { participants.append(makeElement('span', 'muted small', 'まだ参加端末はありません')); }
-    participants.append(makeElement('p', 'participant-merge-note', '同じ表示名は同一人物として割り勘集計します。別人なら表示名を変えてください。'));
+    head.append(left, makeElement('strong', 'dist-count-chip', `参加 ${uniqueNames.size + unnamed}名（${memberIds.length}/${capacity}台）`));
     if (!state.cardShareUids.has(dist.id)) state.cardShareUids.set(dist.id, new Set());
     const directBox = renderCardDirectShareBox({
       distribution: dist, knownMembers: allKnown, memberSet, selectedUids: state.cardShareUids.get(dist.id),
       onChange: () => renderDistributions(db, store, callbacks),
       onPush: (pushBtn, targets) => shareDistributionDirectly(db, store, dist, targets, pushBtn)
     });
-    const capCtrl = makeElement('div', 'capacity-control'), capLabel = makeElement('label', '', '端末枠'), capInput = document.createElement('input');
-    capInput.type = 'number'; capInput.min = String(Math.max(1, memberIds.length)); capInput.max = '50'; capInput.step = '1'; capInput.value = String(capacity); capInput.disabled = isDeleting;
-    const updCap = btn('compact ghost', 'DEVICE LIMIT', () => updateDistributionCapacity(db, dist, Number(capInput.value), updCap), isDeleting);
-    capLabel.append(capInput); capCtrl.append(capLabel, updCap);
-    const actions = makeElement('div', 'trip-actions');
-    actions.append(
-      btn('compact primary', 'COPY LINK', () => copyText(participantRegistrationUrl(dist.accessId), '自動登録リンクをコピーしました。'), dist.status !== 'active' || !dist.accessId),
-      btn('compact ghost', 'COPY ID', () => copyText(formatAccessId(dist.accessId), '配布IDをコピーしました。'), dist.status !== 'active' || !dist.accessId),
-      btn('compact ghost', 'COPY APP URL', () => copyText(participantAppUrl(), '空の参加者アプリURLをコピーしました。')),
-      btn(`compact ${dist.status === 'active' ? 'danger' : ''}`, dist.status === 'active' ? '配布を停止' : '再開', () => toggleDistribution(db, store, dist), isDeleting)
-    );
-    if (dist.status !== 'active') actions.append(btn('compact danger', isDeleting ? '削除を再試行' : '完全削除', () => deleteDistribution(db, store, dist, actions.lastChild)));
-    card.append(head, accessIdCode, participants, ...(directBox ? [directBox] : []), renderDistributionLedger(db, dist), capCtrl, actions);
+    const { inviteBox, adv } = renderCardInviteAndAdvanced({
+      dist, isActive, isDeleting, capacity, memberCount: memberIds.length,
+      onCopyLink: () => copyText(participantRegistrationUrl(dist.accessId), '招待リンクをコピーしました！LINE等でそのまま送れます。'),
+      onCopyId: () => copyText(formatAccessId(dist.accessId), '12桁コードをコピーしました。'),
+      onCopyAppUrl: () => copyText(participantAppUrl(), '参加者アプリのトップURLをコピーしました。'),
+      onUpdateCap: (val, b) => updateDistributionCapacity(db, dist, val, b),
+      onToggle: () => toggleDistribution(db, store, dist),
+      onDelete: b => deleteDistribution(db, store, dist, b)
+    });
+    const participants = renderParticipantDeviceList({ listedIds, partByUid, sharedMap, memberSet, onRemove: (uid, remBtn) => removeParticipantDevice(db, dist, uid, remBtn) });
+    card.append(head, ...(directBox ? [directBox] : []), inviteBox, participants, renderDistributionLedger(db, dist), adv);
     list.append(card);
   });
 }
 
 export async function updateDistributionCapacity(db, distribution, capacity, button) {
-  if (!Number.isInteger(capacity) || capacity < 1 || capacity > 50) return showToast('端末枠は1〜50台の整数で入力してください。', true);
+  if (!Number.isInteger(capacity) || capacity < 1 || capacity > 50) return showToast('端末上限は1〜50台の整数で入力してください。', true);
   setBusy(button, true, '変更中…');
   try {
     const roomRef = doc(db, 'rooms', distribution.roomId || distribution.id);
     const roomSnap = await getDoc(roomRef);
-    if (!roomSnap.exists()) throw new Error('配布ルームが見つかりません。');
+    if (!roomSnap.exists()) throw new Error('共有ルームが見つかりません。');
     const count = Object.keys(roomSnap.data()?.members || {}).length;
-    if (capacity < count) throw new Error(`現在${count}台の端末が登録済みです。端末枠をそれ未満にはできません。`);
+    if (capacity < count) throw new Error(`現在${count}台の端末が参加中です。それ未満にはできません。`);
     await runTransaction(db, async tr => {
       const snap = await tr.get(roomRef);
-      if (!snap.exists()) throw new Error('配布ルームが見つかりません。');
+      if (!snap.exists()) throw new Error('共有ルームが見つかりません。');
       const latestCount = Object.keys(snap.data()?.members || {}).length;
-      if (capacity < latestCount) throw new Error(`現在${latestCount}台の端末が登録済みです。端末枠をそれ未満にはできません。`);
+      if (capacity < latestCount) throw new Error(`現在${latestCount}台の端末が参加中です。それ未満にはできません。`);
       tr.update(roomRef, { capacity, updatedAt: serverTimestamp() });
       tr.update(doc(db, 'adminDistributions', distribution.id), { capacity, updatedAt: serverTimestamp() });
     });
-    showToast(`端末枠を${capacity}台へ変更しました。`);
-  } catch (error) { console.error(error); showToast(`端末枠を変更できません: ${error.message}`, true); }
+    showToast(`端末上限を${capacity}台へ変更しました。`);
+  } catch (error) { console.error(error); showToast(`端末上限を変更できません: ${error.message}`, true); }
   finally { setBusy(button, false); }
 }
 
 export async function toggleDistribution(db, store, distribution) {
-  if (distribution.status === 'deleting') return showToast('削除処理中の配布先は再開できません。完全削除を再試行してください。', true);
+  if (distribution.status === 'deleting') return showToast('削除処理中のため再開できません。完全削除を再試行してください。', true);
   const status = distribution.status === 'active' ? 'revoked' : 'active';
-  if (status === 'revoked' && !window.confirm('この配布IDを停止しますか？オンライン接続中の参加者は閲覧・同期できなくなります。')) return;
+  if (status === 'revoked' && !window.confirm('この共有ルームを一時停止しますか？停止中は参加者が閲覧・同期できなくなります。')) return;
   try {
     const batch = writeBatch(db);
     batch.update(doc(db, 'adminDistributions', distribution.id), { status, updatedAt: serverTimestamp() });
@@ -374,8 +384,8 @@ export async function toggleDistribution(db, store, distribution) {
       batch.update(doc(db, 'accessGrants', distribution.grantId), grantUpd);
     }
     await batch.commit();
-    showToast(status === 'active' ? '配布を再開しました。' : '配布を停止しました。');
-  } catch (error) { console.error(error); showToast(`配布状態を変更できません: ${error.message}`, true); }
+    showToast(status === 'active' ? '共有を再開しました。' : '共有を一時停止しました。');
+  } catch (error) { console.error(error); showToast(`状態を変更できません: ${error.message}`, true); }
 }
 
 export function initDistributionView({ db, store }) {
