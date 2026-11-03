@@ -2079,3 +2079,174 @@ html[data-trip-theme="dark"] .j-card.is-expanded {
   color: var(--sh-text) !important;
   margin-bottom: 8px !important;
 }
+/* 5. Editorial Scroll Storytelling & Photo Presentation */
+.j-card-media {
+  position: relative;
+  width: calc(100% + 32px);
+  margin: -15px -16px 14px -16px;
+  height: 190px;
+  overflow: hidden;
+  border-radius: 17px 17px 0 0;
+  background: #1e2624;
+}
+@media (min-width: 600px) {
+  .j-card-media {
+    height: 230px;
+    width: calc(100% + 40px);
+    margin: -18px -20px 16px -20px;
+  }
+}
+.j-card-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.05);
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease;
+  filter: brightness(0.92);
+}
+.j-card.is-in-view .j-card-photo {
+  transform: scale(1);
+  filter: brightness(0.98);
+}
+.j-card-photo-scrim {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, rgba(12, 18, 16, 0.55) 0%, rgba(12, 18, 16, 0) 45%, rgba(12, 18, 16, 0.65) 100%);
+  pointer-events: none;
+}
+.j-card-num {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.j-card-cat {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.j-card-media-fallback {
+  background: linear-gradient(135deg, #23342f 0%, #17221f 50%, #101917 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 90px;
+}
+.j-card-media-fallback .j-card-photo-scrim {
+  background: none;
+}
+.j-card-fallback-grad {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  background-image: radial-gradient(circle at 80% 20%, var(--sh-accent) 0%, transparent 60%);
+}
+
+/* 6. Typography & Subtraction of Icon Clutter */
+.j-spot-watermark {
+  display: none !important;
+}
+.j-spot-badge {
+  display: none !important;
+}
+.j-card-ttl {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--sh-text) !important;
+  margin: 2px 0 6px !important;
+}
+.j-card-time-row {
+  margin-bottom: 2px !important;
+  gap: 8px !important;
+}
+.j-card-time {
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  color: var(--sh-accent) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+.travel-car-icon {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: var(--sh-accent) !important;
+  display: inline-block !important;
+  box-shadow: 0 0 0 3px var(--sh-accent-soft) !important;
+  font-size: 0 !important;
+  margin-right: 6px !important;
+}
+.v2-travel-hint {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 12px !important;
+  margin: 4px 0 10px 16px !important;
+  font-size: 0.72rem !important;
+  color: var(--sh-muted) !important;
+  border-left: 2px dashed color-mix(in srgb, var(--sh-line) 80%, transparent) !important;
+}
+
+/* 7. Editorial Ghost Action Buttons (No app logo clutter) */
+.j-btn-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: 8px !important;
+}
+.j-btn-row .j-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 5px 12px !important;
+  border-radius: 999px !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+  background: var(--sh-surface) !important;
+  border: 1px solid var(--sh-line) !important;
+  color: var(--sh-text) !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+.j-btn-row .j-btn:hover {
+  background: var(--sh-accent-soft) !important;
+  border-color: var(--sh-accent) !important;
+  color: var(--sh-accent) !important;
+  transform: translateY(-1px) !important;
+}
+.j-btn-row .j-btn.primary {
+  background: var(--sh-accent) !important;
+  border-color: var(--sh-accent) !important;
+  color: #ffffff !important;
+}
+.j-btn-row .j-btn.primary:hover {
+  opacity: 0.92 !important;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3) !important;
+}
+.j-app-icon {
+  display: none !important;
+}

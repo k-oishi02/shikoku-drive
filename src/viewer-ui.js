@@ -222,7 +222,7 @@ export function buildShioriUI(data) {
       const depLabel = depMin == null ? '' : `${String(Math.floor((depMin + 1440) % 1440 / 60)).padStart(2, '0')}:${String((depMin + 1440) % 60).padStart(2, '0')}までに出発`;
       const routeHint = String(card?.routeHint || '').trim(), waypoints = String(card?.waypoints || '').trim();
       const routeHintChip = routeHint ? `<span class="v2-route-chip">経由: ${escapeHtml(routeHint)}</span>` : '';
-      const travelHintHtml = cardIndex > 0 && (travelMin || routeHint) ? `<div class="v2-travel-hint"><span class="travel-car-icon" aria-hidden="true">🚗</span>${travelMin ? `<strong>移動 約${travelMin}分</strong>` : ''}${depLabel ? `<span>${depLabel}</span>` : ''}${routeHintChip}</div>` : '';
+      const travelHintHtml = cardIndex > 0 && (travelMin || routeHint) ? `<div class="v2-travel-hint"><span class="travel-car-icon" aria-hidden="true"></span>${travelMin ? `<strong>移動 約${travelMin}分</strong>` : ''}${depLabel ? `<span>${depLabel}</span>` : ''}${routeHintChip}</div>` : '';
 
       let resHtml = '';
       if (card.reservation && typeof card.reservation === 'object') {
@@ -248,8 +248,8 @@ export function buildShioriUI(data) {
         const prefMapUrl = (typeof window !== 'undefined' && window.shioriPreferredMapUrl) ? window.shioriPreferredMapUrl(mapQuery, wpUrl) : wpUrl;
         linksHtml += renderActionLink(mapSharedUrl || prefMapUrl, '地図', { primary: true, visibleLabel: '地図', ariaLabel: `${cardTitle || '目的地'}を地図で開く` });
       }
-      if (card.tabelog && safeExternalUrl(card.tabelog)) linksHtml += renderActionLink(card.tabelog, '食べログ', { visibleLabel: '食べログ', className: 'app-accent', ariaLabel: '食べログを開く', iconHtml: `<img src="${APP_ICONS.tabelog}" class="j-app-icon" alt="">` });
-      if (card.jalan && safeExternalUrl(card.jalan)) linksHtml += renderActionLink(card.jalan, 'じゃらん', { visibleLabel: 'じゃらん', className: 'app-accent', ariaLabel: 'じゃらんを開く', appUrl: mobileAppLaunchUrl(card.jalan, MOBILE_APP_TARGETS.jalan), sameContext: true, iconHtml: `<img src="${APP_ICONS.jalan}" class="j-app-icon" alt="">` });
+      if (card.tabelog && safeExternalUrl(card.tabelog)) linksHtml += renderActionLink(card.tabelog, '食べログ', { visibleLabel: '食べログ', className: 'app-accent', ariaLabel: '食べログを開く' });
+      if (card.jalan && safeExternalUrl(card.jalan)) linksHtml += renderActionLink(card.jalan, 'じゃらん', { visibleLabel: 'じゃらん', className: 'app-accent', ariaLabel: 'じゃらんを開く', appUrl: mobileAppLaunchUrl(card.jalan, MOBILE_APP_TARGETS.jalan), sameContext: true });
       if (card.asoview && safeExternalUrl(card.asoview)) linksHtml += renderActionLink(card.asoview, 'アソビュー', { visibleLabel: 'アソビュー', className: 'app-accent', ariaLabel: 'アソビューを開く' });
       const offUrl = safeExternalUrl(card.official);
       if (offUrl && !cardLinks.some(l => safeExternalUrl(l?.url) && new URL(safeExternalUrl(l.url)).origin === new URL(offUrl).origin)) {
@@ -259,11 +259,9 @@ export function buildShioriUI(data) {
         if (link === routeLink || !link?.label) return;
         const sUrl = safeExternalUrl(link.url);
         const isBike = link.label === '自転車' && sUrl && new URL(sUrl).hostname === MOBILE_APP_TARGETS.helloCycling.hostname;
-        const confIcon = typeof link.icon === 'string' && Object.hasOwn(APP_ICONS, link.icon) ? APP_ICONS[link.icon] : '';
-        const appIcon = confIcon || (link.label === 'ANA' ? APP_ICONS.ana : link.label === 'TOYOTA' ? APP_ICONS.toyota : isBike ? APP_ICONS.helloCycling : '');
         const genAppUrl = link.androidUrl || link.iosUrl ? (IS_ANDROID_DEVICE ? link.androidUrl || '' : IS_IOS_DEVICE ? link.iosUrl || '' : '') : '';
         const appUrl = genAppUrl || (link.label === 'TOYOTA' && sUrl === TOYOTA_RENTAL_APP.webUrl ? (IS_ANDROID_DEVICE ? TOYOTA_RENTAL_APP.androidIntent : IS_IOS_DEVICE ? TOYOTA_RENTAL_APP.iosUrl : '') : isBike ? mobileAppLaunchUrl(sUrl, MOBILE_APP_TARGETS.helloCycling) : '');
-        linksHtml += renderActionLink(link.url, link.label, { appUrl, visibleLabel: isBike ? '自転車' : undefined, sameContext: isBike, className: appIcon ? 'app-accent' : '', iconHtml: appIcon ? `<img src="${appIcon}" class="j-app-icon" alt="">` : '' });
+        linksHtml += renderActionLink(link.url, link.label, { appUrl, visibleLabel: isBike ? '自転車' : undefined, sameContext: isBike, className: 'app-accent' });
       });
 
       const cst = card.constraints || {};
@@ -271,17 +269,23 @@ export function buildShioriUI(data) {
       const btnRowHtml = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
       const spotNum = String(cardIndex + 1).padStart(2, '0');
       const isDefaultActive = cardIndex === activeCardIndex;
+      const cleanBadge = (card.badge || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+      const badgeHtml = cleanBadge ? `<span class="j-card-cat">${escapeHtml(cleanBadge)}</span>` : '';
+      const photoHtml = card.image
+        ? `<div class="j-card-media"><img class="j-card-photo" src="images/${escapeHtml(card.image)}" alt="${escapeHtml(cardTitle)}" loading="lazy"><div class="j-card-photo-scrim"><span class="j-card-num">NO. ${spotNum}</span>${badgeHtml}</div></div>`
+        : `<div class="j-card-media j-card-media-fallback"><div class="j-card-fallback-grad" aria-hidden="true"></div><div class="j-card-photo-scrim"><span class="j-card-num">NO. ${spotNum}</span>${badgeHtml}</div></div>`;
       cardsHtml += `
         ${travelHintHtml}
         <div class="j-card${isDefaultActive ? ' is-expanded' : ''}" data-spot-index="${cardIndex}" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}" role="button" tabindex="0" aria-expanded="${isDefaultActive}">
           <span class="j-spot-watermark" aria-hidden="true">${spotNum}</span>
+          ${photoHtml}
           <div class="j-card-summary">
-            <div class="j-card-time-row"><span class="j-spot-badge">SPOT ${spotNum}</span><span class="j-card-time">${escapeHtml(card.time)}</span>${cstBadges}</div>
-            <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span><span>${escapeHtml(cardTitle)}</span><span class="j-card-expand-icon" aria-hidden="true">▾</span></div>
+            <div class="j-card-time-row"><span class="j-card-time">${escapeHtml(card.time)}</span>${cstBadges}</div>
+            <div class="j-card-ttl"><span>${escapeHtml(cardTitle)}</span><span class="j-card-expand-icon" aria-hidden="true">▾</span></div>
             ${btnRowHtml}
           </div>
           <div class="j-card-details">
-            ${descHtml}${resHtml}${imgHtml}
+            ${descHtml}${resHtml}
           </div>
         </div>`;
     });
@@ -289,8 +293,8 @@ export function buildShioriUI(data) {
     let journeyStripHtml = '';
     if (dayCards.length > 2) {
       const steps = dayCards.map((c, i) => `<button type="button" class="journey-chip${i === activeCardIndex ? ' active' : ''}" data-jump-card="${escapeHtml(c.cardId || '')}" aria-label="${escapeHtml(c.title || '')}"><span class="chip-num">${String(i + 1).padStart(2, '0')}</span><span class="chip-title">${escapeHtml(c.title || '')}</span></button>`).join('<span class="journey-arrow" aria-hidden="true">→</span>');
-      const statusLabel = data.startDate === todayStr ? `📍 NOW: ${escapeHtml(dayCards[activeCardIndex]?.title || '')}` : `全${dayCards.length}スポットの旅路`;
-      journeyStripHtml = `<div class="journey-strip" aria-label="本日のルート"><div class="journey-strip-head"><span class="journey-strip-badge">🚗 DRIVE ROUTE</span><span class="journey-strip-summary">${statusLabel}</span></div><div class="journey-strip-track">${steps}</div></div>`;
+      const statusLabel = data.startDate === todayStr ? `NOW · ${escapeHtml(dayCards[activeCardIndex]?.title || '')}` : `全${dayCards.length}スポットの旅路`;
+      journeyStripHtml = `<div class="journey-strip" aria-label="本日のルート"><div class="journey-strip-head"><span class="journey-strip-badge">JOURNEY ROUTE</span><span class="journey-strip-summary">${statusLabel}</span></div><div class="journey-strip-track">${steps}</div></div>`;
     }
 
     panelsHtml += `

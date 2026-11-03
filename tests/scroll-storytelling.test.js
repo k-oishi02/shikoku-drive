@@ -44,7 +44,7 @@ function createViewerMiniDom() {
 }
 
 describe('SHIORI Scroll Storytelling & Magazine Drive Experience', () => {
-  it('renders interactive journey drive strip and editorial spot watermarks', () => {
+  it('renders interactive journey drive strip and editorial photo media banners', () => {
     const { doc, elementsById } = createViewerMiniDom();
     const prevDoc = globalThis.document;
     globalThis.document = doc;
@@ -58,7 +58,7 @@ describe('SHIORI Scroll Storytelling & Magazine Drive Experience', () => {
         days: {
           day1: [
             { cardId: 'c1', time: '07:30', title: '町屋出発', badge: '出発', desc: '早朝に出発して混雑回避', links: [{ label: '地図', url: 'https://maps.google.com' }] },
-            { cardId: 'c2', time: '09:20 - 11:15', title: '長瀞ラインくだり', badge: '舟下り', desc: '紅葉の岩畳を満喫', travelMinutesFromPrevious: 110, links: [{ label: '公式', url: 'https://example.com' }] },
+            { cardId: 'c2', time: '09:20 - 11:15', title: '長瀞ラインくだり', badge: '舟下り', image: 'spots/nagatoro-line.jpg', desc: '紅葉の岩畳を満喫', travelMinutesFromPrevious: 110, links: [{ label: '公式', url: 'https://example.com' }] },
             { cardId: 'c3', time: '11:25 - 11:42', title: '長瀞駅（SL見学）', badge: 'SL', desc: 'SLパレオエクスプレス見学', travelMinutesFromPrevious: 10 }
           ]
         }
@@ -74,18 +74,17 @@ describe('SHIORI Scroll Storytelling & Magazine Drive Experience', () => {
       assert.ok(html.includes('data-jump-card="c1"'), 'Must render chip for card 1');
       assert.ok(html.includes('data-jump-card="c2"'), 'Must render chip for card 2');
       assert.ok(html.includes('data-jump-card="c3"'), 'Must render chip for card 3');
-      assert.ok(html.includes('class="journey-strip-badge">🚗 DRIVE ROUTE</span>'), 'Must display Drive Route badge');
+      assert.ok(html.includes('class="journey-strip-badge">JOURNEY ROUTE</span>'), 'Must display Journey Route badge');
       assert.ok(html.includes('全3スポットの旅路'), 'Header shows full spot count on non-trip days');
 
-      // 2. Spot Watermark and Spot Badges
-      assert.ok(html.includes('class="j-spot-watermark" aria-hidden="true">01</span>'), 'Card 1 must have 01 watermark');
-      assert.ok(html.includes('class="j-spot-watermark" aria-hidden="true">02</span>'), 'Card 2 must have 02 watermark');
-      assert.ok(html.includes('class="j-spot-badge">SPOT 01</span>'), 'Card 1 must have SPOT 01 badge');
-      assert.ok(html.includes('class="j-spot-badge">SPOT 02</span>'), 'Card 2 must have SPOT 02 badge');
+      // 2. Editorial Photo Media & Visual Storytelling
+      assert.ok(html.includes('class="j-card-media"'), 'Card must render media container for scroll storytelling');
+      assert.ok(html.includes('class="j-card-photo" src="images/spots/nagatoro-line.jpg"'), 'Card 2 must render scenic photograph');
+      assert.ok(html.includes('class="j-card-num">NO. 01</span>'), 'Card 1 must render chapter marker NO. 01');
+      assert.ok(html.includes('class="j-card-num">NO. 02</span>'), 'Card 2 must render chapter marker NO. 02');
 
-      // 3. Travel hint with moving car icon
-      assert.ok(html.includes('travel-car-icon'), 'Travel hint must include animated car icon');
-      assert.ok(html.includes('🚗'), 'Must render car emoji in travel hint');
+      // 3. Travel hint with indicator
+      assert.ok(html.includes('travel-car-icon'), 'Travel hint must include route indicator');
 
       // 4. Tap-to-Expand Accordion: Buttons in summary, description in details
       assert.ok(html.includes('class="j-card-summary"'), 'Card must have summary block');
@@ -124,7 +123,7 @@ describe('SHIORI Scroll Storytelling & Magazine Drive Experience', () => {
       };
       buildShioriUI(mockTripToday);
       const html = elementsById.get('day-panels-container').innerHTML;
-      assert.ok(html.includes('📍 NOW:'), 'Must indicate NOW spot in drive route on trip day');
+      assert.ok(html.includes('NOW ·'), 'Must indicate NOW spot in drive route on trip day');
     } finally {
       globalThis.document = prevDoc;
     }
