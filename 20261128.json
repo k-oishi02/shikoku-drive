@@ -3,7 +3,7 @@
   "tripId": "20261128",
   "title": "秩父・長瀞 晩秋ドライブ 2026",
   "subtitle": "紅葉と美食を巡る秋のフォトジェニック旅！",
-  "catchphrase": "深紅の紅葉と黄金のイチョウ絨毯！！",
+  "catchphrase": "深紅の紅葉と山頂360度大パノラマ！！",
   "startDate": "2026-11-28",
   "endDate": "2026-11-28",
   "archived": false,
@@ -81,34 +81,35 @@
         "waypoints": "皆野秩父バイパス"
       },
       {
-        "time": "13:30 - 14:35",
-        "badge": "絶景 / 散策",
-        "title": "秩父ミューズパーク",
-        "desc": "【午後の柔らかい光】野さか至近の高台。スカイロード約3kmに広がる落葉の「黄金色イチョウ絨毯」を散策＆撮影！「旅立ちの丘」展望台からは晩秋の秩父市街と連山を一望。",
-        "official": "https://www.muse-park.com/",
-        "mapQuery": "秩父ミューズパーク 旅立ちの丘",
-        "cardId": "day1-04-musepark",
+        "time": "13:40 - 14:40",
+        "badge": "絶景 / 山頂パノラマ",
+        "title": "美の山公園（山頂展望台・紅葉パノラマ）",
+        "desc": "【CX-5快走ヒルクライム＆秩父一望パノラマ】標高581m蓑山山頂へ！トルクフルな走りで観光道路を駆け上がり、山頂展望台から晩秋の秩父盆地、紅葉に染まる山々、雄大な武甲山を360度大パノラマで満喫。園内のモミジ・カエデの紅葉散策も心地よい時間。",
+        "official": "https://www.pref.saitama.lg.jp/b0504/minoyamakouen-top/",
+        "officialLabel": "埼玉県公式案内",
+        "mapQuery": "美の山公園 展望台",
+        "cardId": "day1-04-minoyama",
         "expenseShortcut": true,
-        "travelMinutesFromPrevious": 12,
-        "routeHint": "秩父公園橋（秩父ハープ橋）経由で高台へ",
-        "waypoints": "秩父公園橋"
+        "travelMinutesFromPrevious": 25,
+        "routeHint": "国道140号北上 → 美の山観光道路を登坂（無料駐車場あり）",
+        "waypoints": "美の山観光道路"
       },
       {
         "time": "15:00 - 16:25",
         "badge": "神社 / 夕景ロープウェイ",
         "title": "寶登山神社・宝登山ロープウェイ",
-        "desc": "長瀞へ戻り、極彩色の豪華社殿と紅葉が美しい寶登山神社を参拝。その後ロープウェイ「夕やけ観賞便」で標高497m山頂へ！16:28の日没に向けて茜色に染まる秩父連山を一望。",
+        "desc": "長瀞へ向かい、極彩色の豪華社殿と紅葉が美しい寶登山神社を参拝。その後ロープウェイ「夕やけ観賞便」で標高497m山頂へ！16:28の日没に向けて茜色に染まる秩父連山を一望。",
         "official": "https://hodosan-ropeway.co.jp/",
         "mapQuery": "宝登山ロープウェイ 山麓駅",
         "cardId": "day1-05-hodosan",
         "expenseShortcut": true,
-        "travelMinutesFromPrevious": 25,
+        "travelMinutesFromPrevious": 20,
         "constraints": {
           "opensAt": "09:40",
           "closesAt": "17:00",
           "lastEntryAt": "16:45"
         },
-        "routeHint": "皆野秩父バイパス北上 → 宝登山参道へ",
+        "routeHint": "美の山観光道路を下り、国道140号経由で宝登山参道へ",
         "waypoints": "皆野長瀞IC"
       },
       {
