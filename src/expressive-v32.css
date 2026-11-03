@@ -2060,3 +2060,22 @@ html[data-trip-theme="dark"] .j-card.is-spot-active .j-spot-watermark {
 html[data-trip-theme="dark"] .j-card.is-expanded {
   box-shadow: 0 8px 24px rgba(0, 0, 0, .35) !important;
 }
+/* 3. Hide redundant standalone NOW card (drive route is the live indicator) */
+#now-mode,
+.now-card {
+  display: none !important;
+}
+
+/* 4. Action buttons in summary and full description in details */
+.j-card-summary .j-btn-row {
+  margin-top: 8px !important;
+}
+.j-card-details .j-card-desc {
+  display: block !important;
+  overflow: visible !important;
+  -webkit-line-clamp: unset !important;
+  font-size: .8rem !important;
+  line-height: 1.62 !important;
+  color: var(--sh-text) !important;
+  margin-bottom: 8px !important;
+}

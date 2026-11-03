@@ -194,15 +194,24 @@ export function buildShioriUI(data) {
   }
 
   const panelsContainer = document.getElementById('day-panels-container');
+  const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   let panelsHtml = '';
   dayKeys.forEach((key, idx) => {
-    const dayNum = idx + 1;
-    const label = data.dayLabels?.[key] || `${dayNum}日目`;
+    const dayNum = idx + 1, label = data.dayLabels?.[key] || `${dayNum}日目`;
+    const dayCards = Array.isArray(data.days[key]) ? data.days[key] : [];
+    let activeCardIndex = 0;
+    if (data.startDate === todayStr && dayCards.length > 0) {
+      dayCards.forEach((c, i) => {
+        const m = String(c.time || '').match(/(\d{2}):(\d{2})/);
+        if (m && (Number(m[1]) * 60 + Number(m[2])) <= nowMin) activeCardIndex = i;
+      });
+    }
     let cardsHtml = '';
-    (Array.isArray(data.days[key]) ? data.days[key] : []).forEach((card, cardIndex) => {
+    dayCards.forEach((card, cardIndex) => {
       const cardTitle = String(card?.title || '');
-      const rawDesc = String(card?.desc || '').trim();
-      const cardDesc = rawDesc.length > 75 ? `${rawDesc.slice(0, 75).trimEnd()}…` : rawDesc;
+      const cardDesc = String(card?.desc || '').trim();
+      const descHtml = cardDesc ? `<div class="j-card-desc">${escapeHtml(cardDesc)}</div>` : '';
       const imgHtml = card.image ? `<img class="j-card-img" src="images/${escapeHtml(card.image)}" alt="${escapeHtml(cardTitle)}" loading="lazy">` : '';
       const mapFields = (typeof window !== 'undefined' && window.shioriMapFields) ? window.shioriMapFields(card) : { mapQuery: '', mapUrl: '' };
       const mapQuery = mapFields.mapQuery, mapSharedUrl = mapFields.mapUrl;
@@ -239,15 +248,9 @@ export function buildShioriUI(data) {
         const prefMapUrl = (typeof window !== 'undefined' && window.shioriPreferredMapUrl) ? window.shioriPreferredMapUrl(mapQuery, wpUrl) : wpUrl;
         linksHtml += renderActionLink(mapSharedUrl || prefMapUrl, '地図', { primary: true, visibleLabel: '地図', ariaLabel: `${cardTitle || '目的地'}を地図で開く` });
       }
-      if (card.tabelog && safeExternalUrl(card.tabelog)) {
-        linksHtml += renderActionLink(card.tabelog, '食べログ', { visibleLabel: '食べログ', className: 'app-accent', ariaLabel: '食べログを開く', iconHtml: `<img src="${APP_ICONS.tabelog}" class="j-app-icon" alt="">` });
-      }
-      if (card.jalan && safeExternalUrl(card.jalan)) {
-        linksHtml += renderActionLink(card.jalan, 'じゃらん', { visibleLabel: 'じゃらん', className: 'app-accent', ariaLabel: 'じゃらんを開く', appUrl: mobileAppLaunchUrl(card.jalan, MOBILE_APP_TARGETS.jalan), sameContext: true, iconHtml: `<img src="${APP_ICONS.jalan}" class="j-app-icon" alt="">` });
-      }
-      if (card.asoview && safeExternalUrl(card.asoview)) {
-        linksHtml += renderActionLink(card.asoview, 'アソビュー', { visibleLabel: 'アソビュー', className: 'app-accent', ariaLabel: 'アソビューを開く' });
-      }
+      if (card.tabelog && safeExternalUrl(card.tabelog)) linksHtml += renderActionLink(card.tabelog, '食べログ', { visibleLabel: '食べログ', className: 'app-accent', ariaLabel: '食べログを開く', iconHtml: `<img src="${APP_ICONS.tabelog}" class="j-app-icon" alt="">` });
+      if (card.jalan && safeExternalUrl(card.jalan)) linksHtml += renderActionLink(card.jalan, 'じゃらん', { visibleLabel: 'じゃらん', className: 'app-accent', ariaLabel: 'じゃらんを開く', appUrl: mobileAppLaunchUrl(card.jalan, MOBILE_APP_TARGETS.jalan), sameContext: true, iconHtml: `<img src="${APP_ICONS.jalan}" class="j-app-icon" alt="">` });
+      if (card.asoview && safeExternalUrl(card.asoview)) linksHtml += renderActionLink(card.asoview, 'アソビュー', { visibleLabel: 'アソビュー', className: 'app-accent', ariaLabel: 'アソビューを開く' });
       const offUrl = safeExternalUrl(card.official);
       if (offUrl && !cardLinks.some(l => safeExternalUrl(l?.url) && new URL(safeExternalUrl(l.url)).origin === new URL(offUrl).origin)) {
         linksHtml += renderActionLink(offUrl, card.officialLabel || '公式');
@@ -264,35 +267,30 @@ export function buildShioriUI(data) {
       });
 
       const cst = card.constraints || {};
-      const cstBadges = [
-        cst.reservationAt ? `予約 ${cst.reservationAt}` : '',
-        cst.departureBy ? `出発期限 ${cst.departureBy}` : '',
-        cst.lastEntryAt ? `最終受付/L.O. ${cst.lastEntryAt}` : '',
-        cst.closesAt ? `営業〜${cst.closesAt}` : ''
-      ].filter(Boolean).map(b => `<span class="j-constraint-pill">${escapeHtml(b)}</span>`).join('');
+      const cstBadges = [cst.reservationAt && `予約 ${cst.reservationAt}`, cst.departureBy && `出発期限 ${cst.departureBy}`, cst.lastEntryAt && `最終受付/L.O. ${cst.lastEntryAt}`, cst.closesAt && `営業〜${cst.closesAt}`].filter(Boolean).map(b => `<span class="j-constraint-pill">${escapeHtml(b)}</span>`).join('');
       const btnRowHtml = linksHtml ? `<div class="j-btn-row">${linksHtml}</div>` : '';
       const spotNum = String(cardIndex + 1).padStart(2, '0');
-      const isFirst = cardIndex === 0;
+      const isDefaultActive = cardIndex === activeCardIndex;
       cardsHtml += `
         ${travelHintHtml}
-        <div class="j-card${isFirst ? ' is-expanded' : ''}" data-spot-index="${cardIndex}" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}" role="button" tabindex="0" aria-expanded="${isFirst}">
+        <div class="j-card${isDefaultActive ? ' is-expanded' : ''}" data-spot-index="${cardIndex}" data-card-id="${escapeHtml(card.cardId || '')}" data-map-title="${escapeHtml(cardTitle)}" data-map-query="${escapeHtml(mapQuery)}" data-map-url="${escapeHtml(mapSharedUrl)}" data-route-hint="${escapeHtml(routeHint)}" data-waypoints="${escapeHtml(waypoints)}" data-travel-minutes="${travelMin}" data-expense-shortcut="${card.expenseShortcut === true ? 'true' : 'false'}" role="button" tabindex="0" aria-expanded="${isDefaultActive}">
           <span class="j-spot-watermark" aria-hidden="true">${spotNum}</span>
           <div class="j-card-summary">
             <div class="j-card-time-row"><span class="j-spot-badge">SPOT ${spotNum}</span><span class="j-card-time">${escapeHtml(card.time)}</span>${cstBadges}</div>
             <div class="j-card-ttl"><span class="j-tag-badge">${escapeHtml(card.badge)}</span><span>${escapeHtml(cardTitle)}</span><span class="j-card-expand-icon" aria-hidden="true">▾</span></div>
-            <div class="j-card-desc">${escapeHtml(cardDesc)}</div>
+            ${btnRowHtml}
           </div>
           <div class="j-card-details">
-            ${resHtml}${imgHtml}${btnRowHtml}
+            ${descHtml}${resHtml}${imgHtml}
           </div>
         </div>`;
     });
 
-    const dayCards = Array.isArray(data.days[key]) ? data.days[key] : [];
     let journeyStripHtml = '';
     if (dayCards.length > 2) {
-      const steps = dayCards.map((c, i) => `<button type="button" class="journey-chip${i === 0 ? ' active' : ''}" data-jump-card="${escapeHtml(c.cardId || '')}" aria-label="${escapeHtml(c.title || '')}"><span class="chip-num">${String(i + 1).padStart(2, '0')}</span><span class="chip-title">${escapeHtml(c.title || '')}</span></button>`).join('<span class="journey-arrow" aria-hidden="true">→</span>');
-      journeyStripHtml = `<div class="journey-strip" aria-label="本日のルート"><div class="journey-strip-head"><span class="journey-strip-badge">🚗 DRIVE ROUTE</span><span class="journey-strip-summary">全${dayCards.length}スポットの旅路</span></div><div class="journey-strip-track">${steps}</div></div>`;
+      const steps = dayCards.map((c, i) => `<button type="button" class="journey-chip${i === activeCardIndex ? ' active' : ''}" data-jump-card="${escapeHtml(c.cardId || '')}" aria-label="${escapeHtml(c.title || '')}"><span class="chip-num">${String(i + 1).padStart(2, '0')}</span><span class="chip-title">${escapeHtml(c.title || '')}</span></button>`).join('<span class="journey-arrow" aria-hidden="true">→</span>');
+      const statusLabel = data.startDate === todayStr ? `📍 NOW: ${escapeHtml(dayCards[activeCardIndex]?.title || '')}` : `全${dayCards.length}スポットの旅路`;
+      journeyStripHtml = `<div class="journey-strip" aria-label="本日のルート"><div class="journey-strip-head"><span class="journey-strip-badge">🚗 DRIVE ROUTE</span><span class="journey-strip-summary">${statusLabel}</span></div><div class="journey-strip-track">${steps}</div></div>`;
     }
 
     panelsHtml += `

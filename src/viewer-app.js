@@ -126,14 +126,13 @@ export function initScrollStorytelling() {
       if (el) { el.classList.add('is-expanded'); el.setAttribute('aria-expanded', 'true'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     };
   });
+  document.querySelector('.journey-chip.active')?.scrollIntoView?.({ inline: 'center' });
 }
 
 export function initViewerApp() {
-  if (typeof window !== 'undefined') {
-    if (!window.appRouterPopstateBound) {
-      window.appRouterPopstateBound = true;
-      window.addEventListener('popstate', initAppRouter);
-    }
+  if (typeof window !== 'undefined' && !window.appRouterPopstateBound) {
+    window.appRouterPopstateBound = true;
+    window.addEventListener('popstate', initAppRouter);
   }
   initAppRouter();
   initPwaUpdateManager();
