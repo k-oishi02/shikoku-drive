@@ -162,40 +162,76 @@ export function getTripNowState(raw, now = new Date()) {
 
 export function settlementTransfers(members, expenses) {
   const list = Array.isArray(members) ? members : [];
-  const ids = Array.from(new Set(list.map(member => text(member?.id || member?.uid, 128)).filter(Boolean)));
-  const names = new Map(list.map(member => [text(member?.id || member?.uid, 128), text(member?.name || member?.nickname || '参加者', 40)]));
+  const canonicalIdByName = new Map();
+  const idToCanonical = new Map();
+  const names = new Map();
+
+  list.forEach(member => {
+    const rawId = text(member?.id || member?.uid, 128);
+    if (!rawId) return;
+    const rawName = text(member?.name || member?.nickname || '参加者', 40);
+    const normName = rawName.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
+    if (!canonicalIdByName.has(normName)) {
+      canonicalIdByName.set(normName, rawId);
+    }
+    idToCanonical.set(rawId, canonicalIdByName.get(normName));
+    names.set(rawId, rawName);
+  });
+
+  const ids = Array.from(new Set([...idToCanonical.values()]));
   const balance = new Map(ids.map(id => [id, 0]));
+
   (Array.isArray(expenses) ? expenses : []).forEach(expense => {
     const rawAmount = Number(expense?.amount);
     if (!Number.isFinite(rawAmount)) return;
     const amount = Math.max(0, Math.round(rawAmount));
-    const payer = text(expense?.payer, 128);
+    const rawPayer = text(expense?.payer, 128);
+    let payer = idToCanonical.get(rawPayer) || rawPayer;
+    if (!balance.has(payer)) {
+      const normPayer = rawPayer.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
+      if (canonicalIdByName.has(normPayer)) {
+        payer = canonicalIdByName.get(normPayer);
+      }
+    }
     if (!amount || !balance.has(payer)) return;
+
     const selected = expense.splitMode === 'selected'
-      ? Array.from(new Set((Array.isArray(expense.participantIds) ? expense.participantIds : []).map(id => text(id, 128)).filter(id => balance.has(id))))
+      ? Array.from(new Set(
+          (Array.isArray(expense.participantIds) ? expense.participantIds : [])
+            .map(id => idToCanonical.get(text(id, 128)) || text(id, 128))
+            .filter(id => balance.has(id))
+        ))
       : ids;
     if (!selected.length) return;
+
     balance.set(payer, balance.get(payer) + amount);
     const share = amount / selected.length;
     selected.forEach(id => balance.set(id, balance.get(id) - share));
   });
+
   const creditors = [...balance].filter(([, value]) => value > 0.5).map(([id, value]) => ({ id, value }));
   const debtors = [...balance].filter(([, value]) => value < -0.5).map(([id, value]) => ({ id, value: -value }));
   const transfers = [];
   let debtorIndex = 0;
   let creditorIndex = 0;
+
   while (debtorIndex < debtors.length && creditorIndex < creditors.length) {
     const debtor = debtors[debtorIndex];
     const creditor = creditors[creditorIndex];
     if (!Number.isFinite(debtor.value) || !Number.isFinite(creditor.value)) break;
     const amount = Math.min(debtor.value, creditor.value);
-    if (amount >= 0.5) transfers.push({
-      from: debtor.id,
-      fromName: names.get(debtor.id) || debtor.id,
-      to: creditor.id,
-      toName: names.get(creditor.id) || creditor.id,
-      amount: Math.round(amount)
-    });
+    const fromName = names.get(debtor.id) || debtor.id;
+    const toName = names.get(creditor.id) || creditor.id;
+
+    if (amount >= 0.5 && debtor.id !== creditor.id && fromName !== toName) {
+      transfers.push({
+        from: debtor.id,
+        fromName,
+        to: creditor.id,
+        toName,
+        amount: Math.round(amount)
+      });
+    }
     debtor.value -= amount;
     creditor.value -= amount;
     if (debtor.value < 0.5) debtorIndex += 1;

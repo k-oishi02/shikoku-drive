@@ -362,6 +362,15 @@
         const rawId = String(payer || '');
         const id = String(window.expensePayerAliases?.[rawId] || rawId);
         if (members.some(member => member.id === id)) return id;
+        const byName = members.find(member => member.name === rawId);
+        if (byName) return byName.id;
+        if (rawId === 'local') {
+            const myNickname = String(localStorage.getItem('user_nickname') || '').trim();
+            if (myNickname) {
+                const byNick = members.find(member => member.name === myNickname);
+                if (byNick) return byNick.id;
+            }
+        }
         return id || members[0]?.id || 'local';
     }
 
@@ -387,7 +396,9 @@
             const debtor = debtors[debtorIndex];
             const creditor = creditors[creditorIndex];
             const amount = Math.min(debtor.amount, creditor.amount);
-            if (amount > 0.5) transfers.push(`${debtor.name} → ${creditor.name} ${formatYen(amount)}`);
+            if (amount > 0.5 && debtor.id !== creditor.id && debtor.name !== creditor.name) {
+                transfers.push(`${debtor.name} → ${creditor.name} ${formatYen(amount)}`);
+            }
             debtor.amount -= amount;
             creditor.amount -= amount;
             if (debtor.amount <= 0.5) debtorIndex += 1;
@@ -425,7 +436,15 @@
         expenses.forEach(expense => {
             const payerId = resolveExpensePayerId(expense.payer, members);
             if (!paidBy.has(payerId)) {
-                const unknownMember = { id: payerId, name: expenseMemberName(payerId, members) };
+                const payerName = expenseMemberName(payerId, members);
+                const existing = members.find(m => m.name === payerName);
+                if (existing) {
+                    if (!window.expensePayerAliases) window.expensePayerAliases = {};
+                    window.expensePayerAliases[payerId] = existing.id;
+                    paidBy.set(existing.id, (paidBy.get(existing.id) || 0));
+                    return;
+                }
+                const unknownMember = { id: payerId, name: payerName };
                 members.push(unknownMember);
                 paidBy.set(payerId, 0);
             }

@@ -314,5 +314,59 @@ describe('Settlement Suite (settlementTransfers)', () => {
     });
   });
 
+  describe('Self-transfer prevention & Nickname canonical deduplication', () => {
+    test('deduplicates multiple UIDs sharing identical nickname and prevents self-transfers', () => {
+      const members = [
+        { id: 'uid-koutarou-1', name: 'こうたろう' },
+        { id: 'uid-koutarou-2', name: 'こうたろう' },
+        { id: 'uid-kimura', name: 'きむら' }
+      ];
+      const expenses = [{ amount: 6000, payer: 'uid-koutarou-1' }];
+      const transfers = settlementTransfers(members, expenses);
+
+      assert.equal(transfers.length, 1);
+      assert.deepEqual(transfers[0], {
+        from: 'uid-kimura',
+        fromName: 'きむら',
+        to: 'uid-koutarou-1',
+        toName: 'こうたろう',
+        amount: 3000
+      });
+      assert.notEqual(transfers[0].fromName, transfers[0].toName, 'Self transfer must never occur');
+    });
+
+    test('resolves local or raw nickname payer to canonical member and maintains clean division', () => {
+      const members = [
+        { id: 'uid-koutarou', name: 'こうたろう' },
+        { id: 'local', name: 'こうたろう' },
+        { id: 'uid-kimura', name: 'きむら' }
+      ];
+      const expenses = [
+        { amount: 3000, payer: 'local' },
+        { amount: 1000, payer: 'uid-kimura' }
+      ];
+      const transfers = settlementTransfers(members, expenses);
+
+      assert.equal(transfers.length, 1);
+      assert.deepEqual(transfers[0], {
+        from: 'uid-kimura',
+        fromName: 'きむら',
+        to: 'uid-koutarou',
+        toName: 'こうたろう',
+        amount: 1000
+      });
+    });
+
+    test('strictly eliminates any accidental transfer where fromName === toName', () => {
+      const members = [
+        { id: 'u1', name: 'SameName' },
+        { id: 'u2', name: 'SameName' }
+      ];
+      const expenses = [{ amount: 5000, payer: 'u1' }];
+      const transfers = settlementTransfers(members, expenses);
+      assert.deepEqual(transfers, []);
+    });
+  });
+
 });
 
