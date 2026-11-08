@@ -2,6 +2,16 @@ import { journeyRecapStorageKey } from './journey-v4.js';
 
 const PUBLIC_RECAPS = Object.freeze([
   Object.freeze({
+    id: 'ibaraki-2026',
+    title: '茨城ドライブ 2026 Autumn',
+    subtitle: '秋の味覚が俺たちを呼んでるぜ！！',
+    startDate: '2026-11-07',
+    endDate: '2026-11-07',
+    sourceTripIds: ['20261107', '20261031'],
+    href: './recap.html?id=ibaraki-2026',
+    dataUrl: './recaps/ibaraki-2026.json'
+  }),
+  Object.freeze({
     id: 'shikoku-2026',
     title: '香川・愛媛 2泊3日',
     subtitle: '旅の記録 · RECAP',
