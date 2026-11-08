@@ -9,13 +9,13 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="images/shiori-icon-v2.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="images/shiori-icon-v2-180.png">
-    <link rel="stylesheet" href="src/participant-v2.css?v=410">
-    <link rel="stylesheet" href="src/recap.css?v=410">
-    <link rel="stylesheet" href="src/enhancements.css?v=410">
-    <link rel="stylesheet" href="src/discussion.css?v=410">
-    <link rel="stylesheet" href="src/theme-v31.css?v=410">
-    <link rel="stylesheet" href="src/design-v31.css?v=410">
-    <link rel="stylesheet" href="src/expressive-v32.css?v=410">
+    <link rel="stylesheet" href="src/participant-v2.css?v=411">
+    <link rel="stylesheet" href="src/recap.css?v=411">
+    <link rel="stylesheet" href="src/enhancements.css?v=411">
+    <link rel="stylesheet" href="src/discussion.css?v=411">
+    <link rel="stylesheet" href="src/theme-v31.css?v=411">
+    <link rel="stylesheet" href="src/design-v31.css?v=411">
+    <link rel="stylesheet" href="src/expressive-v32.css?v=411">
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -277,10 +277,7 @@
                         <div class="expense-settlement"><span>最終的な受け渡し</span><strong id="expense-settlement">まだ支出はありません</strong></div>
                     </div>
                     <ul id="expense-list" class="expense-list" aria-label="支出一覧"></ul>
-                    <div class="expense-export-actions" role="group" aria-label="CSV出力">
-                        <button type="button" class="j-btn expense-export" onclick="downloadExpensesCsv('all')" aria-label="旅費全体の立替台帳をCSVで書き出す">全体台帳CSV</button>
-                        <button type="button" class="j-btn expense-export-my" onclick="downloadExpensesCsv('my-burden')" aria-label="自分の実質負担（相手立替含む）を家計簿用CSVで書き出す">家計簿用CSV（自分負担）</button>
-                    </div>
+                    <button type="button" class="j-btn expense-export" onclick="downloadExpensesCsv()" aria-label="精算内容をCSVで書き出す">CSV出力</button>
                 </div>
 
                 <!-- Optional PayPay handoff -->
@@ -405,12 +402,12 @@
     <div id="error-boundary-root" class="shiori-error-boundary-container" hidden></div>
 
     <!-- MAIN SHIORI ROUTER & BUILDER SCRIPT -->
-    <script type="module" src="src/viewer-app.js?v=410"></script>
+    <script type="module" src="src/viewer-app.js?v=411"></script>
 
     <!-- External Dynamic Enhancements and Auth/Sync modules -->
-    <script src="src/enhancements.js?v=410"></script>
-    <script type="module" src="src/recap.js?v=410"></script>
-    <script type="module" src="src/firebase-sync.js?v=410"></script>
+    <script src="src/enhancements.js?v=411"></script>
+    <script type="module" src="src/recap.js?v=411"></script>
+    <script type="module" src="src/firebase-sync.js?v=411"></script>
 </body>
 </html>
 
