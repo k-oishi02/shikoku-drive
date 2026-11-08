@@ -443,6 +443,8 @@ export async function initSyncEngine(tripId) {
     }
     window.suggestionSyncService = null;
     window.expensePayerAliases = {};
+    window.liveTripMembers = null;
+    window.refreshLiveParticipants = null;
     publishLedgerAccess();
     if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
     if (unsubscribeExpenses) { unsubscribeExpenses(); unsubscribeExpenses = null; }
@@ -575,6 +577,7 @@ export async function initSyncEngine(tripId) {
             syncContext.logicalMemberCount = optionData.length;
             window.expensePayerAliases = payerAliases;
             window.memberNames = Object.fromEntries(allParticipants.map(person => [person.uid, person.nickname]));
+            window.liveTripMembers = optionData;
             window.currentTripMembers = optionData;
             window.dispatchEvent(new CustomEvent('shiori-members-changed', { detail: optionData }));
 
@@ -614,6 +617,7 @@ export async function initSyncEngine(tripId) {
 
             if (window.recalculateExpenses) window.recalculateExpenses();
         };
+        window.refreshLiveParticipants = refreshParticipants;
 
         // Listen to participant updates for header display and PayPay select options.
         unsubscribeParticipants = onSnapshot(collection(roomRef, 'participants'), { includeMetadataChanges: true }, snapshot => {
@@ -763,6 +767,8 @@ export function stopSyncEngine() {
     }
     window.suggestionSyncService = null;
     window.expensePayerAliases = {};
+    window.liveTripMembers = null;
+    window.refreshLiveParticipants = null;
     publishLedgerAccess();
     setIdentityControlLocked(false);
 }

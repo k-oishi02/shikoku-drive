@@ -366,6 +366,48 @@ describe('Settlement Suite (settlementTransfers)', () => {
       const transfers = settlementTransfers(members, expenses);
       assert.deepEqual(transfers, []);
     });
+
+    test('resolves window.expensePayerAliases and window.memberNames when secondary UID paid or was selected', () => {
+      const originalWindow = globalThis.window;
+      globalThis.window = {
+        expensePayerAliases: {
+          'uid-koutarou-device2': 'uid-koutarou-main',
+          'uid-kimura-device2': 'uid-kimura-main'
+        },
+        memberNames: {
+          'uid-koutarou-device2': 'こうたろう',
+          'uid-kimura-device2': 'きむら'
+        }
+      };
+      try {
+        const members = [
+          { id: 'uid-koutarou-main', name: 'こうたろう' },
+          { id: 'uid-kimura-main', name: 'きむら' }
+        ];
+        const expenses = [
+          { amount: 4000, payer: 'uid-koutarou-device2' },
+          { amount: 1000, payer: 'uid-kimura-device2', splitMode: 'selected', participantIds: ['uid-koutarou-device2'] }
+        ];
+        // 4000 equal split -> kimura owes koutarou 2000.
+        // 1000 paid by kimura for koutarou only -> koutarou owes kimura 1000.
+        // Net: kimura owes koutarou 1000.
+        const transfers = settlementTransfers(members, expenses);
+        assert.equal(transfers.length, 1);
+        assert.deepEqual(transfers[0], {
+          from: 'uid-kimura-main',
+          fromName: 'きむら',
+          to: 'uid-koutarou-main',
+          toName: 'こうたろう',
+          amount: 1000
+        });
+      } finally {
+        if (originalWindow !== undefined) {
+          globalThis.window = originalWindow;
+        } else {
+          delete globalThis.window;
+        }
+      }
+    });
   });
 
 });

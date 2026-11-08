@@ -165,12 +165,20 @@ export function settlementTransfers(members, expenses) {
   const canonicalIdByName = new Map();
   const idToCanonical = new Map();
   const names = new Map();
+  const globalAliases = (typeof globalThis !== 'undefined' && globalThis.window?.expensePayerAliases && typeof globalThis.window.expensePayerAliases === 'object')
+    ? globalThis.window.expensePayerAliases
+    : null;
+  const globalMemberNames = (typeof globalThis !== 'undefined' && globalThis.window?.memberNames && typeof globalThis.window.memberNames === 'object')
+    ? globalThis.window.memberNames
+    : null;
+
+  const normKey = (val) => String(val || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
 
   list.forEach(member => {
     const rawId = text(member?.id || member?.uid, 128);
     if (!rawId) return;
     const rawName = text(member?.name || member?.nickname || '参加者', 40);
-    const normName = rawName.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
+    const normName = normKey(rawName);
     if (!canonicalIdByName.has(normName)) {
       canonicalIdByName.set(normName, rawId);
     }
@@ -181,24 +189,33 @@ export function settlementTransfers(members, expenses) {
   const ids = Array.from(new Set([...idToCanonical.values()]));
   const balance = new Map(ids.map(id => [id, 0]));
 
+  const resolveMemberId = (rawValue) => {
+    const rawId = text(rawValue, 128);
+    if (!rawId) return '';
+    if (idToCanonical.has(rawId)) return idToCanonical.get(rawId);
+    const aliased = globalAliases?.[rawId] ? text(globalAliases[rawId], 128) : '';
+    if (aliased && idToCanonical.has(aliased)) return idToCanonical.get(aliased);
+    const mappedName = globalMemberNames?.[rawId] || (aliased ? globalMemberNames?.[aliased] : '');
+    if (mappedName) {
+      const normMapped = normKey(mappedName);
+      if (canonicalIdByName.has(normMapped)) return canonicalIdByName.get(normMapped);
+    }
+    const normRaw = normKey(rawId);
+    if (canonicalIdByName.has(normRaw)) return canonicalIdByName.get(normRaw);
+    return aliased || rawId;
+  };
+
   (Array.isArray(expenses) ? expenses : []).forEach(expense => {
     const rawAmount = Number(expense?.amount);
     if (!Number.isFinite(rawAmount)) return;
     const amount = Math.max(0, Math.round(rawAmount));
-    const rawPayer = text(expense?.payer, 128);
-    let payer = idToCanonical.get(rawPayer) || rawPayer;
-    if (!balance.has(payer)) {
-      const normPayer = rawPayer.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
-      if (canonicalIdByName.has(normPayer)) {
-        payer = canonicalIdByName.get(normPayer);
-      }
-    }
+    const payer = resolveMemberId(expense?.payer);
     if (!amount || !balance.has(payer)) return;
 
     const selected = expense.splitMode === 'selected'
       ? Array.from(new Set(
           (Array.isArray(expense.participantIds) ? expense.participantIds : [])
-            .map(id => idToCanonical.get(text(id, 128)) || text(id, 128))
+            .map(id => resolveMemberId(id))
             .filter(id => balance.has(id))
         ))
       : ids;

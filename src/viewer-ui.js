@@ -328,12 +328,14 @@ export function buildShioriUI(data) {
   const deviceOwner = document.getElementById('device-owner');
   const expensePayer = document.getElementById('expense-payer');
   let ownerOptions = '';
-  (Array.isArray(data.members) ? data.members : []).forEach(m => {
+  const liveMembers = typeof window !== 'undefined' && Array.isArray(window.liveTripMembers) ? window.liveTripMembers : [];
+  const memberSource = (Array.isArray(data.members) && data.members.length) ? data.members : liveMembers;
+  memberSource.forEach(m => {
     const mId = String(m?.id || '');
     if (isValidDataKey(mId)) ownerOptions += `<option value="${escapeHtml(mId)}">${escapeHtml(String(m?.name || mId))}</option>`;
   });
-  if (deviceOwner) deviceOwner.innerHTML = ownerOptions;
-  if (expensePayer) expensePayer.innerHTML = ownerOptions;
+  if (deviceOwner && (ownerOptions || !deviceOwner.options?.length)) deviceOwner.innerHTML = ownerOptions;
+  if (expensePayer && (ownerOptions || !expensePayer.options?.length)) expensePayer.innerHTML = ownerOptions;
 }
 
 export function switchTab(panelId, btnEl) {

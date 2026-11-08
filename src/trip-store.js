@@ -21,7 +21,9 @@ function syncToWindow(state) {
   window.currentTripTitle = trip ? (trip.subtitle || trip.title || '旅行') : '';
   window.currentTripDate = (trip && trip.startDate) ? trip.startDate : '';
   window.currentTripEndDate = (trip && trip.endDate) ? trip.endDate : '';
-  window.currentTripMembers = (trip && Array.isArray(trip.members)) ? trip.members : [];
+  window.currentTripMembers = (trip && Array.isArray(trip.members) && trip.members.length)
+    ? trip.members
+    : (trip && Array.isArray(window.liveTripMembers) ? window.liveTripMembers : []);
 }
 
 export function createInitialTripState() {

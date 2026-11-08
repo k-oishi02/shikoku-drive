@@ -200,6 +200,22 @@ describe('TripStore Unit Test Suite', () => {
       assert.equal(globalThis.window.currentTripLedgerToken, '');
       assert.equal(globalThis.window.currentTripData, null);
       assert.deepEqual(globalThis.window.currentTripMembers, []);
+
+      // Preserve liveTripMembers when activeTrip has no static members array
+      globalThis.window.liveTripMembers = [
+        { id: 'uid-koutarou', name: 'こうたろう' },
+        { id: 'uid-kimura', name: 'きむら' }
+      ];
+      store.setState({
+        activeTrip: { tripId: '20261107', title: '茨城ドライブ' }
+      });
+      assert.equal(globalThis.window.currentTripMembers.length, 2);
+      assert.equal(globalThis.window.currentTripMembers[0].name, 'こうたろう');
+      assert.equal(globalThis.window.currentTripMembers[1].name, 'きむら');
+
+      // Updating another slice (e.g., syncState or weather) must not wipe liveTripMembers
+      store.setSlice('syncState', { mode: 'live', status: 'ready', pendingCount: 0 });
+      assert.equal(globalThis.window.currentTripMembers.length, 2);
     } finally {
       if (originalWindow !== undefined) {
         globalThis.window = originalWindow;

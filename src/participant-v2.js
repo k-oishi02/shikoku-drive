@@ -284,38 +284,55 @@ function installSettingsButton() {
   actions.append(button);
 }
 
+function currentExpenseMembers() {
+  if (Array.isArray(window.liveTripMembers) && window.liveTripMembers.length) return window.liveTripMembers;
+  if (Array.isArray(window.currentTripMembers) && window.currentTripMembers.length) return window.currentTripMembers;
+  return [{ id: 'local', name: safeStorage.get('user_nickname', '参加者') }];
+}
+
 function renderExpenseParticipants() {
   const container = document.getElementById('expense-participants');
   const mode = document.getElementById('expense-split-mode')?.value || 'equal';
   if (!container) return;
   container.hidden = mode === 'equal';
-  const members = Array.isArray(window.currentTripMembers) ? window.currentTripMembers : [];
+  const members = currentExpenseMembers();
   const checked = new Set([...container.querySelectorAll('input:checked')].map(input => input.value));
   container.replaceChildren(...members.map(member => {
     const label = document.createElement('label');
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.value = member.id;
-    input.checked = checked.size ? checked.has(member.id) : true;
+    input.checked = mode === 'equal' ? true : (checked.size ? checked.has(member.id) : true);
     label.append(input, document.createTextNode(member.name));
     return label;
   }));
   updateExpenseSplitPreview();
 }
 
-function updateExpenseSplitPreview() {
-  const mode = document.getElementById('expense-split-mode')?.value || 'equal';
+function updateExpenseSplitPreview(event) {
+  const splitSelect = document.getElementById('expense-split-mode');
+  const allInputs = [...document.querySelectorAll('#expense-participants input[type="checkbox"]')];
+  const checkedInputs = allInputs.filter(input => input.checked);
+  if (event?.target?.matches?.('#expense-participants input[type="checkbox"]') && splitSelect && allInputs.length > 0) {
+    if (checkedInputs.length > 0 && checkedInputs.length < allInputs.length) {
+      splitSelect.value = 'selected';
+    } else if (checkedInputs.length === allInputs.length && splitSelect.value === 'selected') {
+      splitSelect.value = 'equal';
+    }
+  }
+  const mode = splitSelect?.value || 'equal';
   const amount = Math.max(0, Math.round(Number(document.getElementById('expense-amount')?.value) || 0));
-  const members = Array.isArray(window.currentTripMembers) ? window.currentTripMembers : [];
-  const selected = mode === 'selected'
-    ? [...document.querySelectorAll('#expense-participants input:checked')]
+  const members = currentExpenseMembers();
+  const useSelected = mode === 'selected' || (allInputs.length > 0 && checkedInputs.length < allInputs.length);
+  const selected = useSelected
+    ? checkedInputs
     : members.map(member => ({ value: member.id }));
-  const names = mode === 'selected'
-    ? [...document.querySelectorAll('#expense-participants input:checked')].map(input => input.parentElement?.textContent?.trim()).filter(Boolean)
+  const names = useSelected
+    ? checkedInputs.map(input => input.parentElement?.textContent?.trim()).filter(Boolean)
     : members.map(member => member.name);
   const help = document.getElementById('expense-split-help');
   const preview = document.getElementById('expense-split-preview');
-  if (help) help.textContent = mode === 'selected'
+  if (help) help.textContent = useSelected
     ? 'この支出を負担する人だけにチェックしてください。2人だけの割り勘にも対応しています。'
     : '登録メンバー全員で同額ずつ負担します。';
   if (!preview) return;
@@ -332,6 +349,12 @@ function updateExpenseSplitPreview() {
 }
 
 function handleExpenseSplitModeChange() {
+  const mode = document.getElementById('expense-split-mode')?.value || 'equal';
+  if (mode === 'equal') {
+    document.querySelectorAll('#expense-participants input[type="checkbox"]').forEach(input => {
+      input.checked = true;
+    });
+  }
   renderExpenseParticipants();
 }
 

@@ -346,36 +346,76 @@
         }).format(Math.round(value || 0));
     }
 
+    function normalizeMemberKey(value) {
+        return String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
+    }
+
     function expenseMembers() {
         const fallback = [{ id: 'local', name: String(localStorage.getItem('user_nickname') || '\u3053\u306e\u7aef\u672b').slice(0, 40) }];
-        const source = Array.isArray(window.currentTripMembers) && window.currentTripMembers.length
+        const liveSource = Array.isArray(window.liveTripMembers) && window.liveTripMembers.length
+            ? window.liveTripMembers
+            : null;
+        const currentSource = Array.isArray(window.currentTripMembers) && window.currentTripMembers.length
             ? window.currentTripMembers
-            : fallback;
-        const seen = new Set();
-        return source.map(member => ({
-            id: String(member?.id || '').slice(0, 128),
-            name: String(member?.name || '参加者').slice(0, 40)
-        })).filter(member => member.id && !seen.has(member.id) && seen.add(member.id));
+            : null;
+        const source = liveSource || currentSource || fallback;
+        const byId = new Set();
+        const byName = new Map();
+        const result = [];
+        source.forEach(member => {
+            const id = String(member?.id || member?.uid || '').slice(0, 128);
+            const name = String(member?.name || member?.nickname || '参加者').slice(0, 40);
+            if (!id || byId.has(id)) return;
+            const nameKey = normalizeMemberKey(name);
+            if (nameKey && byName.has(nameKey)) {
+                const existingIdx = byName.get(nameKey);
+                if (result[existingIdx].id === 'local' && id !== 'local') {
+                    byId.delete('local');
+                    byId.add(id);
+                    result[existingIdx] = { id, name };
+                }
+                return;
+            }
+            byId.add(id);
+            if (nameKey) byName.set(nameKey, result.length);
+            result.push({ id, name });
+        });
+        return result.length ? result : fallback;
     }
 
     function resolveExpensePayerId(payer, members) {
-        const rawId = String(payer || '');
-        const id = String(window.expensePayerAliases?.[rawId] || rawId);
-        if (members.some(member => member.id === id)) return id;
-        const byName = members.find(member => member.name === rawId);
-        if (byName) return byName.id;
-        if (rawId === 'local') {
-            const myNickname = String(localStorage.getItem('user_nickname') || '').trim();
+        const rawId = String(payer || '').trim();
+        const aliasedId = String(window.expensePayerAliases?.[rawId] || rawId).trim();
+        if (members.some(member => member.id === aliasedId)) return aliasedId;
+        if (members.some(member => member.id === rawId)) return rawId;
+        const mappedName = window.memberNames?.[rawId] || window.memberNames?.[aliasedId] || '';
+        if (mappedName) {
+            const normMapped = normalizeMemberKey(mappedName);
+            const byMappedName = members.find(member => normalizeMemberKey(member.name) === normMapped);
+            if (byMappedName) return byMappedName.id;
+        }
+        const normRaw = normalizeMemberKey(rawId);
+        if (normRaw) {
+            const byName = members.find(member => normalizeMemberKey(member.name) === normRaw);
+            if (byName) return byName.id;
+        }
+        if (rawId === 'local' || aliasedId === 'local') {
+            const myNickname = normalizeMemberKey(localStorage.getItem('user_nickname') || '');
             if (myNickname) {
-                const byNick = members.find(member => member.name === myNickname);
+                const byNick = members.find(member => normalizeMemberKey(member.name) === myNickname);
                 if (byNick) return byNick.id;
             }
         }
-        return id || members[0]?.id || 'local';
+        return aliasedId || rawId || members[0]?.id || 'local';
     }
 
     function expenseMemberName(id, members = expenseMembers()) {
-        return members.find(member => member.id === id)?.name || window.memberNames?.[id] || '参加者';
+        const rawId = String(id || '').trim();
+        const aliasedId = String(window.expensePayerAliases?.[rawId] || rawId).trim();
+        return members.find(member => member.id === aliasedId || member.id === rawId)?.name
+            || window.memberNames?.[aliasedId]
+            || window.memberNames?.[rawId]
+            || (rawId === 'local' ? String(localStorage.getItem('user_nickname') || '\u3053\u306e\u7aef\u672b').slice(0, 40) : '参加者');
     }
 
     function buildExpenseSettlements(members, paidBy, total) {
@@ -433,22 +473,39 @@
 
         const members = expenseMembers();
         const paidBy = new Map(members.map(member => [member.id, 0]));
-        expenses.forEach(expense => {
-            const payerId = resolveExpensePayerId(expense.payer, members);
-            if (!paidBy.has(payerId)) {
-                const payerName = expenseMemberName(payerId, members);
-                const existing = members.find(m => m.name === payerName);
-                if (existing) {
-                    if (!window.expensePayerAliases) window.expensePayerAliases = {};
-                    window.expensePayerAliases[payerId] = existing.id;
-                    paidBy.set(existing.id, (paidBy.get(existing.id) || 0));
-                    return;
+        const ensureMember = (rawId) => {
+            const resolvedId = resolveExpensePayerId(rawId, members);
+            if (paidBy.has(resolvedId)) return resolvedId;
+            const memberName = expenseMemberName(resolvedId, members);
+            const normName = normalizeMemberKey(memberName);
+            const existing = members.find(m => normalizeMemberKey(m.name) === normName);
+            if (existing) {
+                if (existing.id === 'local' && resolvedId !== 'local') {
+                    const prevPaid = paidBy.get('local') || 0;
+                    paidBy.delete('local');
+                    existing.id = resolvedId;
+                    paidBy.set(resolvedId, prevPaid);
+                    return resolvedId;
                 }
-                const unknownMember = { id: payerId, name: payerName };
-                members.push(unknownMember);
-                paidBy.set(payerId, 0);
+                return existing.id;
             }
+            const unknownMember = { id: resolvedId, name: memberName };
+            members.push(unknownMember);
+            paidBy.set(resolvedId, 0);
+            return resolvedId;
+        };
+
+        const normalizedExpenses = [];
+        expenses.forEach(expense => {
+            const payerId = ensureMember(expense.payer);
+            const rawPartIds = Array.isArray(expense.participantIds) ? expense.participantIds : [];
+            const resolvedPartIds = Array.from(new Set(rawPartIds.map(pid => ensureMember(pid)).filter(Boolean)));
             paidBy.set(payerId, Number(paidBy.get(payerId) || 0) + Number(expense.amount || 0));
+            normalizedExpenses.push({
+                ...expense,
+                payer: payerId,
+                participantIds: expense.splitMode === 'selected' ? resolvedPartIds : []
+            });
 
             const row = document.createElement('li');
             const textBox = document.createElement('div');
@@ -494,7 +551,7 @@
             settlement.textContent = 'まだ支出はありません';
         } else {
             const detailed = typeof window.shioriSettlementTransfers === 'function'
-                ? window.shioriSettlementTransfers(members, expenses).map(item => `${item.fromName} → ${item.toName} ${formatYen(item.amount)}`)
+                ? window.shioriSettlementTransfers(members, normalizedExpenses).map(item => `${item.fromName} → ${item.toName} ${formatYen(item.amount)}`)
                 : buildExpenseSettlements(members, paidBy, total);
             settlement.textContent = detailed.length ? detailed.join(' ／ ') : '受け渡しはありません';
         }
@@ -545,19 +602,37 @@
         notifyExpenseAction({ type: 'remove', id });
     }
 
+    function syncSelectOptionsWithMembers(deviceOwner, payer) {
+        const members = expenseMembers();
+        if (deviceOwner && !deviceOwner.options.length && members.length) {
+            deviceOwner.replaceChildren(...members.map(m => new Option(m.name, m.id)));
+        }
+        if (payer && !payer.options.length && members.length) {
+            payer.replaceChildren(...members.map(m => new Option(m.name, m.id)));
+        }
+        const savedOwner = safeLoad(deviceOwnerStorageKey(), '');
+        const optionIds = deviceOwner ? [...deviceOwner.options].map(option => option.value) : [];
+        const fallbackOwner = optionIds[0] || members[0]?.id || 'local';
+        if (deviceOwner) {
+            const myName = localStorage.getItem('user_nickname');
+            const ownOption = [...deviceOwner.options].find(option => option.textContent === myName);
+            const nextOwner = optionIds.includes(savedOwner) ? savedOwner : (ownOption?.value || fallbackOwner);
+            if (optionIds.includes(nextOwner)) deviceOwner.value = nextOwner;
+            else if (optionIds.length) deviceOwner.value = optionIds[0];
+        }
+        if (payer) {
+            const payerIds = [...payer.options].map(option => option.value);
+            const desiredPayer = deviceOwner?.value || fallbackOwner;
+            if (payerIds.includes(desiredPayer)) payer.value = desiredPayer;
+            else if (payerIds.length) payer.value = payerIds[0];
+        }
+    }
+
     function setupExpenses() {
         const form = document.getElementById('expense-form');
         const deviceOwner = document.getElementById('device-owner');
         const payer = document.getElementById('expense-payer');
-        const savedOwner = safeLoad(deviceOwnerStorageKey(), '');
-        const optionIds = deviceOwner ? [...deviceOwner.options].map(option => option.value) : [];
-        const fallbackOwner = optionIds[0] || expenseMembers()[0]?.id || 'local';
-        if (deviceOwner) {
-            const myName = localStorage.getItem('user_nickname');
-            const ownOption = [...deviceOwner.options].find(option => option.textContent === myName);
-            deviceOwner.value = optionIds.includes(savedOwner) ? savedOwner : (ownOption?.value || fallbackOwner);
-        }
-        if (payer) payer.value = deviceOwner?.value || fallbackOwner;
+        syncSelectOptionsWithMembers(deviceOwner, payer);
         if (deviceOwner && deviceOwner.dataset.expenseBound !== 'true') {
             deviceOwner.dataset.expenseBound = 'true';
             deviceOwner.addEventListener('change', () => {
@@ -569,26 +644,39 @@
             form.dataset.expenseBound = 'true';
             form.addEventListener('submit', event => {
                 event.preventDefault();
-                const amount = Number(document.getElementById('expense-amount').value);
+                const rawAmountStr = String(document.getElementById('expense-amount')?.value || '').replace(/[,，\s￥¥]/g, '');
+                const amount = Number(rawAmountStr);
                 if (!Number.isFinite(amount) || amount <= 0) return;
                 const expenses = safeLoad(EXPENSE_KEY, []);
                 const access = currentLedgerAccess();
-                const splitMode = document.getElementById('expense-split-mode')?.value || 'equal';
+                const members = expenseMembers();
+                const allCheckboxes = [...document.querySelectorAll('#expense-participants input[type="checkbox"]')];
+                const checkedIds = allCheckboxes.filter(input => input.checked).map(input => input.value);
+                let splitMode = document.getElementById('expense-split-mode')?.value || 'equal';
+                if (allCheckboxes.length > 0 && checkedIds.length > 0 && checkedIds.length < allCheckboxes.length) {
+                    splitMode = 'selected';
+                }
                 const participantIds = splitMode === 'selected'
-                    ? [...document.querySelectorAll('#expense-participants input:checked')].map(input => input.value)
+                    ? (allCheckboxes.length > 0 ? checkedIds : members.map(m => m.id))
                     : [];
                 if (splitMode === 'selected' && !participantIds.length) {
                     window.alert('費用を分ける参加者を1人以上選んでください。');
                     return;
                 }
+                const rawPayer = document.getElementById('expense-payer')?.value
+                    || document.getElementById('device-owner')?.value
+                    || safeLoad(deviceOwnerStorageKey(), '')
+                    || members[0]?.id
+                    || 'local';
+                const resolvedPayer = resolveExpensePayerId(rawPayer, members);
                 const isOnline = expenseIsUnlocked();
                 const isPending = !isOnline;
                 const expense = {
                     id: `exp-${Date.now()}-${Math.random().toString(16).slice(2)}`,
                     amount: Math.round(amount),
-                    payer: document.getElementById('expense-payer').value,
-                    category: document.getElementById('expense-category').value,
-                    note: document.getElementById('expense-note').value.trim().slice(0, 120),
+                    payer: resolvedPayer,
+                    category: document.getElementById('expense-category')?.value || 'その他',
+                    note: String(document.getElementById('expense-note')?.value || '').trim().slice(0, 120),
                     createdAt: new Date().toISOString(),
                     creatorUid: access.uid || safeLoad(deviceOwnerStorageKey(), '') || 'local-user',
                     splitMode,
@@ -609,7 +697,7 @@
                 const splitModeField = document.getElementById('expense-split-mode');
                 if (splitModeField) splitModeField.value = 'equal';
                 window.shioriRenderExpenseParticipants?.();
-                if (payer) payer.value = deviceOwner?.value || safeLoad(deviceOwnerStorageKey(), '');
+                syncSelectOptionsWithMembers(deviceOwner, payer);
                 renderExpenses();
                 if (isOnline) {
                     notifyExpenseAction({ type: 'upsert', expense });
@@ -622,6 +710,13 @@
                 if (!expenseIsUnlocked()) return;
                 const expenses = Array.isArray(event.detail) ? event.detail : [];
                 safeSave(EXPENSE_KEY, expenses);
+                renderExpenses();
+            });
+            window.addEventListener('shiori-members-changed', () => {
+                syncSelectOptionsWithMembers(
+                    document.getElementById('device-owner'),
+                    document.getElementById('expense-payer')
+                );
                 renderExpenses();
             });
             window.addEventListener('shiori-ledger-access', event => {
@@ -771,12 +866,17 @@
         // Use the exact configuration already rendered by the participant app.
         const tripData = window.currentTripData || {};
         if (currentRunId !== enhancementRunId) return;
-        window.currentTripMembers = Array.isArray(tripData.members) && tripData.members.length
-            ? tripData.members
-            : [{ id: 'local', name: String(localStorage.getItem('user_nickname') || '\u3053\u306e\u7aef\u672b').slice(0, 40) }];
+        if (Array.isArray(tripData.members) && tripData.members.length) {
+            window.currentTripMembers = tripData.members;
+        } else if (Array.isArray(window.liveTripMembers) && window.liveTripMembers.length) {
+            window.currentTripMembers = window.liveTripMembers;
+        } else if (!Array.isArray(window.currentTripMembers) || !window.currentTripMembers.length) {
+            window.currentTripMembers = [{ id: 'local', name: String(localStorage.getItem('user_nickname') || '\u3053\u306e\u7aef\u672b').slice(0, 40) }];
+        }
         initTripDays();
         setupChecklist();
         setupExpenses();
+        window.refreshLiveParticipants?.();
         setupExpenseShortcuts();
         setupOfflineSupport();
         openLinkedTab();
