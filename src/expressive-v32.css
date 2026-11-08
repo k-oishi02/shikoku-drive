@@ -1390,6 +1390,30 @@ html[data-trip-theme="dark"] .expense-offline-badge {
   margin-top: 12px;
   border-radius: 10px !important;
 }
+.expense-export-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+.expense-export-actions .j-btn {
+  margin-top: 0 !important;
+  width: 100%;
+  min-height: 42px !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px 12px;
+}
+.expense-export-my {
+  background: var(--sh-accent) !important;
+  color: var(--sh-on-accent) !important;
+  border: 1px solid var(--sh-accent) !important;
+}
 
 .j-widget {
   display: flex;

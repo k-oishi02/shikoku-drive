@@ -562,25 +562,97 @@
         return expenseMemberName(resolvedId, members);
     };
     window.recalculateExpenses = renderExpenses;
-    window.downloadExpensesCsv = function () {
+    window.downloadExpensesCsv = function (mode = 'all') {
         if (!expenseIsUnlocked()) {
             window.alert('精算内容はオンラインで参加権限を確認できた時だけ書き出せます。');
             return;
         }
         const members = expenseMembers();
+        const expenses = safeLoad(EXPENSE_KEY, []);
+        const tripId = window.currentTripId || 'trip';
+        const tripTitle = window.currentTripTitle || '旅行';
+
+        if (mode === 'my-burden') {
+            const rawOwner = document.getElementById('device-owner')?.value
+                || safeLoad(deviceOwnerStorageKey(), '')
+                || members[0]?.id
+                || 'local';
+            const myId = resolveExpensePayerId(rawOwner, members);
+            const myName = expenseMemberName(myId, members);
+            const normMyName = normalizeMemberKey(myName);
+
+            const rows = [['日時', '内容', 'カテゴリ', '自己負担額', '立替者', '立替種別', '全体金額', '精算メモ']];
+            expenses.forEach(expense => {
+                const rawAmount = Number(expense.amount || 0);
+                if (!rawAmount) return;
+                const splitMode = expense.splitMode || 'equal';
+                const rawPartIds = Array.isArray(expense.participantIds) ? expense.participantIds : [];
+
+                let count = 0;
+                let isIncluded = false;
+                if (splitMode === 'equal') {
+                    count = members.length || 1;
+                    isIncluded = true;
+                } else {
+                    const resolvedPids = rawPartIds.map(pid => resolveExpensePayerId(pid, members));
+                    count = resolvedPids.length || 1;
+                    isIncluded = resolvedPids.some(pid => pid === myId || normalizeMemberKey(expenseMemberName(pid, members)) === normMyName);
+                }
+                if (!isIncluded) return;
+
+                const myShare = Math.round(rawAmount / count);
+                const payerId = resolveExpensePayerId(expense.payer, members);
+                const payerName = expenseMemberName(payerId, members);
+                const isPaidByMe = (payerId === myId || normalizeMemberKey(payerName) === normMyName);
+                const settlementType = isPaidByMe ? '自己立替' : ${payerName}立替（要精算）;
+
+                rows.push([
+                    expense.createdAt || '',
+                    expense.note || expense.category || '支出',
+                    expense.category || 'その他',
+                    myShare,
+                    payerName,
+                    settlementType,
+                    rawAmount,
+                    ${tripTitle} / 
+                ]);
+            });
+
+            if (rows.length <= 1) {
+                window.alert(${myName}さんの負担対象となる支出はまだありません。);
+                return;
+            }
+
+            const csv = '\uFEFF' + rows.map(row => row.map(value => "").join(',')).join('\r\n');
+            const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = ${tripId}--burden-expenses.csv;
+            anchor.click();
+            URL.revokeObjectURL(url);
+            return;
+        }
+
         const rows = [['日時', '内容', 'カテゴリ', '金額', '支払者', '分け方', '対象者']];
-        safeLoad(EXPENSE_KEY, []).forEach(expense => {
+        expenses.forEach(expense => {
             const targets = Array.isArray(expense.participantIds) && expense.participantIds.length
                 ? expense.participantIds.map(id => expenseMemberName(id, members)).join('・')
                 : '全員';
-            rows.push([expense.createdAt, expense.note || '', expense.category || '', expense.amount || 0,
-                expenseMemberName(resolveExpensePayerId(expense.payer, members), members), expense.splitMode || 'equal', targets]);
+            rows.push([
+                expense.createdAt || '',
+                expense.note || '',
+                expense.category || '',
+                expense.amount || 0,
+                expenseMemberName(resolveExpensePayerId(expense.payer, members), members),
+                expense.splitMode || 'equal',
+                targets
+            ]);
         });
-        const csv = '\uFEFF' + rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',')).join('\r\n');
+        const csv = '\uFEFF' + rows.map(row => row.map(value => "").join(',')).join('\r\n');
         const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
         const anchor = document.createElement('a');
         anchor.href = url;
-        anchor.download = `${window.currentTripId || 'trip'}-expenses.csv`;
+        anchor.download = ${tripId}-expenses-all.csv;
         anchor.click();
         URL.revokeObjectURL(url);
     };
