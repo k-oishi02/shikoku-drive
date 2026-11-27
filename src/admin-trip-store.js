@@ -430,3 +430,41 @@ export async function revokeMemberInboxEntries({ db, doc, getDoc, setDoc, server
   }
   return updated;
 }
+
+export async function deleteTripRecord({ db, doc, collection, getDocs, writeBatch, query, limit, tripId, batchLimit = 400 }) {
+  if (!segment(tripId)) throw new Error('無効なしおりIDです。');
+  const distSnap = await getDocs(collection(db, 'adminDistributions'));
+  const linked = distSnap.docs.filter(d => (d.data() || {}).tripId === tripId);
+  if (linked.length > 0) {
+    const error = new Error(`このしおりに紐づく共有ルームが${linked.length}件残っています。先に「③ メンバーへ共有」から共有ルームを完全削除してください。`);
+    error.code = 'distributions-exist';
+    throw error;
+  }
+  const batch = writeBatch(db);
+  batch.delete(doc(db, 'adminTrips', tripId));
+  batch.delete(doc(db, 'publishedTrips', tripId));
+  await batch.commit();
+
+  let deletedHistories = 0;
+  try {
+    const versionsCol = collection(db, 'tripHistories', tripId, 'versions');
+    while (true) {
+      const q = query && limit ? query(versionsCol, limit(batchLimit)) : versionsCol;
+      const snap = await getDocs(q);
+      if (snap.empty) break;
+      const hBatch = writeBatch(db);
+      let count = 0;
+      for (const item of snap.docs) {
+        hBatch.delete(item.ref);
+        count++;
+        if (count >= batchLimit) break;
+      }
+      await hBatch.commit();
+      deletedHistories += count;
+      if (snap.docs.length < batchLimit) break;
+    }
+  } catch {
+    // Best-effort cleanup of version history.
+  }
+  return { deleted: true, tripId, deletedHistories };
+}

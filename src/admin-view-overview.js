@@ -12,6 +12,7 @@ export function renderTripLibrary({
   onOpenDistribution,
   duplicateTrip,
   toggleTripArchive,
+  deleteTrip,
   downloadDraftRecovery
 }) {
   const list = $('admin-trip-list');
@@ -95,6 +96,12 @@ export function renderTripLibrary({
     archive.addEventListener('click', () => toggleTripArchive(tripId));
 
     popover.append(duplicate, archive);
+    if (state.currentRole === 'owner' && typeof deleteTrip === 'function') {
+      const del = makeElement('button', 'menu-action-item danger-text', '🗑 しおりを完全削除');
+      del.type = 'button';
+      del.addEventListener('click', () => deleteTrip(tripId));
+      popover.append(del);
+    }
     moreMenu.append(moreSummary, popover);
     actions.append(edit, distribute, moreMenu);
 

@@ -2,7 +2,7 @@
  * Admin Trip Service: Persistence, Draft Synchronization & Transfer Operations
  */
 
-import { collection, doc, getDoc, getDocs, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+import { collection, doc, getDoc, getDocs, limit, query, runTransaction, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
 import {
   migrateTripToV2,
   cleanPlanning,
@@ -13,7 +13,7 @@ import {
 } from './trip-v2-index.js';
 import { decodeDraftRecord } from './admin-draft-record.js';
 import { draftVersion } from './admin-save-state.js';
-import { commitTripRecord } from './admin-trip-store.js';
+import { commitTripRecord, deleteTripRecord } from './admin-trip-store.js';
 import { buildTripExport, buildAdminBackup, parseTripImport } from './admin-transfer.js';
 import { validateStoredDraftSize } from './draft-validation.js';
 import { reconcileAssignments } from './admin-candidate-state.js';
@@ -340,48 +340,43 @@ export async function toggleTripArchive({ db, store, session, tripId, hasUnsaved
   if (record.loadError) return showToast('壊れた下書きは保管状態を変更できません。元データを保管して修復してください。', true);
   const errors = validateTripDraft(record.trip, record.planning || blankPlanning());
   if (errors.length) return showToast(errors.join('\n'), true);
-  if (state.activeTrip?.tripId === tripId && typeof hasUnsavedChanges === 'function' && hasUnsavedChanges()) {
-    return showToast('この旅行の未保存変更を先に保存してください。', true);
-  }
-  const generation = session.generation;
-  const trip = migrateTripToV2(record.trip);
-  const planning = cleanPlanning(record.planning || blankPlanning());
+  if (state.activeTrip?.tripId === tripId && typeof hasUnsavedChanges === 'function' && hasUnsavedChanges()) return showToast('この旅行の未保存変更を先に保存してください。', true);
+  const generation = session.generation, trip = migrateTripToV2(record.trip), planning = cleanPlanning(record.planning || blankPlanning());
   trip.archived = !trip.archived;
   store.setState({ tripWriteBusy: true });
   if (typeof updateSaveStatus === 'function') updateSaveStatus();
   try {
-    const data = {
-      tripId,
-      title: trip.title,
-      status: state.publishedIds.has(tripId) ? 'published' : 'draft',
-      payloadJson: JSON.stringify(stripPlanningForPublication(trip)),
-      planningJson: JSON.stringify(planning),
-      revision: crypto.randomUUID(),
-      updatedAt: serverTimestamp(),
-      updatedBy: state.currentUser?.uid || 'admin'
-    };
-    const version = await commitTripRecord({
-      db,
-      runTransaction,
-      reference: doc(db, 'adminTrips', tripId),
-      expectedVersion: record.version ?? null,
-      data
-    });
+    const data = { tripId, title: trip.title, status: state.publishedIds.has(tripId) ? 'published' : 'draft', payloadJson: JSON.stringify(stripPlanningForPublication(trip)), planningJson: JSON.stringify(planning), revision: crypto.randomUUID(), updatedAt: serverTimestamp(), updatedBy: state.currentUser?.uid || 'admin' };
+    const version = await commitTripRecord({ db, runTransaction, reference: doc(db, 'adminTrips', tripId), expectedVersion: record.version ?? null, data });
     state.trips.set(tripId, { trip, planning, version, source: 'cloud', updatedAt: new Date() });
     if (state.activeTrip?.tripId === tripId && session.generation === generation && !(typeof hasUnsavedChanges === 'function' && hasUnsavedChanges())) {
-      store.setState({
-        activeTrip: deepClone(trip),
-        activePlanning: deepClone(planning)
-      });
+      store.setState({ activeTrip: deepClone(trip), activePlanning: deepClone(planning) });
       if (typeof renderEditor === 'function') renderEditor();
       if (typeof startEditorSession === 'function') startEditorSession(true, version);
     }
     if (typeof renderTripLibrary === 'function') renderTripLibrary();
     showToast(trip.archived ? '思い出へアーカイブしました。' : '旅行一覧へ戻しました。');
-  } catch (error) {
-    showToast(`変更できません: ${error.message}`, true);
-  } finally {
-    store.setState({ tripWriteBusy: false });
-    if (typeof updateSaveStatus === 'function') updateSaveStatus();
-  }
+  } catch (error) { showToast(`変更できません: ${error.message}`, true); }
+  finally { store.setState({ tripWriteBusy: false }); if (typeof updateSaveStatus === 'function') updateSaveStatus(); }
+}
+
+export async function deleteTrip({ db, store, session, tripId, updateSaveStatus, renderTripLibrary, populateTripSelects }) {
+  const state = store.getState();
+  if (state.currentRole !== 'owner') return showToast('しおりの完全削除はオーナー権限のみ実行できます。', true);
+  if (state.tripWriteBusy || session.saving) return showToast('保存が終わるまでお待ちください。', true);
+  if ((state.distributions || []).some(d => d.tripId === tripId)) return showToast('共有ルームが残っています。先に「③ メンバーへ共有」から共有ルームを完全削除してください。', true);
+  const title = state.trips.get(tripId)?.trip?.title || tripId;
+  if (!window.confirm(`「${title}」（${tripId}）を完全削除しますか？\n下書き・公開データ・候補・非公開メモがすべて削除され、元に戻せません。`)) return;
+  if (window.prompt(`確認のため、削除するしおりID「${tripId}」を入力してください。`) !== tripId) return;
+  store.setState({ tripWriteBusy: true });
+  if (typeof updateSaveStatus === 'function') updateSaveStatus();
+  try {
+    await deleteTripRecord({ db, doc, collection, getDocs, writeBatch, query, limit, tripId });
+    state.trips.delete(tripId); state.publishedIds.delete(tripId); state.publishedTrips.delete(tripId);
+    if (state.activeTrip?.tripId === tripId) store.setState({ activeTrip: null, activePlanning: null, activeDayKey: '', lastDayPlanUndo: null });
+    if (typeof renderTripLibrary === 'function') renderTripLibrary();
+    if (typeof populateTripSelects === 'function') populateTripSelects();
+    showToast(`「${title}」を完全削除しました。`);
+  } catch (error) { showToast(`削除できません: ${error.message}`, true); }
+  finally { store.setState({ tripWriteBusy: false }); if (typeof updateSaveStatus === 'function') updateSaveStatus(); }
 }

@@ -13,7 +13,7 @@ import { createEditorSession } from './admin-save-state.js';
 import { initAdminAuth, handleAuthState } from './admin-auth.js';
 import {
   loadCloudTrips, persistTrip, reloadActiveDraft, downloadDraftRecovery,
-  downloadActiveTrip, importTripFile, duplicateTrip, toggleTripArchive
+  downloadActiveTrip, importTripFile, duplicateTrip, toggleTripArchive, deleteTrip
 } from './admin-trip-service.js';
 import { renderTripLibrary, initOverviewView } from './admin-view-overview.js';
 import {
@@ -94,6 +94,7 @@ const callbacks = {
     onOpenDistribution: id => openDistribution(adminStore, id, showView),
     duplicateTrip: id => duplicateTrip({ store: adminStore, tripId: id, confirmEditorLeave: callbacks.confirmEditorLeave, renderEditor: callbacks.renderEditor, showView, startEditorSession: (s, v) => startEditorSession(adminStore, editorSession, s, v) }),
     toggleTripArchive: id => toggleTripArchive({ db, store: adminStore, session: editorSession, tripId: id, hasUnsavedChanges: callbacks.hasUnsavedChanges, updateSaveStatus: callbacks.updateSaveStatus, renderEditor: callbacks.renderEditor, startEditorSession: (s, v) => startEditorSession(adminStore, editorSession, s, v), renderTripLibrary: () => callbacks.renderTripLibrary() }),
+    deleteTrip: id => deleteTrip({ db, store: adminStore, session: editorSession, tripId: id, updateSaveStatus: callbacks.updateSaveStatus, renderTripLibrary: () => callbacks.renderTripLibrary(), populateTripSelects: callbacks.populateTripSelects }),
     downloadDraftRecovery: id => downloadDraftRecovery(adminStore, id)
   }),
   renderTripAudit: () => renderTripAudit(adminStore),
